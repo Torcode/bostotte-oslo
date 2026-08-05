@@ -1000,6 +1000,42 @@ bg_termin <- bg_est
 Modelleringen skjer på logskala, $y_t = \ln M^{T}_t$: nivåserien er strengt positiv, regelendringenes effekter er multiplikative i @eq-takeup sin dekomponering, og logtransformasjonen gjør intervallene asymmetriske på nivåskala der de skal være det. Populasjonsoffset brukes ikke i hovedspesifikasjonen — Oslos befolkning beveger seg under én prosent på tolv måneder; rater reserveres for bydelsanalysen og driftsdiagnostikken. Analysesettet er dermed `r nb(nrow(analyse))` terminer × `r nb(ncol(analyse))` kolonner der alt foran er destillert: utfallet fra form 1, regressorene generert fra form 4, kalendertrioen fra det kalibrerte gridet, kovariatene fra form 3 låst ned til én kolonne hver. Hierarkiet — Oslo, femten bydeler og ufordelt-noden, med brukergruppene som alternativt snitt — står summeringskonsistent klart for MinT-avstemming i del 2 [@wickramasuriya2019].
 
 
+## Seriediagnostikk: hva serien er, før den modelleres {#sec-met-diagnostikk}
+
+Diagnostikken hører logisk sett tidlig, men den kan ikke kjøres tidligere enn her, og grunnen er verdt en setning. En enhetsrottest på den rå serien svarer på om det finnes en stokastisk trend. Med fem daterte nivåskift i utvalget er det spørsmålet nesten uinformativt: strukturelle brudd gjør at en stasjonær serie ser integrert ut, og enhetsrottester er systematisk skjeve mot ikke å forkaste under slike brudd [@perron1989]. Kjørt på rådata ville testen bare bekreftet at det finnes brudd — noe regelverkskalenderen allerede sa. Den informative testen er den *betingede*: er serien stasjonær gitt de deterministiske leddene? Den forutsetter at intervensjonsmatrisen (@sec-met-x) og kalenderregressoren (@sec-met-kalender) allerede er bygget, og hører derfor hjemme nettopp her.
+
+```{r}
+#| label: tbl-diagnostikk
+#| tbl-cap: 'Seriediagnostikk før og etter at de deterministiske leddene er trukket ut. «Betinget» er OLS-residualen fra en regresjon av logserien på intervensjonsmatrisen og kalenderregressoren. KPSS tester nullhypotesen om stasjonaritet: lav teststatistikk og høy p-verdi betyr at nullhypotesen står.'
+
+suppressPackageStartupMessages({library(tsibble); library(feasts); library(urca)})
+
+ts_diag <- analyse |> mutate(mnd = yearmonth(dato)) |> as_tsibble(index = mnd)
+det <- lm(log_M ~ win_covid + win_strom + pakke_2024h2 + k_pre + k_post, data = ts_diag)
+tr_diag <- tibble(mnd = ts_diag$mnd, e = as.numeric(residuals(det))) |> as_tsibble(index = mnd)
+
+hent <- function(x, v) {
+  u <- x |> features({{ v }}, list(kpss = unitroot_kpss, nd = unitroot_ndiffs, nsd = unitroot_nsdiffs))
+  st <- x |> features({{ v }}, feat_stl)
+  tibble(kpss = u$kpss_kpss_stat, p = u$kpss_kpss_pvalue, nd = u$nd_ndiffs, nsd = u$nsd_nsdiffs,
+         trend = st$trend_strength, sesong = st$seasonal_strength_year)
+}
+diag_tab <- bind_rows(hent(ts_diag, log_M) |> mutate(serie = "Rå logserie"),
+                      hent(tr_diag,  e)     |> mutate(serie = "Betinget på deterministiske ledd"))
+
+diag_tab |>
+  transmute(Serie = serie,
+            `KPSS` = nb(kpss, 2),
+            `p-verdi` = if_else(p <= 0.01, "≤ 0,01", if_else(p >= 0.1, "≥ 0,10", nb(p, 2))),
+            `Differensiering` = nd, `Sesongdiff.` = nsd,
+            `Trendstyrke` = nb(trend, 2), `Sesongstyrke` = nb(sesong, 2)) |>
+  kab(align = "lrrrrrr")
+```
+
+Resultatet er studiens kanskje reneste enkeltfunn. Den rå logserien forkaster stasjonaritet og krever én differensiering. Trekker man ut de fem deterministiske leddene, står nullhypotesen om stasjonaritet, og ingen differensiering er nødvendig. **Ikke-stasjonariteten i serien er regelendringene.** De samme fem leddene forklarer `r pst(100 * summary(det)$r.squared)` av variansen i $\ln M^T_t$ alene.
+
+Funnet er ikke bare et diagnostisk kuriosum: det bekreftes uavhengig av modellvalget i @sec-met-modeller. Referansemodellen uten regressorer velger $d = 1$ — den må differensiere bruddene bort. Spesifikasjonene med intervensjonsmatrisen velger $d = 0$. To ulike prosedyrer, samme konklusjon, og det er den beste formen for bekreftelse en diagnostikk kan få.
+
 ## Modellspesifikasjoner {#sec-met-modeller}
 
 Modellvalget følger hierarkiet i @sec-teori-modeller, men med én tilleggsbetingelse som kommer fra forskningsspørsmålet selv. Spørsmålet er ikke bare *hvor presist* serien kan prognostiseres, men *hvor mye det hjelper* å modellere kjente regelendringer eksplisitt. Et slikt spørsmål besvares ikke av én god modell mot én dårlig; det besvares av en **nøstet stige** der modellene skiller seg fra hverandre i nøyaktig én informasjonskilde av gangen. @tbl-modeller er bygget slik.
@@ -1030,7 +1066,11 @@ der $x_t$ er kolonnene fra @sec-met-x og @sec-met-kalender. Dette er standardark
 
 **Transformasjon og tilbaketransformasjon.** Modelleringen skjer på logskala (@sec-met-kovariater). Punktprognosen i @eq-estimand er *medianen*, og medianen tilbaketransformeres ved ren eksponensiering. Det er et bevisst valg og ikke en forglemmelse: en forventningsriktig tilbaketransformasjon ville krevd et Jensen-ledd og gitt et annet estimand enn det forskningsspørsmålet definerer. Intervallgrensene tilbaketransformeres på samme måte, hvilket bevarer den asymmetrien nivåskalaen skal ha.
 
-**Ordensvalg.** $(p,d,q)(P,D,Q)_{12}$ velges automatisk ved AICc, med differensieringsgradene bestemt av enhetsrot- og sesongstyrketest. Det avgjørende er *når*: valget gjentas ved hver prognoseopprinnelse, på treningsvinduet alene. Å velge orden én gang på hele utvalget og deretter «rulle» er en av de vanligste og minst synlige formene for informasjonslekkasje i denne litteraturen, og den ville gjort evalueringen optimistisk uten å etterlate spor.
+**Ordensvalg — og hva informasjonskriterier *ikke* brukes til.** $(p,d,q)(P,D,Q)_{12}$ velges automatisk ved AICc, med differensieringsgradene bestemt av enhetsrot- og sesongstyrketest (@sec-met-diagnostikk). Det avgjørende er *når*: valget gjentas ved hver prognoseopprinnelse, på treningsvinduet alene. Å velge orden én gang på hele utvalget og deretter «rulle» er en av de vanligste og minst synlige formene for informasjonslekkasje i denne litteraturen, og den ville gjort evalueringen optimistisk uten å etterlate spor.
+
+AICc velger altså orden *innenfor* en modell. Den velger ikke mellom trinnene i @tbl-modeller, og det er et bevisst valg med to begrunnelser. Den ene er at stigen ikke er en søkeliste, men en dekomponering: å plukke AICc-vinneren ville gjort M6-mot-M4 og M6-mot-M5 meningsløse, og vi ville sittet igjen med én modell og ingen svar på hvor gevinsten kom fra. Den andre er teknisk. AICc er et *ettstegs* kriterium — det estimerer forventet ut-av-utvalgs-tilpasning for $h = 1$, betinget på at modellklassen er riktig og prosessen stabil. Forskningsspørsmålet gjelder $h = 1,\dots,12$ og intervalldekning, og et ettstegskriterium sier ingenting om noen av delene. Når selve målet lar seg måle direkte på rullerende opprinnelse, ville det vært et skritt tilbake å velge på en indikator for én av horisontene.
+
+Det finnes en tredje mulighet som ikke forfølges her, men som fortjener å navngis: å la hver opprinnelse velge spesifikasjon etter *historisk ut-av-utvalgs*-ytelse, eller å kombinere modellene. Det er trolig nærmere det en analysefunksjon i drift ville gjort, og det er en utvidelse av designet — ikke en innvending mot stigen.
 
 ### M7: effektstørrelse hentet utenfra {#sec-met-prior}
 
