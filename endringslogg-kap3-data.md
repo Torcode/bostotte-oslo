@@ -493,3 +493,82 @@ Alle fire holder eksakt.
 stratifisering på identifikasjon), `velferdsetaten-data/data/clean/arsrapport_nokkeltall.csv`
 (ny), `velferdsetaten-data/scripts/velferdsetaten_data.R` (laster den),
 `kodebok.md` (nytt avsnitt 5b, nytt datasett, fire nye feller), `datakilder.md`.
+
+---
+
+# M7: prior-varianten (5. august 2026, tredje runde)
+
+Designvalget etter datakvalitetsrevisjonen: skal effektstørrelsen for en vedtatt,
+men ikke ikrafttrådt regelendring hentes utenfra som en egen modell, eller holdes
+til robusthetsanalysen? Valgt: egen modell.
+
+**Begrunnelsen er at det ikke finnes noe nøytralt alternativ.** Å utelate
+regressoren pålegger β = 0 — altså en påstand om at en regelendring Stortinget
+allerede har vedtatt, ikke vil ha effekt i Oslo. Det er en sterkere antakelse enn å
+bruke departementets eget publiserte anslag. Valget står mellom å pålegge null og å
+pålegge det beste daterte tallet som finnes; M7 gjør valget eksplisitt og
+kildebelagt i stedet for implisitt.
+
+Stillingen dette arbeidet retter seg mot, ligger i en analyse- og
+utredningsseksjon som leverer kunnskapsgrunnlag, framskrivinger og
+beslutningsgrunnlag. Spørsmålet «hvor mange Oslo-husstander» kommer når endringen
+varsles i statsbudsjettet i oktober, ikke etter at den har trådt i kraft i januar.
+En modell som først kan svare fra måned syv, svarer etter at beslutningen er tatt.
+
+## M1. Ny modell M7 (avsnitt 3.6.1)
+
+M7 er identisk med M6 bortsett fra ett offset-ledd for regressorer som ikke passerer
+inngangsregelen ved opprinnelsen. Leddet inngår i prognosen, men ikke i
+estimeringen, slik at det ikke forstyrrer de øvrige koeffisientene.
+
+Anslagene hentes fra ny fil `forhandsanslag.csv` og skaleres med Oslos målte andel
+av mottakerne (18,5 %, målt i revisjonen). Tabellen skiller tre typer, og skillet er
+ikke kosmetisk: `forhaand` er publisert før hendelsen og er det eneste en prognose i
+drift ville hatt; `etterberegnet` er realisert utfall og kan bare brukes til å
+validere metoden; `mekanisk` er utledet av regelverket.
+
+**Prioren skal scores, ikke tros.** For `win_strom` finnes både et publisert anslag
+og en estimerbar koeffisient. Metoden kalibreres derfor ved å sammenlikne β̂ mot
+prior-implisert λ der begge finnes. Treffer de publiserte tallene, er det belegg for
+å bruke dem der estimering er umulig; treffer de ikke, er det funnet — og det
+forteller hvor mye vekt en konsekvensutredning tåler. Ny T5 i `tbl-tester` med begge
+leddene.
+
+## M2. Korreksjon av mitt eget funn R2 fra forrige runde
+
+Da jeg gikk til kildene for å bygge prior-tabellen, viste det seg at R2 var for
+grovt formulert. To presiseringer, begge inn i 3.7.1:
+
+**`k_post` er rammet på en ufarlig måte.** Utelatelse pålegger β = 0, og null er
+*nøyaktig* det regelmekanikken predikerer: 3 × ⅔ = 2. Utelatelse og korrekt prior
+sammenfaller. De 138 rammede punktene for `k_post` er derfor ikke et problem å løse,
+men en tilfeldighet i vår favør — og det burde stått. Bare `pakke_2024h2` er
+genuint skadelidende, fordi kildene der sier at effekten er positiv.
+
+**Aprilbruddet 2024 er ikke rammet i det hele tatt.** Seriens største bevegelse
+bæres av `win_strom`, som er identifisert ved alle 31 opprinnelser fordi vinduets
+*åpning* ligger i treningsvinduet. Modellen kan framskrive lukkingen selv om
+lukkingen ligger i horisonten. Forrige runde antydet at identifikasjonsproblemet
+rammet den hendelsen studien er mest opptatt av. Det gjør det ikke.
+
+Begge presiseringene gjør funnet mindre dramatisk enn først formulert. De står her
+fordi en endringslogg som bare registrerer det som styrker konklusjonen, er
+verdiløs.
+
+## M3. En kjent begrensning, notert framfor fylt
+
+Høstpakken 2024 — regressoren som faktisk er uidentifisert ved flest opprinnelser —
+har ingen publiserte husstandstall. Årsrapporten oppgir bare kronebeløp (14, 22 og 8
+mill.), og oppvarmingstillegget gikk dessuten til *eksisterende* mottakere, slik at
+en kroner-til-husstander-omregning ville vært direkte feil. Radene står som `ingen`
+i `forhandsanslag.csv` med kilde og merknad. M7 kan altså ikke demonstreres på den
+hendelsen før anslaget er hentet fra Prop. 1 S / RNB 2024. Det er notert som en åpen
+verifiseringsoppgave på linje med de øvrige `delvis`-flaggene, framfor å fylles med
+et konstruert tall.
+
+## Filer endret
+
+`unt_1.qmd` (M7 i modellstigen, nytt avsnitt 3.6.1, presisert 3.7.1, ny T5,
+protokolltallene oppdatert til åtte modeller),
+`velferdsetaten-data/data/clean/forhandsanslag.csv` (ny),
+`velferdsetaten-data/scripts/velferdsetaten_data.R`, `kodebok.md`, `datakilder.md`.

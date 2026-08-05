@@ -128,6 +128,10 @@ last_alt <- function(sti = NULL) {
     # Publiserte nasjonale årstall fra Husbankens årsrapport, brukt til ekstern
     # validering av Qlik-uttrekket (se metodekapitlets avsnitt om validering).
     arsrapport               = read_csv(file.path(cln, "arsrapport_nokkeltall.csv"),
+                                        show_col_types = FALSE),
+    # Daterte forhaands- og etterberegnede effektanslag per intervensjon. Brukes
+    # som prior der regressoren ennaa ikke er estimerbar (modell M7).
+    forhandsanslag           = read_csv(file.path(cln, "forhandsanslag.csv"),
                                         show_col_types = FALSE)
   )
 }

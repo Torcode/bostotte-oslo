@@ -363,7 +363,7 @@ To hull dokumenteres like eksplisitt som kildene, fordi et kjent hull er en anne
 
 ### Fire former — hva formen bestemmer {#sec-met-former}
 
-Datagrunnlaget består av tjueen datasett. De er ikke tjue ulike ting å lære seg. En *form* sier ikke hva et datasett handler om, men hvordan det er lagret: hvilken enhet én rad representerer — **kornet** — og dermed hvilken operasjon som er lovlig uten videre bearbeiding. Fire former dekker alle sammen. @tbl-former gir for hver av dem kornet, det kanoniske grepet og den karakteristiske feilen formen inviterer til.
+Datagrunnlaget består av tjueto datasett. De er ikke tjue ulike ting å lære seg. En *form* sier ikke hva et datasett handler om, men hvordan det er lagret: hvilken enhet én rad representerer — **kornet** — og dermed hvilken operasjon som er lovlig uten videre bearbeiding. Fire former dekker alle sammen. @tbl-former gir for hver av dem kornet, det kanoniske grepet og den karakteristiske feilen formen inviterer til.
 
 | Form | Kornet: én rad er | Kanonisk grep | Karakteristisk feil |
 |:---------|:------------------|:------------------|:----------------------------|
@@ -380,7 +380,7 @@ Datagrunnlaget består av tjueen datasett. De er ikke tjue ulike ting å lære s
 
 *Form 3 — statistikk-kuber i langformat* (SSB- og Oslo-statbanktabellene). Én rad er én celle, med kode-, navn- og verdikolonner. En kube er ikke en serie før alle dimensjoner unntatt tid er låst. Toromsleien i Oslo og Bærum krever for eksempel `Soner2_kode == "01"`, `AntRom_kode == "2"` og `ContentsCode_kode == "Husleie"` — tre filtre for én tallrekke. Uten full nedlåsing summerer man over en glemt dimensjon og får et tall som ser plausibelt ut. Det er kubefellen, og grunnen til at hver kube i denne analysen bare brukes gjennom navngitte filteroppskrifter, dokumentert i kodeboken.
 
-*Form 4 — oppslagstabeller* (`intervensjoner`, `parametre`, `stromstotte`, `grunnbelop`, `arsrapport`). Én rad er én datert regelendring med mekanisme, forventet fortegn og verifiseringsstatus; en regelparameter; et månedsbeløp; et G-vedtak; et publisert nasjonalt årstall. Disse brukes aldri som serier. De *genererer* de deterministiske regressorene i @sec-met-x og forsyner regelmotorens konstanter.
+*Form 4 — oppslagstabeller* (`intervensjoner`, `parametre`, `stromstotte`, `grunnbelop`, `arsrapport`, `forhandsanslag`). Én rad er én datert regelendring med mekanisme, forventet fortegn og verifiseringsstatus; en regelparameter; et månedsbeløp; et G-vedtak; et publisert nasjonalt årstall; et datert effektanslag for én intervensjon. Disse brukes aldri som serier. De *genererer* de deterministiske regressorene i @sec-met-x og forsyner regelmotorens konstanter.
 
 @tbl-datasett plasserer alle objektene i denne inndelingen. Rad- og kolonnetall er telt programmatisk fra objektene, og oppslaget mot formtabellen er sikret med en konsistenssjekk: dersom datapakken en dag inneholder et objekt som ikke er klassifisert, stopper renderingen.
 
@@ -410,7 +410,8 @@ korn <- tribble(
   "parametre",               "4 oppslag",  "én regelparameter",
   "stromstotte",             "4 oppslag",  "én utbetalingsmåned",
   "grunnbelop",              "4 oppslag",  "ett G-vedtak (1. mai)",
-  "arsrapport",              "4 oppslag",  "ett publisert årstall (nasjonalt)"
+  "arsrapport",              "4 oppslag",  "ett publisert årstall (nasjonalt)",
+  "forhandsanslag",          "4 oppslag",  "ett effektanslag for én intervensjon"
 )
 
 # Kontrakt: hvert objekt i datapakken skal være klassifisert, og hver
@@ -1012,6 +1013,7 @@ Modellvalget følger hierarkiet i @sec-teori-modeller, men med én tilleggsbetin
 | **M4** | RegARIMA $+\ k$ | kalenderregressoren | isolerer kalenderbidraget |
 | **M5** | RegARIMA $+\ X$ | intervensjonsmatrisen | isolerer regelverksbidraget |
 | **M6** | RegARIMA $+\ X + k$ | begge | **hovedspesifikasjon** |
+| **M7** | M6 $+$ pålagt effekt | daterte forhåndsanslag | svarer **UB**: regelendring vedtatt, men ikke trådt i kraft |
 
 : Modellstigen. Hvert trinn legger til nøyaktig én informasjonskilde, slik at differansen mellom to modeller kan tilskrives den kilden og ikke et modellbytte. {#tbl-modeller}
 
@@ -1030,6 +1032,22 @@ der $x_t$ er kolonnene fra @sec-met-x og @sec-met-kalender. Dette er standardark
 
 **Ordensvalg.** $(p,d,q)(P,D,Q)_{12}$ velges automatisk ved AICc, med differensieringsgradene bestemt av enhetsrot- og sesongstyrketest. Det avgjørende er *når*: valget gjentas ved hver prognoseopprinnelse, på treningsvinduet alene. Å velge orden én gang på hele utvalget og deretter «rulle» er en av de vanligste og minst synlige formene for informasjonslekkasje i denne litteraturen, og den ville gjort evalueringen optimistisk uten å etterlate spor.
 
+### M7: effektstørrelse hentet utenfra {#sec-met-prior}
+
+M6 kan ikke framskrive en regelendring som ennå ikke har inntruffet: en regressor som er null gjennom hele treningsvinduet, har ingen koeffisient å estimere. Omfanget kvantifiseres i @sec-met-identifikasjon — det gjelder over halvparten av prognosepunktene. M7 lukker det hullet ved å hente effektstørrelsen fra en datert kilde utenfor serien. Modellen er identisk med M6 bortsett fra ett ledd:
+
+$$\ln M^{T}_{t} \;=\; \beta'_{\text{est}} x^{\text{est}}_t \;+\; \underbrace{\textstyle\sum_{j \in \mathcal{U}_\tau} \lambda_j\, x^{j}_t}_{\text{pålagt, ikke estimert}} \;+\; \eta_t$$ {#eq-prior}
+
+der $\mathcal{U}_\tau$ er regressorene som ikke passerer inngangsregelen ved opprinnelse $\tau$. Leddet er en *offset*: det inngår i prognosen, men ikke i estimeringen, slik at det ikke forstyrrer de øvrige koeffisientene.
+
+**Hvor $\lambda_j$ kommer fra.** Fra `forhandsanslag.csv`, som kobler hver intervensjon til et datert anslag med kilde og verifiseringsstatus. Det nasjonale anslaget skaleres med Oslos målte andel av mottakerne, `r pst(100 * mean(tail(d$oslo$ant_husstander_termin, 12) / tail(d$nasjonalt$ant_husstander_termin, 12)))`, og omregnes til logskala mot nivået ved opprinnelsen. Anslagene er av tre slag, og forskjellen mellom dem er ikke kosmetisk: *forhåndsanslag* er publisert før hendelsen og er det eneste en prognose i drift faktisk ville hatt; *etterberegnet* er realisert utfall og kan bare brukes til å validere metoden, aldri i en prognose; *mekanisk* er utledet av regelverket selv.
+
+**Begrunnelsen er ikke bekvemmelighet, men at det ikke finnes noe nøytralt alternativ.** Å utelate regressoren pålegger $\lambda_j = 0$ — en påstand om at en vedtatt regelendring ikke vil ha effekt. Valget står altså mellom å pålegge null og å pålegge det beste daterte tallet som finnes; ingen av delene er antakelsesfri. M7 gjør valget eksplisitt og kildebelagt i stedet for implisitt.
+
+**Og prioren skal scores, ikke tros.** For `win_strom` finnes både et publisert anslag og en koeffisient som *er* estimerbar. Metoden kan derfor kalibreres: sammenlign $\hat\beta$ mot den prior-impliserte $\lambda$ på de hendelsene der begge finnes. Treffer de publiserte tallene, er det belegg for å bruke dem der estimering er umulig; treffer de ikke, er *det* funnet — og det forteller hvor mye vekt en konsekvensutredning tåler. Sporingen rapporteres som en egen figur i kapitlets andre del: den estimerte koeffisienten etter hvert som den identifiseres, mot forhåndsanslaget.
+
+**En kjent begrensning.** Anslagsgrunnlaget er tynt. For høstpakken 2024 — regressoren som faktisk er uidentifisert ved flest opprinnelser — publiserte årsrapporten bare kronebeløp, ikke husstandstall, og radene står derfor som `mangler` i `forhandsanslag.csv`. M7 kan altså ikke demonstreres på den hendelsen uten at anslaget først hentes fra budsjettdokumentene. Det er en verifiseringsoppgave på linje med de øvrige `delvis`-flaggene i intervensjonstabellen, og den er notert som sådan framfor å fylles med et konstruert tall.
+
 **Asymmetriproposisjonen.** @eq-regarima estimerer statiske regresjonskoeffisienter og uttrykker dermed rene trinn, ikke transferfunksjonens $\delta$ (@eq-transfer). Asymmetriproposisjonen fra @sec-teori-beholdning testes derfor på to måter i stedet for å pålegges. For det første estimeres en variant der `win_strom` suppleres med en tre måneders innfasingsrampe ved inn-kanten; rampekoeffisienten er det direkte estimatet av gradvis innfasing, og variantene sammenliknes med AICc. For det andre inspiseres residualene ved hver kant: en skarp ut-kant skal ikke etterlate mønster, mens en gradvis inn-kant modellert som trinn skal etterlate en serie residualer med samme fortegn. De to testene peker på samme parameter fra hver sin side.
 
 ## Prognoseprotokoll {#sec-met-protokoll}
@@ -1046,7 +1064,7 @@ opprinnelser <- oslo_est$dato[
   seq_len(nrow(oslo_est)) <= (nrow(oslo_est) - H_MAKS)
 ]
 n_opprinnelser <- length(opprinnelser)
-n_modeller     <- 7
+n_modeller     <- 8
 n_prognosepkt  <- n_opprinnelser * H_MAKS
 ```
 
@@ -1118,6 +1136,12 @@ estimerbar |>
 
 Av de `r nb(n_prognosepkt)` prognosepunktene er `r pst(andel_rammet, 0)` slik at minst én aktiv regressor ikke kunne estimeres ved opprinnelsen. Andelen stiger med horisonten — fra `r pst(100 * mean(celler$udekket[celler$h == 1] > 0), 0)` på én måned til `r pst(100 * mean(celler$udekket[celler$h == H_MAKS] > 0), 0)` på tolv — fordi lengre horisonter når lenger inn i regelendringer som ennå ikke har inntruffet.
 
+**Men ikke alle uidentifiserte regressorer er like skadelige.** Å utelate en regressor er ikke et nøytralt valg — det pålegger $\beta = 0$. Om det er galt, avhenger av hva teorien sier at koeffisienten skal være.
+
+For `k_post` er null *nøyaktig* det teorien predikerer: når to tredeler av ytelsen medregnes i tre-utbetalingsmåneder, blir telt inntekt $3 \times \tfrac{2}{3} = 2$ — identisk med en normalmåned (@sec-met-kalender). Utelatelse og korrekt prior sammenfaller dermed, og de `r nb(sum(rammet$mangler[rammet$regressor == "k_post"]))` rammede punktene for `k_post` er rammet på en ufarlig måte. For `pakke_2024h2` er situasjonen motsatt: både regelverket og kronebeløpene i årsrapporten sier at effekten er positiv, og å utelate regressoren pålegger en påstand kildene motsier.
+
+Det er også verdt å merke seg hva som *ikke* er et problem. Seriens største brudd — avviklingen i termin april 2024 — bæres av `win_strom`, som er identifisert ved alle opprinnelser fra `r mnd(min(opprinnelser))`, fordi vinduets åpning ligger i treningsvinduet. Modellen kan derfor framskrive lukkingen selv om lukkingen selv ligger i horisonten. Identifikasjonsproblemet rammer altså ikke den hendelsen studien er mest opptatt av.
+
 **Protokollens svar: en eksplisitt inngangsregel.** En regressor inngår i spesifikasjonen ved opprinnelse $\tau$ hvis og bare hvis den har minst `r nb(MIN_NZ)` ikke-null observasjoner i treningsvinduet; ellers utelates den for den opprinnelsen. Regelen er deterministisk og logges, slik at spesifikasjonen ved hver opprinnelse er kjent. Alternativet — å la modelltilpasningen selv droppe kollineære kolonner — ville gitt samme resultat i stillhet, og «M6» ville da vært syv ulike modeller uten at noen sto oppført.
 
 **Og en presisering av hva studien kan konkludere med.** Gevinsten av å modellere kjente regelendringer eksplisitt deler seg i to regimer som må rapporteres hver for seg:
@@ -1126,7 +1150,7 @@ Av de `r nb(n_prognosepkt)` prognosepunktene er `r pst(andel_rammet, 0)` slik at
 
 *Regelendringen er vedtatt, men ikke trådt i kraft.* Koeffisienten finnes ikke i serien. Regelverkskalenderen forteller modellen at noe kommer og nøyaktig når — men ikke hvor mye. En prognose kan da bare bære endringen dersom effektstørrelsen hentes *utenfor* serien.
 
-Det andre regimet er ikke en svakhet ved designet; det er innholdet i underspørsmål **UB**, og datagrunnlaget gir det et skarpere svar enn spørsmålet ble stilt med. Studien har dessuten kilden som trengs: for avviklingen i april 2024 forelå departementets anslag på 20 000–25 000 mottakere nasjonalt *på forhånd* [@dagsavisen2024; @pensjonistforbundet2024], og Husbankens årsrapport bekreftet om lag 25 000 i etterkant [@husbanken2024aars]. Et forhåndsanslag omregnet til Oslos andel er dermed en tilgjengelig, datert og etterprøvbar prior — nøyaktig den informasjonen en prognose i drift ville hatt. Om den skal brukes som pålagt koeffisient i en egen modellvariant, er et designvalg som tas i kapitlets andre del; her fastslås bare at muligheten finnes og at den er den eneste som finnes.
+Det andre regimet er ikke en svakhet ved designet; det er innholdet i underspørsmål **UB**. Studien har kilden som trengs: for avviklingen i april 2024 forelå departementets anslag på 20 000–25 000 mottakere nasjonalt *på forhånd* [@dagsavisen2024; @pensjonistforbundet2024], og Husbankens årsrapport bekreftet om lag 25 000 i etterkant [@husbanken2024aars]. Det er grunnlaget for M7 (@sec-met-prior), som pålegger effektstørrelsen fra en datert kilde der den ikke kan estimeres — og som selv blir målt, ved at prioren sammenliknes med den estimerte koeffisienten på de hendelsene der begge finnes.
 
 ## Evaluering og inferens {#sec-met-evaluering}
 
@@ -1156,8 +1180,11 @@ Det andre regimet er ikke en svakhet ved designet; det er innholdet i underspør
 | **T2** | Eksplisitte intervensjoner hjelper — mest på intervallene | M6 mot M3, stratifisert på bruddnære og rolige punkter *og* på om regressoren var estimerbar (@sec-met-identifikasjon); Clark–West på punktfeil, dekningsdifferanse på intervaller | ingen dekningsgevinst i de bruddnære vinduene der regressoren var estimerbar |
 | **T3** | Kalendereffekten er stor før 2025 og eksakt null etter | $\hat\beta_{k,\text{pre}}$ negativ og signifikant; for $\hat\beta_{k,\text{post}}$ en ekvivalenstest mot grensen $\delta = \tfrac{1}{2}\lvert\hat\beta_{k,\text{pre}}\rvert$ | $\hat\beta_{k,\text{pre}}$ ikke negativ, eller ekvivalens for $\hat\beta_{k,\text{post}}$ forkastes |
 | **T4** | Nominell dekning krever brudd og kalender; resten fikses konformalt | dekning ved 80/95 for M3 og M6, før og etter konformal kalibrering, med intervallskår | M6 dekker ikke bedre enn M3, eller kalibreringen ikke lukker gapet |
+| **T5** | Daterte forhåndsanslag bærer informasjon der estimering er umulig | M7 mot M6 på punkter der en regressor var uidentifisert (@sec-met-prior); og $\hat\beta$ mot prior-implisert $\lambda$ der begge finnes | M7 er ikke bedre enn M6 på de rammede punktene, eller $\hat\beta$ avviker systematisk fra anslaget |
 
 : Teoriens implikasjoner som avgjørbare teststatistikker. Kolonnen «faller dersom» er skrevet før estimeringen, slik at utfallet ikke kan omtolkes i etterkant. {#tbl-tester}
+
+T5 er ny og hører til underspørsmål **UB**. Den er formulert med to ledd fordi de svarer på hvert sitt: det første måler om metoden hjelper, det andre om kilden er til å stole på. En metode som hjelper med en prior som ikke stemmer, er et lykketreff og ikke et funn.
 
 To ting i tabellen fortjener en kommentar. **T3** er formulert som en *ekvivalenstest*, ikke som en vanlig nullhypotesetest. Grunnen er at teorien predikerer at effekten er null, og en ordinær test kan aldri bekrefte en nullhypotese — den kan bare unnlate å forkaste, hvilket like gjerne kan skyldes lite data. Ekvivalensformuleringen snur bevisbyrden riktig vei: den krever at konfidensintervallet for $\hat\beta_{k,\text{post}}$ ligger *innenfor* en grense vi har satt på forhånd, og gir dermed teorien en reell mulighet til å falle. Grensen er satt til halvparten av den estimerte førperiodeeffekten, altså i seriens egne enheter framfor en vilkårlig konstant. **T2** er formulert med intervalldekning som det avgjørende kriteriet, ikke punktfeil. Det er ikke en flukt fra det vanskelige målet, men følger av @clements1998: umodellerte nivåskift skader intervallene mer og lenger enn de skader punktprognosene, og det er der gevinsten skal vise seg om teorien stemmer.
 

@@ -1,0 +1,9 @@
+intervensjon_id,regressor,anslag_type,retning,antall_nasjonalt,nedre,ovre,kilde,verifisering,merknad
+I05,win_strom,etterberegnet,opp,25000,,,Husbankens årsrapport 2023 vedlegg 1 + årsrapport 2024 s.45,bekreftet,Husstander som kom inn da det progressive egenandelsleddet ble redusert 0.28 -> 0.12 prosent
+I12,win_strom,forhaand,ned,,20000,25000,Departementets anslag gjengitt i Dagsavisen og Pensjonistforbundet januar 2024,bekreftet,Publisert FØR avviklingen; det eneste rene forhåndsanslaget i materialet
+I12,win_strom,etterberegnet,ned,25000,,,Husbankens årsrapport 2024 s.44-45,bekreftet,Realisert utfall ved avviklingen termin april 2024
+I14,pakke_2024h2,ingen,opp,,,,Husbankens årsrapport 2024 s.45-46,mangler,Bare kronebeløp publisert (14 mill.); ingen husstandstall funnet
+I15,pakke_2024h2,ingen,opp,,,,Husbankens årsrapport 2024 s.46,mangler,Bare kronebeløp publisert (22 mill.); tillegget gikk til eksisterende mottakere
+I16,pakke_2024h2,ingen,opp,,,,Husbankens årsrapport 2024 s.46,mangler,Bare kronebeløp publisert (8 mill.); ingen husstandstall funnet
+I17,k_post,mekanisk,ingen,0,,,Regelmekanikk: 3 x 2/3 = 2 (forskriftens 66.67-prosentregel),bekreftet,Prioren er null og følger av regelen selv; ikke et publisert anslag
+I18,,forhaand,ned,13000,,,regjeringen.no (primærrunde 3. august 2026),delvis,Økte minsteytelser; ikke gjenfunnet i årsrapport 2025

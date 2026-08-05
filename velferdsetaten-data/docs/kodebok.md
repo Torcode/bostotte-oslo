@@ -1,6 +1,6 @@
 # Kodebok — Velferdsprosjektet
 
-Variabelnivå-dokumentasjon for alle 21 datasett i `last_alt()` pluss de konstruerte variablene i analysesettet. Kildenivå-dokumentasjon (URL-er, uttrekksmetode, hull) ligger i `datakilder.md`; denne fila svarer på «hva betyr hver kolonne». Generert og verifisert mot pakken 4. august 2026.
+Variabelnivå-dokumentasjon for alle 22 datasett i `last_alt()` pluss de konstruerte variablene i analysesettet. Kildenivå-dokumentasjon (URL-er, uttrekksmetode, hull) ligger i `datakilder.md`; denne fila svarer på «hva betyr hver kolonne». Generert og verifisert mot pakken 4. august 2026.
 
 ## 0. Lesenøkkel
 
@@ -73,6 +73,10 @@ Geografiverdiene inkluderer «Oslo i alt» + bydelsnavn; totalrader må filtrere
 
 **`arsrapport`** (5×7). Publiserte nasjonale årstall fra Husbankens årsrapport 2025, tabell 3.1, brukt til ekstern validering av Qlik-uttrekket. `aar` (2021–2025), `husstander_unike_aaret` (**unike** husstander gjennom året — *ikke* en månedsbeholdning og ikke direkte sammenliknbar med kjerneseriene), `utbetalt_bostotte_mill` (direkte sammenliknbar med årssummen av `utbetalt_belop`), `utbetalt_stromstotte_mill` (publisert separat, inngår ikke i beløpet over), `geografi`, `kilde`, `verifisering`.
 
+**`forhandsanslag`** (8×11). Daterte effektanslag per intervensjon, brukt som prior i modell M7 der regressoren ennå ikke er estimerbar. `intervensjon_id` (kobler til `intervensjoner`), `regressor` (kolonnen i intervensjonsmatrisen), `anslag_type` — **skillet som betyr noe**: `forhaand` er publisert *før* hendelsen og er det eneste en prognose i drift ville hatt; `etterberegnet` er realisert utfall og kan bare brukes til å validere metoden, aldri i en prognose; `mekanisk` er utledet av regelverket selv; `ingen` betyr at anslag mangler. Videre `retning`, `antall_nasjonalt` (punktanslag) eller `nedre`/`ovre` (intervall), `kilde`, `verifisering`, `merknad`.
+
+Status i dag: I12 har både forhåndsanslag (20 000–25 000, departementet) og etterberegnet utfall (~25 000, årsrapport 2024). I05 har etterberegnet (~25 000 inn). I17 har mekanisk prior lik null (3 × ⅔ = 2). **Høstpakken 2024 (I14/I15/I16) mangler husstandstall** — årsrapporten publiserte bare kronebeløp — og står som `ingen`. Det er en åpen verifiseringsoppgave: tallene bør finnes i Prop. 1 S / RNB 2024.
+
 **`grunnbelop`** (17×5). `virkningsdato` (1. mai 2010–2026), `g_belop` (75 641 → 136 549), `g_snitt_kalenderaar`, `merknad` (2020: utsatt oppgjør, tilbakevirkende).
 
 ## 5. Konstruerte variabler (analysesettet, metode 3.1–3.2)
@@ -122,3 +126,5 @@ Disse er testet på hele materialet og brukes som kontroller i metodekapitlet. D
 12. Avslagsserien er ikke ledende: korrelasjonen med endringen i mottakertallet forsvinner ved to måneders lag.
 13. `husstander_unike_aaret` i `arsrapport` er unike husstander gjennom året, ikke en beholdning. Forholdet til snittbeholdningen ligger stabilt på 1,4–1,6.
 14. En intervensjonsregressor er null før hendelsen og kan ikke estimeres ved en prognoseopprinnelse som ligger før den. `pakke_2024h2` og `k_post` er uidentifiserbare ved henholdsvis 24 og 30 av 31 opprinnelser i protokollen.
+15. Men utelatelse er ikke like galt overalt: for `k_post` er null *nøyaktig* det regelmekanikken predikerer, så utelatelse sammenfaller med korrekt prior. For `pakke_2024h2` motsier kildene null. Sjekk `forhandsanslag$anslag_type` før du behandler en manglende koeffisient som et problem.
+16. Aprilbruddet 2024 er *ikke* rammet: det bæres av `win_strom`, hvis åpning ligger i treningsvinduet ved alle opprinnelser. Modellen framskriver lukkingen selv om lukkingen ligger i horisonten.
