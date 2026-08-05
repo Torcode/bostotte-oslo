@@ -1,0 +1,281 @@
+Soner2_kode,AntRom_kode,ContentsCode_kode,Tid_kode,Soner2_navn,AntRom_navn,ContentsCode_navn,Tid_navn,verdi
+00,1,Husleie,2012,Hele landet,1 rom,Gjennomsnittlig månedlig leie,2012,5300
+00,1,Husleie,2013,Hele landet,1 rom,Gjennomsnittlig månedlig leie,2013,5850
+00,1,Husleie,2014,Hele landet,1 rom,Gjennomsnittlig månedlig leie,2014,5850
+00,1,Husleie,2015,Hele landet,1 rom,Gjennomsnittlig månedlig leie,2015,6290
+00,1,Husleie,2016,Hele landet,1 rom,Gjennomsnittlig månedlig leie,2016,6830
+00,1,Husleie,2017,Hele landet,1 rom,Gjennomsnittlig månedlig leie,2017,7150
+00,1,Husleie,2018,Hele landet,1 rom,Gjennomsnittlig månedlig leie,2018,7570
+00,1,Husleie,2019,Hele landet,1 rom,Gjennomsnittlig månedlig leie,2019,7890
+00,1,Husleie,2020,Hele landet,1 rom,Gjennomsnittlig månedlig leie,2020,7320
+00,1,Husleie,2021,Hele landet,1 rom,Gjennomsnittlig månedlig leie,2021,7690
+00,1,Husleie,2022,Hele landet,1 rom,Gjennomsnittlig månedlig leie,2022,8050
+00,1,Husleie,2023,Hele landet,1 rom,Gjennomsnittlig månedlig leie,2023,8760
+00,1,Husleie,2024,Hele landet,1 rom,Gjennomsnittlig månedlig leie,2024,8400
+00,1,Husleie,2025,Hele landet,1 rom,Gjennomsnittlig månedlig leie,2025,8770
+00,1,Husleiear,2012,Hele landet,1 rom,Gjennomsnittlig årlig leie per kvm,2012,2310
+00,1,Husleiear,2013,Hele landet,1 rom,Gjennomsnittlig årlig leie per kvm,2013,2510
+00,1,Husleiear,2014,Hele landet,1 rom,Gjennomsnittlig årlig leie per kvm,2014,2610
+00,1,Husleiear,2015,Hele landet,1 rom,Gjennomsnittlig årlig leie per kvm,2015,2660
+00,1,Husleiear,2016,Hele landet,1 rom,Gjennomsnittlig årlig leie per kvm,2016,2870
+00,1,Husleiear,2017,Hele landet,1 rom,Gjennomsnittlig årlig leie per kvm,2017,2920
+00,1,Husleiear,2018,Hele landet,1 rom,Gjennomsnittlig årlig leie per kvm,2018,3040
+00,1,Husleiear,2019,Hele landet,1 rom,Gjennomsnittlig årlig leie per kvm,2019,3100
+00,1,Husleiear,2020,Hele landet,1 rom,Gjennomsnittlig årlig leie per kvm,2020,3420
+00,1,Husleiear,2021,Hele landet,1 rom,Gjennomsnittlig årlig leie per kvm,2021,3770
+00,1,Husleiear,2022,Hele landet,1 rom,Gjennomsnittlig årlig leie per kvm,2022,3910
+00,1,Husleiear,2023,Hele landet,1 rom,Gjennomsnittlig årlig leie per kvm,2023,4340
+00,1,Husleiear,2024,Hele landet,1 rom,Gjennomsnittlig årlig leie per kvm,2024,4630
+00,1,Husleiear,2025,Hele landet,1 rom,Gjennomsnittlig årlig leie per kvm,2025,4750
+00,2,Husleie,2012,Hele landet,2 rom,Gjennomsnittlig månedlig leie,2012,6310
+00,2,Husleie,2013,Hele landet,2 rom,Gjennomsnittlig månedlig leie,2013,6800
+00,2,Husleie,2014,Hele landet,2 rom,Gjennomsnittlig månedlig leie,2014,7040
+00,2,Husleie,2015,Hele landet,2 rom,Gjennomsnittlig månedlig leie,2015,7480
+00,2,Husleie,2016,Hele landet,2 rom,Gjennomsnittlig månedlig leie,2016,8130
+00,2,Husleie,2017,Hele landet,2 rom,Gjennomsnittlig månedlig leie,2017,8450
+00,2,Husleie,2018,Hele landet,2 rom,Gjennomsnittlig månedlig leie,2018,8740
+00,2,Husleie,2019,Hele landet,2 rom,Gjennomsnittlig månedlig leie,2019,9060
+00,2,Husleie,2020,Hele landet,2 rom,Gjennomsnittlig månedlig leie,2020,9320
+00,2,Husleie,2021,Hele landet,2 rom,Gjennomsnittlig månedlig leie,2021,9530
+00,2,Husleie,2022,Hele landet,2 rom,Gjennomsnittlig månedlig leie,2022,9880
+00,2,Husleie,2023,Hele landet,2 rom,Gjennomsnittlig månedlig leie,2023,10620
+00,2,Husleie,2024,Hele landet,2 rom,Gjennomsnittlig månedlig leie,2024,11060
+00,2,Husleie,2025,Hele landet,2 rom,Gjennomsnittlig månedlig leie,2025,11790
+00,2,Husleiear,2012,Hele landet,2 rom,Gjennomsnittlig årlig leie per kvm,2012,1550
+00,2,Husleiear,2013,Hele landet,2 rom,Gjennomsnittlig årlig leie per kvm,2013,1670
+00,2,Husleiear,2014,Hele landet,2 rom,Gjennomsnittlig årlig leie per kvm,2014,1750
+00,2,Husleiear,2015,Hele landet,2 rom,Gjennomsnittlig årlig leie per kvm,2015,1830
+00,2,Husleiear,2016,Hele landet,2 rom,Gjennomsnittlig årlig leie per kvm,2016,2050
+00,2,Husleiear,2017,Hele landet,2 rom,Gjennomsnittlig årlig leie per kvm,2017,2120
+00,2,Husleiear,2018,Hele landet,2 rom,Gjennomsnittlig årlig leie per kvm,2018,2180
+00,2,Husleiear,2019,Hele landet,2 rom,Gjennomsnittlig årlig leie per kvm,2019,2280
+00,2,Husleiear,2020,Hele landet,2 rom,Gjennomsnittlig årlig leie per kvm,2020,2350
+00,2,Husleiear,2021,Hele landet,2 rom,Gjennomsnittlig årlig leie per kvm,2021,2420
+00,2,Husleiear,2022,Hele landet,2 rom,Gjennomsnittlig årlig leie per kvm,2022,2530
+00,2,Husleiear,2023,Hele landet,2 rom,Gjennomsnittlig årlig leie per kvm,2023,2680
+00,2,Husleiear,2024,Hele landet,2 rom,Gjennomsnittlig årlig leie per kvm,2024,2850
+00,2,Husleiear,2025,Hele landet,2 rom,Gjennomsnittlig årlig leie per kvm,2025,3040
+00,3,Husleie,2012,Hele landet,3 rom,Gjennomsnittlig månedlig leie,2012,7370
+00,3,Husleie,2013,Hele landet,3 rom,Gjennomsnittlig månedlig leie,2013,8080
+00,3,Husleie,2014,Hele landet,3 rom,Gjennomsnittlig månedlig leie,2014,8390
+00,3,Husleie,2015,Hele landet,3 rom,Gjennomsnittlig månedlig leie,2015,8860
+00,3,Husleie,2016,Hele landet,3 rom,Gjennomsnittlig månedlig leie,2016,9610
+00,3,Husleie,2017,Hele landet,3 rom,Gjennomsnittlig månedlig leie,2017,9880
+00,3,Husleie,2018,Hele landet,3 rom,Gjennomsnittlig månedlig leie,2018,10220
+00,3,Husleie,2019,Hele landet,3 rom,Gjennomsnittlig månedlig leie,2019,10580
+00,3,Husleie,2020,Hele landet,3 rom,Gjennomsnittlig månedlig leie,2020,11030
+00,3,Husleie,2021,Hele landet,3 rom,Gjennomsnittlig månedlig leie,2021,11140
+00,3,Husleie,2022,Hele landet,3 rom,Gjennomsnittlig månedlig leie,2022,11560
+00,3,Husleie,2023,Hele landet,3 rom,Gjennomsnittlig månedlig leie,2023,12320
+00,3,Husleie,2024,Hele landet,3 rom,Gjennomsnittlig månedlig leie,2024,12980
+00,3,Husleie,2025,Hele landet,3 rom,Gjennomsnittlig månedlig leie,2025,13910
+00,3,Husleiear,2012,Hele landet,3 rom,Gjennomsnittlig årlig leie per kvm,2012,1310
+00,3,Husleiear,2013,Hele landet,3 rom,Gjennomsnittlig årlig leie per kvm,2013,1440
+00,3,Husleiear,2014,Hele landet,3 rom,Gjennomsnittlig årlig leie per kvm,2014,1490
+00,3,Husleiear,2015,Hele landet,3 rom,Gjennomsnittlig årlig leie per kvm,2015,1570
+00,3,Husleiear,2016,Hele landet,3 rom,Gjennomsnittlig årlig leie per kvm,2016,1750
+00,3,Husleiear,2017,Hele landet,3 rom,Gjennomsnittlig årlig leie per kvm,2017,1820
+00,3,Husleiear,2018,Hele landet,3 rom,Gjennomsnittlig årlig leie per kvm,2018,1900
+00,3,Husleiear,2019,Hele landet,3 rom,Gjennomsnittlig årlig leie per kvm,2019,1960
+00,3,Husleiear,2020,Hele landet,3 rom,Gjennomsnittlig årlig leie per kvm,2020,2030
+00,3,Husleiear,2021,Hele landet,3 rom,Gjennomsnittlig årlig leie per kvm,2021,2060
+00,3,Husleiear,2022,Hele landet,3 rom,Gjennomsnittlig årlig leie per kvm,2022,2160
+00,3,Husleiear,2023,Hele landet,3 rom,Gjennomsnittlig årlig leie per kvm,2023,2270
+00,3,Husleiear,2024,Hele landet,3 rom,Gjennomsnittlig årlig leie per kvm,2024,2450
+00,3,Husleiear,2025,Hele landet,3 rom,Gjennomsnittlig årlig leie per kvm,2025,2590
+00,4,Husleie,2012,Hele landet,4 rom,Gjennomsnittlig månedlig leie,2012,8130
+00,4,Husleie,2013,Hele landet,4 rom,Gjennomsnittlig månedlig leie,2013,8760
+00,4,Husleie,2014,Hele landet,4 rom,Gjennomsnittlig månedlig leie,2014,8940
+00,4,Husleie,2015,Hele landet,4 rom,Gjennomsnittlig månedlig leie,2015,9300
+00,4,Husleie,2016,Hele landet,4 rom,Gjennomsnittlig månedlig leie,2016,10480
+00,4,Husleie,2017,Hele landet,4 rom,Gjennomsnittlig månedlig leie,2017,10800
+00,4,Husleie,2018,Hele landet,4 rom,Gjennomsnittlig månedlig leie,2018,11370
+00,4,Husleie,2019,Hele landet,4 rom,Gjennomsnittlig månedlig leie,2019,11710
+00,4,Husleie,2020,Hele landet,4 rom,Gjennomsnittlig månedlig leie,2020,12330
+00,4,Husleie,2021,Hele landet,4 rom,Gjennomsnittlig månedlig leie,2021,12470
+00,4,Husleie,2022,Hele landet,4 rom,Gjennomsnittlig månedlig leie,2022,12990
+00,4,Husleie,2023,Hele landet,4 rom,Gjennomsnittlig månedlig leie,2023,13730
+00,4,Husleie,2024,Hele landet,4 rom,Gjennomsnittlig månedlig leie,2024,14310
+00,4,Husleie,2025,Hele landet,4 rom,Gjennomsnittlig månedlig leie,2025,15640
+00,4,Husleiear,2012,Hele landet,4 rom,Gjennomsnittlig årlig leie per kvm,2012,1140
+00,4,Husleiear,2013,Hele landet,4 rom,Gjennomsnittlig årlig leie per kvm,2013,1220
+00,4,Husleiear,2014,Hele landet,4 rom,Gjennomsnittlig årlig leie per kvm,2014,1230
+00,4,Husleiear,2015,Hele landet,4 rom,Gjennomsnittlig årlig leie per kvm,2015,1320
+00,4,Husleiear,2016,Hele landet,4 rom,Gjennomsnittlig årlig leie per kvm,2016,1530
+00,4,Husleiear,2017,Hele landet,4 rom,Gjennomsnittlig årlig leie per kvm,2017,1610
+00,4,Husleiear,2018,Hele landet,4 rom,Gjennomsnittlig årlig leie per kvm,2018,1710
+00,4,Husleiear,2019,Hele landet,4 rom,Gjennomsnittlig årlig leie per kvm,2019,1740
+00,4,Husleiear,2020,Hele landet,4 rom,Gjennomsnittlig årlig leie per kvm,2020,1730
+00,4,Husleiear,2021,Hele landet,4 rom,Gjennomsnittlig årlig leie per kvm,2021,1760
+00,4,Husleiear,2022,Hele landet,4 rom,Gjennomsnittlig årlig leie per kvm,2022,1830
+00,4,Husleiear,2023,Hele landet,4 rom,Gjennomsnittlig årlig leie per kvm,2023,1940
+00,4,Husleiear,2024,Hele landet,4 rom,Gjennomsnittlig årlig leie per kvm,2024,1980
+00,4,Husleiear,2025,Hele landet,4 rom,Gjennomsnittlig årlig leie per kvm,2025,2180
+00,5+,Husleie,2012,Hele landet,5 rom eller flere,Gjennomsnittlig månedlig leie,2012,9160
+00,5+,Husleie,2013,Hele landet,5 rom eller flere,Gjennomsnittlig månedlig leie,2013,9230
+00,5+,Husleie,2014,Hele landet,5 rom eller flere,Gjennomsnittlig månedlig leie,2014,9450
+00,5+,Husleie,2015,Hele landet,5 rom eller flere,Gjennomsnittlig månedlig leie,2015,9780
+00,5+,Husleie,2016,Hele landet,5 rom eller flere,Gjennomsnittlig månedlig leie,2016,11470
+00,5+,Husleie,2017,Hele landet,5 rom eller flere,Gjennomsnittlig månedlig leie,2017,11740
+00,5+,Husleie,2018,Hele landet,5 rom eller flere,Gjennomsnittlig månedlig leie,2018,12520
+00,5+,Husleie,2019,Hele landet,5 rom eller flere,Gjennomsnittlig månedlig leie,2019,12880
+00,5+,Husleie,2020,Hele landet,5 rom eller flere,Gjennomsnittlig månedlig leie,2020,13790
+00,5+,Husleie,2021,Hele landet,5 rom eller flere,Gjennomsnittlig månedlig leie,2021,13820
+00,5+,Husleie,2022,Hele landet,5 rom eller flere,Gjennomsnittlig månedlig leie,2022,14180
+00,5+,Husleie,2023,Hele landet,5 rom eller flere,Gjennomsnittlig månedlig leie,2023,15290
+00,5+,Husleie,2024,Hele landet,5 rom eller flere,Gjennomsnittlig månedlig leie,2024,16140
+00,5+,Husleie,2025,Hele landet,5 rom eller flere,Gjennomsnittlig månedlig leie,2025,16330
+00,5+,Husleiear,2012,Hele landet,5 rom eller flere,Gjennomsnittlig årlig leie per kvm,2012,940
+00,5+,Husleiear,2013,Hele landet,5 rom eller flere,Gjennomsnittlig årlig leie per kvm,2013,980
+00,5+,Husleiear,2014,Hele landet,5 rom eller flere,Gjennomsnittlig årlig leie per kvm,2014,1040
+00,5+,Husleiear,2015,Hele landet,5 rom eller flere,Gjennomsnittlig årlig leie per kvm,2015,1050
+00,5+,Husleiear,2016,Hele landet,5 rom eller flere,Gjennomsnittlig årlig leie per kvm,2016,1270
+00,5+,Husleiear,2017,Hele landet,5 rom eller flere,Gjennomsnittlig årlig leie per kvm,2017,1450
+00,5+,Husleiear,2018,Hele landet,5 rom eller flere,Gjennomsnittlig årlig leie per kvm,2018,1500
+00,5+,Husleiear,2019,Hele landet,5 rom eller flere,Gjennomsnittlig årlig leie per kvm,2019,1550
+00,5+,Husleiear,2020,Hele landet,5 rom eller flere,Gjennomsnittlig årlig leie per kvm,2020,1510
+00,5+,Husleiear,2021,Hele landet,5 rom eller flere,Gjennomsnittlig årlig leie per kvm,2021,1450
+00,5+,Husleiear,2022,Hele landet,5 rom eller flere,Gjennomsnittlig årlig leie per kvm,2022,1470
+00,5+,Husleiear,2023,Hele landet,5 rom eller flere,Gjennomsnittlig årlig leie per kvm,2023,1580
+00,5+,Husleiear,2024,Hele landet,5 rom eller flere,Gjennomsnittlig årlig leie per kvm,2024,1650
+00,5+,Husleiear,2025,Hele landet,5 rom eller flere,Gjennomsnittlig årlig leie per kvm,2025,1710
+01,1,Husleie,2012,Oslo og Bærum kommune,1 rom,Gjennomsnittlig månedlig leie,2012,6300
+01,1,Husleie,2013,Oslo og Bærum kommune,1 rom,Gjennomsnittlig månedlig leie,2013,6810
+01,1,Husleie,2014,Oslo og Bærum kommune,1 rom,Gjennomsnittlig månedlig leie,2014,6930
+01,1,Husleie,2015,Oslo og Bærum kommune,1 rom,Gjennomsnittlig månedlig leie,2015,7170
+01,1,Husleie,2016,Oslo og Bærum kommune,1 rom,Gjennomsnittlig månedlig leie,2016,7740
+01,1,Husleie,2017,Oslo og Bærum kommune,1 rom,Gjennomsnittlig månedlig leie,2017,8160
+01,1,Husleie,2018,Oslo og Bærum kommune,1 rom,Gjennomsnittlig månedlig leie,2018,8750
+01,1,Husleie,2019,Oslo og Bærum kommune,1 rom,Gjennomsnittlig månedlig leie,2019,8930
+01,1,Husleie,2020,Oslo og Bærum kommune,1 rom,Gjennomsnittlig månedlig leie,2020,8750
+01,1,Husleie,2021,Oslo og Bærum kommune,1 rom,Gjennomsnittlig månedlig leie,2021,8860
+01,1,Husleie,2022,Oslo og Bærum kommune,1 rom,Gjennomsnittlig månedlig leie,2022,9660
+01,1,Husleie,2023,Oslo og Bærum kommune,1 rom,Gjennomsnittlig månedlig leie,2023,10410
+01,1,Husleie,2024,Oslo og Bærum kommune,1 rom,Gjennomsnittlig månedlig leie,2024,9730
+01,1,Husleie,2025,Oslo og Bærum kommune,1 rom,Gjennomsnittlig månedlig leie,2025,10090
+01,1,Husleiear,2012,Oslo og Bærum kommune,1 rom,Gjennomsnittlig årlig leie per kvm,2012,2720
+01,1,Husleiear,2013,Oslo og Bærum kommune,1 rom,Gjennomsnittlig årlig leie per kvm,2013,2980
+01,1,Husleiear,2014,Oslo og Bærum kommune,1 rom,Gjennomsnittlig årlig leie per kvm,2014,3120
+01,1,Husleiear,2015,Oslo og Bærum kommune,1 rom,Gjennomsnittlig årlig leie per kvm,2015,3260
+01,1,Husleiear,2016,Oslo og Bærum kommune,1 rom,Gjennomsnittlig årlig leie per kvm,2016,3360
+01,1,Husleiear,2017,Oslo og Bærum kommune,1 rom,Gjennomsnittlig årlig leie per kvm,2017,3490
+01,1,Husleiear,2018,Oslo og Bærum kommune,1 rom,Gjennomsnittlig årlig leie per kvm,2018,3620
+01,1,Husleiear,2019,Oslo og Bærum kommune,1 rom,Gjennomsnittlig årlig leie per kvm,2019,3700
+01,1,Husleiear,2020,Oslo og Bærum kommune,1 rom,Gjennomsnittlig årlig leie per kvm,2020,3920
+01,1,Husleiear,2021,Oslo og Bærum kommune,1 rom,Gjennomsnittlig årlig leie per kvm,2021,4210
+01,1,Husleiear,2022,Oslo og Bærum kommune,1 rom,Gjennomsnittlig årlig leie per kvm,2022,4470
+01,1,Husleiear,2023,Oslo og Bærum kommune,1 rom,Gjennomsnittlig årlig leie per kvm,2023,5020
+01,1,Husleiear,2024,Oslo og Bærum kommune,1 rom,Gjennomsnittlig årlig leie per kvm,2024,5320
+01,1,Husleiear,2025,Oslo og Bærum kommune,1 rom,Gjennomsnittlig årlig leie per kvm,2025,5270
+01,2,Husleie,2012,Oslo og Bærum kommune,2 rom,Gjennomsnittlig månedlig leie,2012,8500
+01,2,Husleie,2013,Oslo og Bærum kommune,2 rom,Gjennomsnittlig månedlig leie,2013,9000
+01,2,Husleie,2014,Oslo og Bærum kommune,2 rom,Gjennomsnittlig månedlig leie,2014,9320
+01,2,Husleie,2015,Oslo og Bærum kommune,2 rom,Gjennomsnittlig månedlig leie,2015,9900
+01,2,Husleie,2016,Oslo og Bærum kommune,2 rom,Gjennomsnittlig månedlig leie,2016,10200
+01,2,Husleie,2017,Oslo og Bærum kommune,2 rom,Gjennomsnittlig månedlig leie,2017,10710
+01,2,Husleie,2018,Oslo og Bærum kommune,2 rom,Gjennomsnittlig månedlig leie,2018,11240
+01,2,Husleie,2019,Oslo og Bærum kommune,2 rom,Gjennomsnittlig månedlig leie,2019,11650
+01,2,Husleie,2020,Oslo og Bærum kommune,2 rom,Gjennomsnittlig månedlig leie,2020,12080
+01,2,Husleie,2021,Oslo og Bærum kommune,2 rom,Gjennomsnittlig månedlig leie,2021,12310
+01,2,Husleie,2022,Oslo og Bærum kommune,2 rom,Gjennomsnittlig månedlig leie,2022,12770
+01,2,Husleie,2023,Oslo og Bærum kommune,2 rom,Gjennomsnittlig månedlig leie,2023,13850
+01,2,Husleie,2024,Oslo og Bærum kommune,2 rom,Gjennomsnittlig månedlig leie,2024,14400
+01,2,Husleie,2025,Oslo og Bærum kommune,2 rom,Gjennomsnittlig månedlig leie,2025,15260
+01,2,Husleiear,2012,Oslo og Bærum kommune,2 rom,Gjennomsnittlig årlig leie per kvm,2012,2120
+01,2,Husleiear,2013,Oslo og Bærum kommune,2 rom,Gjennomsnittlig årlig leie per kvm,2013,2280
+01,2,Husleiear,2014,Oslo og Bærum kommune,2 rom,Gjennomsnittlig årlig leie per kvm,2014,2420
+01,2,Husleiear,2015,Oslo og Bærum kommune,2 rom,Gjennomsnittlig årlig leie per kvm,2015,2540
+01,2,Husleiear,2016,Oslo og Bærum kommune,2 rom,Gjennomsnittlig årlig leie per kvm,2016,2700
+01,2,Husleiear,2017,Oslo og Bærum kommune,2 rom,Gjennomsnittlig årlig leie per kvm,2017,2780
+01,2,Husleiear,2018,Oslo og Bærum kommune,2 rom,Gjennomsnittlig årlig leie per kvm,2018,2910
+01,2,Husleiear,2019,Oslo og Bærum kommune,2 rom,Gjennomsnittlig årlig leie per kvm,2019,3050
+01,2,Husleiear,2020,Oslo og Bærum kommune,2 rom,Gjennomsnittlig årlig leie per kvm,2020,3180
+01,2,Husleiear,2021,Oslo og Bærum kommune,2 rom,Gjennomsnittlig årlig leie per kvm,2021,3240
+01,2,Husleiear,2022,Oslo og Bærum kommune,2 rom,Gjennomsnittlig årlig leie per kvm,2022,3390
+01,2,Husleiear,2023,Oslo og Bærum kommune,2 rom,Gjennomsnittlig årlig leie per kvm,2023,3600
+01,2,Husleiear,2024,Oslo og Bærum kommune,2 rom,Gjennomsnittlig årlig leie per kvm,2024,3810
+01,2,Husleiear,2025,Oslo og Bærum kommune,2 rom,Gjennomsnittlig årlig leie per kvm,2025,4060
+01,3,Husleie,2012,Oslo og Bærum kommune,3 rom,Gjennomsnittlig månedlig leie,2012,10750
+01,3,Husleie,2013,Oslo og Bærum kommune,3 rom,Gjennomsnittlig månedlig leie,2013,11370
+01,3,Husleie,2014,Oslo og Bærum kommune,3 rom,Gjennomsnittlig månedlig leie,2014,11750
+01,3,Husleie,2015,Oslo og Bærum kommune,3 rom,Gjennomsnittlig månedlig leie,2015,12460
+01,3,Husleie,2016,Oslo og Bærum kommune,3 rom,Gjennomsnittlig månedlig leie,2016,12880
+01,3,Husleie,2017,Oslo og Bærum kommune,3 rom,Gjennomsnittlig månedlig leie,2017,13120
+01,3,Husleie,2018,Oslo og Bærum kommune,3 rom,Gjennomsnittlig månedlig leie,2018,13500
+01,3,Husleie,2019,Oslo og Bærum kommune,3 rom,Gjennomsnittlig månedlig leie,2019,14100
+01,3,Husleie,2020,Oslo og Bærum kommune,3 rom,Gjennomsnittlig månedlig leie,2020,14810
+01,3,Husleie,2021,Oslo og Bærum kommune,3 rom,Gjennomsnittlig månedlig leie,2021,14920
+01,3,Husleie,2022,Oslo og Bærum kommune,3 rom,Gjennomsnittlig månedlig leie,2022,15680
+01,3,Husleie,2023,Oslo og Bærum kommune,3 rom,Gjennomsnittlig månedlig leie,2023,16790
+01,3,Husleie,2024,Oslo og Bærum kommune,3 rom,Gjennomsnittlig månedlig leie,2024,17630
+01,3,Husleie,2025,Oslo og Bærum kommune,3 rom,Gjennomsnittlig månedlig leie,2025,19030
+01,3,Husleiear,2012,Oslo og Bærum kommune,3 rom,Gjennomsnittlig årlig leie per kvm,2012,1910
+01,3,Husleiear,2013,Oslo og Bærum kommune,3 rom,Gjennomsnittlig årlig leie per kvm,2013,2080
+01,3,Husleiear,2014,Oslo og Bærum kommune,3 rom,Gjennomsnittlig årlig leie per kvm,2014,2120
+01,3,Husleiear,2015,Oslo og Bærum kommune,3 rom,Gjennomsnittlig årlig leie per kvm,2015,2270
+01,3,Husleiear,2016,Oslo og Bærum kommune,3 rom,Gjennomsnittlig årlig leie per kvm,2016,2410
+01,3,Husleiear,2017,Oslo og Bærum kommune,3 rom,Gjennomsnittlig årlig leie per kvm,2017,2510
+01,3,Husleiear,2018,Oslo og Bærum kommune,3 rom,Gjennomsnittlig årlig leie per kvm,2018,2610
+01,3,Husleiear,2019,Oslo og Bærum kommune,3 rom,Gjennomsnittlig årlig leie per kvm,2019,2680
+01,3,Husleiear,2020,Oslo og Bærum kommune,3 rom,Gjennomsnittlig årlig leie per kvm,2020,2840
+01,3,Husleiear,2021,Oslo og Bærum kommune,3 rom,Gjennomsnittlig årlig leie per kvm,2021,2830
+01,3,Husleiear,2022,Oslo og Bærum kommune,3 rom,Gjennomsnittlig årlig leie per kvm,2022,3040
+01,3,Husleiear,2023,Oslo og Bærum kommune,3 rom,Gjennomsnittlig årlig leie per kvm,2023,3190
+01,3,Husleiear,2024,Oslo og Bærum kommune,3 rom,Gjennomsnittlig årlig leie per kvm,2024,3460
+01,3,Husleiear,2025,Oslo og Bærum kommune,3 rom,Gjennomsnittlig årlig leie per kvm,2025,3640
+01,4,Husleie,2012,Oslo og Bærum kommune,4 rom,Gjennomsnittlig månedlig leie,2012,12800
+01,4,Husleie,2013,Oslo og Bærum kommune,4 rom,Gjennomsnittlig månedlig leie,2013,13530
+01,4,Husleie,2014,Oslo og Bærum kommune,4 rom,Gjennomsnittlig månedlig leie,2014,13980
+01,4,Husleie,2015,Oslo og Bærum kommune,4 rom,Gjennomsnittlig månedlig leie,2015,14560
+01,4,Husleie,2016,Oslo og Bærum kommune,4 rom,Gjennomsnittlig månedlig leie,2016,15150
+01,4,Husleie,2017,Oslo og Bærum kommune,4 rom,Gjennomsnittlig månedlig leie,2017,15900
+01,4,Husleie,2018,Oslo og Bærum kommune,4 rom,Gjennomsnittlig månedlig leie,2018,16460
+01,4,Husleie,2019,Oslo og Bærum kommune,4 rom,Gjennomsnittlig månedlig leie,2019,17150
+01,4,Husleie,2020,Oslo og Bærum kommune,4 rom,Gjennomsnittlig månedlig leie,2020,18410
+01,4,Husleie,2021,Oslo og Bærum kommune,4 rom,Gjennomsnittlig månedlig leie,2021,18690
+01,4,Husleie,2022,Oslo og Bærum kommune,4 rom,Gjennomsnittlig månedlig leie,2022,19370
+01,4,Husleie,2023,Oslo og Bærum kommune,4 rom,Gjennomsnittlig månedlig leie,2023,20530
+01,4,Husleie,2024,Oslo og Bærum kommune,4 rom,Gjennomsnittlig månedlig leie,2024,21100
+01,4,Husleie,2025,Oslo og Bærum kommune,4 rom,Gjennomsnittlig månedlig leie,2025,23200
+01,4,Husleiear,2012,Oslo og Bærum kommune,4 rom,Gjennomsnittlig årlig leie per kvm,2012,1840
+01,4,Husleiear,2013,Oslo og Bærum kommune,4 rom,Gjennomsnittlig årlig leie per kvm,2013,1980
+01,4,Husleiear,2014,Oslo og Bærum kommune,4 rom,Gjennomsnittlig årlig leie per kvm,2014,1930
+01,4,Husleiear,2015,Oslo og Bærum kommune,4 rom,Gjennomsnittlig årlig leie per kvm,2015,2130
+01,4,Husleiear,2016,Oslo og Bærum kommune,4 rom,Gjennomsnittlig årlig leie per kvm,2016,2270
+01,4,Husleiear,2017,Oslo og Bærum kommune,4 rom,Gjennomsnittlig årlig leie per kvm,2017,2400
+01,4,Husleiear,2018,Oslo og Bærum kommune,4 rom,Gjennomsnittlig årlig leie per kvm,2018,2510
+01,4,Husleiear,2019,Oslo og Bærum kommune,4 rom,Gjennomsnittlig årlig leie per kvm,2019,2620
+01,4,Husleiear,2020,Oslo og Bærum kommune,4 rom,Gjennomsnittlig årlig leie per kvm,2020,2670
+01,4,Husleiear,2021,Oslo og Bærum kommune,4 rom,Gjennomsnittlig årlig leie per kvm,2021,2750
+01,4,Husleiear,2022,Oslo og Bærum kommune,4 rom,Gjennomsnittlig årlig leie per kvm,2022,2850
+01,4,Husleiear,2023,Oslo og Bærum kommune,4 rom,Gjennomsnittlig årlig leie per kvm,2023,3030
+01,4,Husleiear,2024,Oslo og Bærum kommune,4 rom,Gjennomsnittlig årlig leie per kvm,2024,3020
+01,4,Husleiear,2025,Oslo og Bærum kommune,4 rom,Gjennomsnittlig årlig leie per kvm,2025,3410
+01,5+,Husleie,2012,Oslo og Bærum kommune,5 rom eller flere,Gjennomsnittlig månedlig leie,2012,15470
+01,5+,Husleie,2013,Oslo og Bærum kommune,5 rom eller flere,Gjennomsnittlig månedlig leie,2013,17350
+01,5+,Husleie,2014,Oslo og Bærum kommune,5 rom eller flere,Gjennomsnittlig månedlig leie,2014,17150
+01,5+,Husleie,2015,Oslo og Bærum kommune,5 rom eller flere,Gjennomsnittlig månedlig leie,2015,16830
+01,5+,Husleie,2016,Oslo og Bærum kommune,5 rom eller flere,Gjennomsnittlig månedlig leie,2016,18260
+01,5+,Husleie,2017,Oslo og Bærum kommune,5 rom eller flere,Gjennomsnittlig månedlig leie,2017,18410
+01,5+,Husleie,2018,Oslo og Bærum kommune,5 rom eller flere,Gjennomsnittlig månedlig leie,2018,20480
+01,5+,Husleie,2019,Oslo og Bærum kommune,5 rom eller flere,Gjennomsnittlig månedlig leie,2019,21430
+01,5+,Husleie,2020,Oslo og Bærum kommune,5 rom eller flere,Gjennomsnittlig månedlig leie,2020,22270
+01,5+,Husleie,2021,Oslo og Bærum kommune,5 rom eller flere,Gjennomsnittlig månedlig leie,2021,23010
+01,5+,Husleie,2022,Oslo og Bærum kommune,5 rom eller flere,Gjennomsnittlig månedlig leie,2022,22780
+01,5+,Husleie,2023,Oslo og Bærum kommune,5 rom eller flere,Gjennomsnittlig månedlig leie,2023,24990
+01,5+,Husleie,2024,Oslo og Bærum kommune,5 rom eller flere,Gjennomsnittlig månedlig leie,2024,27300
+01,5+,Husleie,2025,Oslo og Bærum kommune,5 rom eller flere,Gjennomsnittlig månedlig leie,2025,26250
+01,5+,Husleiear,2012,Oslo og Bærum kommune,5 rom eller flere,Gjennomsnittlig årlig leie per kvm,2012,1690
+01,5+,Husleiear,2013,Oslo og Bærum kommune,5 rom eller flere,Gjennomsnittlig årlig leie per kvm,2013,1660
+01,5+,Husleiear,2014,Oslo og Bærum kommune,5 rom eller flere,Gjennomsnittlig årlig leie per kvm,2014,1800
+01,5+,Husleiear,2015,Oslo og Bærum kommune,5 rom eller flere,Gjennomsnittlig årlig leie per kvm,2015,1790
+01,5+,Husleiear,2016,Oslo og Bærum kommune,5 rom eller flere,Gjennomsnittlig årlig leie per kvm,2016,2140
+01,5+,Husleiear,2017,Oslo og Bærum kommune,5 rom eller flere,Gjennomsnittlig årlig leie per kvm,2017,2440
+01,5+,Husleiear,2018,Oslo og Bærum kommune,5 rom eller flere,Gjennomsnittlig årlig leie per kvm,2018,2570
+01,5+,Husleiear,2019,Oslo og Bærum kommune,5 rom eller flere,Gjennomsnittlig årlig leie per kvm,2019,2700
+01,5+,Husleiear,2020,Oslo og Bærum kommune,5 rom eller flere,Gjennomsnittlig årlig leie per kvm,2020,2600
+01,5+,Husleiear,2021,Oslo og Bærum kommune,5 rom eller flere,Gjennomsnittlig årlig leie per kvm,2021,2480
+01,5+,Husleiear,2022,Oslo og Bærum kommune,5 rom eller flere,Gjennomsnittlig årlig leie per kvm,2022,2430
+01,5+,Husleiear,2023,Oslo og Bærum kommune,5 rom eller flere,Gjennomsnittlig årlig leie per kvm,2023,2680
+01,5+,Husleiear,2024,Oslo og Bærum kommune,5 rom eller flere,Gjennomsnittlig årlig leie per kvm,2024,2820
+01,5+,Husleiear,2025,Oslo og Bærum kommune,5 rom eller flere,Gjennomsnittlig årlig leie per kvm,2025,2740

@@ -1,0 +1,28 @@
+# --- R / RStudio ---
+.Rproj.user/
+.Rhistory
+.RData
+.Ruserdata
+*_cache/
+
+# --- Posit / editor ---
+.posit/
+.vscode/
+
+# --- Quarto render-artefakter (regenereres) ---
+/.quarto/
+/unt_1.html
+/unt_1.pdf
+/unt_1.typ
+/unt_1.knit.md
+/unt_1_files/
+/*_files/
+*.knit.md
+
+# --- Store binærfiler som ikke trengs i repoet ---
+# Datapakke-zip (redundant med utpakket velferdsetaten-data/)
+*.zip
+
+# --- OS ---
+.DS_Store
+Thumbs.db

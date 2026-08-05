@@ -1,0 +1,33 @@
+parameter,verdi,enhet,gruppe,gyldig_fra,kilde
+dekningsgrad,73.7,prosent,alle,gjeldende (forskrift § 1),Husbanken veileder 2.9 (oppdatert 29.06.2026)
+boutgiftstak_1_person,92234,kr/år,alle kommuner (grunnsats),etter prisjustering juni 2026,Husbanken veileder 2.4.3
+boutgiftstak_2_personer,113774,kr/år,alle kommuner (grunnsats),etter prisjustering juni 2026,Husbanken veileder 2.4.3
+boutgiftstak_3_personer,125977,kr/år,alle kommuner (grunnsats),etter prisjustering juni 2026,Husbanken veileder 2.4.3
+boutgiftstak_4_personer,138182,kr/år,alle kommuner (grunnsats),etter prisjustering juni 2026,Husbanken veileder 2.4.3
+boutgiftstak_5_pluss,150385,kr/år,alle kommuner (grunnsats),etter prisjustering juni 2026,Husbanken veileder 2.4.3
+boutgiftstak_tillegg_oslo,27982,kr/år,Oslo (kommunegruppe 1),etter prisjustering juni 2026,Husbanken veileder 2.4.3
+boutgiftstak_tillegg_gruppe2,19079,kr/år,"Bergen, Trondheim, Tromsø, Stavanger, Bærum",etter prisjustering juni 2026,Husbanken veileder 2.4.3
+boutgiftstak_tillegg_gruppe3,12720,kr/år,"Kristiansand, Skedsmo, Frogn, Lørenskog, Nordre Follo, Asker, Nesodden, Sola, Sandnes",etter prisjustering juni 2026,Husbanken veileder 2.4.3
+boutgiftstak_tillegg_spesialtilpasset,5724,kr/år,husstander med spesialtilpasset bolig,etter prisjustering juni 2026,Husbanken veileder 2.4.3
+egenandel_minste,26576,kr/år,alle,etter prisjustering juni 2025 (per veileder),Husbanken veileder 2.4.4
+egenandel_ledd1_sats,16.44,prosent,alle,gjeldende,Husbanken veileder 2.4.4
+egenandel_ledd1_grense,137462,kr vektet inntekt,alle,gjeldende,Husbanken veileder 2.4.4
+egenandel_ledd2_sats,63.56,prosent,alle,gjeldende,Husbanken veileder 2.4.4
+egenandel_ledd2_grense,245278,kr vektet inntekt,alle,gjeldende,Husbanken veileder 2.4.4
+egenandel_ledd2_grense_ung_ufor,295795,kr vektet inntekt,unge uføre,gjeldende,Husbanken veileder 2.4.4
+egenandel_ledd1_grense_enslig_pensjonist,148275,kr vektet inntekt,enslige alders-/uførepensjonister,gjeldende,Husbanken veileder 2.4.4
+egenandel_ledd2_grense_enslig_pensjonist,256613,kr vektet inntekt,enslige alders-/uførepensjonister,gjeldende,Husbanken veileder 2.4.4
+vekt_forste_person,1.0,vekt,alle,gjeldende (forskrift § 7),Husbanken veileder 2.5.1
+vekt_ovrige_over_18,0.13,vekt,alle,gjeldende,Husbanken veileder 2.5.1
+vekt_under_18,0.15,vekt,alle,fra 1.2.2023 (økt fra 0.13),Husbanken veileder 2.5.1 + årsrapport 2023 vedlegg 1
+minsteutbetaling,63,kr/måned,alle,gjeldende (forskrift § 13),Husbanken veileder 2.9
+utbetalingsdag,20,dag i måneden (etterskuddsvis),alle,fast,Husbanken veileder 2.9 (forskrift § 13)
+meldekortregel_andel_medregnet,66.67,prosent i tre-utbetalingsmåneder,AAP- og dagpengemottakere,fra 1.1.2025,Husbanken veileder 2.5.1 + årsrapport 2025
+prisjustering_dato,1. juni,årlig,alle kronesatser,modell fra 2017,Husbankens årsrapport 2024/2025
+prisjustering_2023_boutgift,2.5,prosent,boutgiftssatser,juni 2023,Husbankens årsrapport 2023
+prisjustering_2024_boutgift,4.2,prosent,boutgiftssatser,juni 2024,Husbankens årsrapport 2024
+prisjustering_2024_egenandel,4.7,prosent,egenandelssatser,juni 2024,Husbankens årsrapport 2024
+prisjustering_2025_boutgift,2.7,prosent,boutgiftssatser,juni 2025,Husbankens årsrapport 2025
+prisjustering_2025_egenandel,4.1,prosent,egenandelssatser,juni 2025,Husbankens årsrapport 2025
+midlertidig_progressivt_ledd_ordinaert,0.28,prosent (per intervall),historisk: før des 2021 og etter mar 2024-termin,2021 og 2024,Husbankens årsrapport 2023 vedlegg 1
+midlertidig_progressivt_ledd_redusert,0.12,prosent (per intervall),vinduet utbetaling jan 2022 - apr 2024,2022-2024,Husbankens årsrapport 2023 vedlegg 1

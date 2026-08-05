@@ -1,0 +1,303 @@
+<!-- =========================================================================
+03-metode-del1.qmd — Metodekapitlet, del 1: data og variabelkonstruksjon
+Limes inn under "# Metode" i unt_1.qmd. Del 2 (modellspesifikasjon, protokoll,
+evaluering) bygges som neste trinn; stubben står sist i denne delen.
+
+Alle chunks er kjørt mot datapakken i velferdsetaten-data/ (identisk struktur
+som Velferdsprosjekt-mappa) og verifisert 4. august 2026.
+
+Nye bib-nøkler som må inn i .bib (forslag nederst i denne fila, kommentert ut):
+@husbanken2021aars @husbanken2022aars @husbanken2023aars @husbanken2024aars
+@husbanken2025aars @ssb01222 @ssb03013 @ssb14710 @oslostatbank @navGrunnbelop
+========================================================================== -->
+
+Metodekapitlet gjør én kontrakt eksplisitt: hver størrelse som inngår i analysen skal kunne regenereres av navngitt kode fra navngitt kilde, og hver modellbeslutning skal kunne spores tilbake til et teoretisk argument i @sec-teori eller et dokumentert empirisk faktum. Kapitlet bygger nedenfra: først estimanden og kalendrene som definerer *hva* som prognostiseres (@sec-met-estimand), så datagrunnlaget med proveniens (@sec-met-data), deretter konstruksjonen og verifikasjonen av utfallsserien (@sec-met-dv), den deterministiske regelverksinformasjonen — intervensjonsmatrisen (@sec-met-x) og kalenderregressoren (@sec-met-kalender) — og til slutt kovariater, transformasjoner og hierarki (@sec-met-kovariater, @sec-met-sett). Modellspesifikasjoner, prognoseprotokoll og evalueringsdesign følger i kapitlets andre del.
+
+## Estimand, kalendre og informasjonsmengde {#sec-met-estimand}
+
+Bostøtten lever i to kalendre, og presisjon her er ikke pedanteri — det avgjør hvordan intervensjoner dateres og hva en prognose i drift faktisk kan vite. La $M^{T}_{t}$ være antall husstander i Oslo med innvilget bostøtte for *termin* $t$ (rettighetsmåneden), og $M^{U}_{t}$ antall husstander med *utbetaling* i kalendermåned $t$. Fordi bostøtten utbetales etterskuddsvis den 20. i måneden etter terminen [@husbankenKanFaa], er de to seriene informasjonsmessig samme objekt:
+
+$$M^{U}_{t} \;=\; M^{T}_{t-1}$$ {#eq-kalenderidentitet}
+
+Identiteten er ikke en antakelse, men en testbar egenskap ved datauttrekket; den holder eksakt i alle 198 månedspar i serien (@sec-met-dv). Analysen føres i *terminkalenderen*: regelendringer trer i kraft per termin, inntektsgrunnlaget hentes per terminmåned [@husbankenInntekter], og meldekortsyklusen treffer terminmåneden. Utbetalingskalenderen er den operative rapporteringskalenderen — for dimensjonering og likviditet forskyves prognosene én måned med @eq-kalenderidentitet, uten informasjonstap.
+
+Estimanden er den prediktive fordelingen
+$$p\!\left(M^{T}_{\tau+h} \,\middle|\, \mathcal{I}_{\tau}\right), \qquad h = 1, \dots, 12,$$ {#eq-estimand}
+med punktprognose (medianen), og 80- og 95-prosents prediksjonsintervaller hvis empiriske dekning er en del av estimanden selv, jf. forskningsspørsmålet. Informasjonsmengden $\mathcal{I}_{\tau}$ er definert av produksjonssyklusen: terminkjøringen for måned $m$ skjer først i påfølgende måned (per 4. august 2026 forelå juni-terminen, ikke juli-terminen), slik at en prognoseopprinnelse lagt til månedsskiftet $\tau$ har terminserien til og med $\tau - 1$, hele regelverkskalenderen med vedtatte, ikke ikrafttrådte endringer, og NAVs forhåndspubliserte utbetalingskalender [@navUtbetaling]. Denne vintage-disiplinen håndhever at ingen modell ser informasjon den ikke ville hatt i drift; at serien i tillegg revideres bakover gjennom etterkontroll mot skatteoppgjøret [@husbanken9c22] behandles som robusthetsspørsmål, ikke som del av hovedprotokollen, siden historiske vintages ikke er offentlig tilgjengelige.
+
+## Datagrunnlag og proveniens {#sec-met-data}
+
+Tabellen nedenfor er studiens faktiske kildekart — den operasjonaliserte varianten av innhentingsstigen i @sec-teori-data. Alle kilder er åpne; ingen krever avtale eller innsyn. Hver rad er hentet av et navngitt skript i prosjektets `scripts/`-katalog, og rådata (JSON/CSV/PDF) er arkivert i `data/raw/` slik at enhver kolonne kan regenereres eller etterprøves offline.
+
+| Rolle | Kilde og uttrekksmetode | Frekvens × nivå | Dekning | Skript |
+|-------------------|----------------------------|--------------|-----------|-----------|
+| Utfallsserie $M^{T}_t$, $M^{U}_t$ | Husbankens statistikkbank — Qlik-appens Engine-API (WebSocket, anonym offentlig tilgang), måldefinisjoner lest ut av appens datamodell [@husbankenStatistikk] | måned × kommune/bydel × brukergruppe | 2010m1–2026m7 | `extract_bostotte_v2.py` |
+| Regelverkskalender | Husbankens årsrapporter 2021–2025 [@husbanken2021aars; @husbanken2022aars; @husbanken2023aars; @husbanken2024aars; @husbanken2025aars], regelverksveilederen [@husbankenBeregning; @husbankenInntekter; @husbankenBoutgifter] og budsjettdokumenter [@husbanken2024rnb; @kdd2025] | hendelsesdatert | 2020–2026 | kuratert: `intervensjonstabell.csv` |
+| Regelparametre | Forskriftssatser via regelverksveilederen (Lovdata maskinstengt; identisk innhold) | gjeldende + endringslogg | per juni 2026 | `regelparametre_gjeldende.csv` |
+| Strømtiltakenes kronebeløp | Årsrapportenes månedstabeller [@husbanken2022aars; @husbanken2023aars] | måned | 2021m3–2024m4 | `stromstotte_manedlig.csv` |
+| Meldekortkalender $u_t$ | Deterministisk 14-dagersgrid, fasekalibrert mot data (@sec-met-kalender); i drift: NAVs publiserte datoer [@navUtbetaling] | måned, kjent på alle horisonter | 2016–2027 | i analysen |
+| Leienivå (driver av $BU$) | SSB 09895, Leiemarkedsundersøkelsen, PxWeb-API [@ssb09895] | år × prissone × rom | 2012–2025 | `fetch_ssb.py` |
+| Husleieindeks | SSB 03013 (KPI etter konsumgruppe, 04.1) og 14710 (totalindeks, bro inn i 2026) [@ssb03013; @ssb14710] | måned | 1979–2026 | `fetch_ssb.py` |
+| Befolkning og framskriving | SSB 01222 (kvartal) [@ssb01222]; Oslo kommunes statistikkbank BEF004/BEF005 (bydel, år) og BEF036 (framskriving 2025–2050, aggregert fra delbydel) [@oslostatbank] | kvartal/år × bydel | 1997–2050 | `fetch_ssb.py`, `fetch_oslo_statbank.py` |
+| Grunnbeløpet $G$ | NAV [@navGrunnbelop] | årlig, virkning 1. mai | 2010–2026 | `grunnbelop_historisk.csv` |
+| Bydelskovariater (tverrsnitt) | Oslo kommunes statistikkbank: AAP (SOS001), uføretrygd (SOS006), sosialhjelp (STØ013/STØ020) [@oslostatbank] | år × bydel | 2004–2024 | `fetch_oslo_statbank.py` |
+
+: Operasjonalisert kildekart. Alle kilder åpne; rådata arkivert i `data/raw/`. {#tbl-kildekart}
+
+Tre presiseringer bærer resten av kapitlet. *Måldefinisjonen:* utfallsserien er antall unike husstander med positivt vedtaksutfall, telt i statistikkbankens egen datamodell som `count(distinct HusstandId)` betinget på virkemiddel bostøtte og tilstand terminutbetaling henholdsvis utbetaling — begge kalendre hentes derfor fra samme kilde med identisk telleregel, og @eq-kalenderidentitet blir testbar. *Vintage:* statistikkbanken lastes på nytt hver natt og reflekterer etterkontroller bakover; uttrekket er datostemplet (4. august 2026). *Personvern:* kilden prikker celler under fire husstander; på analysens nivåer (Oslo totalt, femten bydeler, fem brukergrupper) forekommer ingen prikking, og ingen persondata behandles — analysen arver aggregatenes personvernegenskaper, i tråd med prinsippet om dataminimering.
+
+To bevisste hull dokumenteres like eksplisitt som kildene: NAVs månedsserier per kommune (AAP, dagpenger, helt ledige) foreligger bare som manuelt nedlastbare regneark og holdes utenfor hovedanalysen — behandlingsgruppens månedsserie finnes uansett i brukergruppesnittet av utfallskilden — og kommunal bostøtte i Oslo publiseres ikke som åpen serie, et datagap som i seg selv er et funn om kunnskapsgrunnlaget på feltet.
+
+## Utfallsserien: konstruksjon og verifikasjon {#sec-met-dv}
+
+```{r}
+#| label: met-setup
+#| output: false
+source("velferdsetaten-data/scripts/velferdsetaten_data.R")
+d <- last_alt("velferdsetaten-data")
+```
+
+Terminserien konstrueres direkte fra uttrekket; eneste inngrep er å fjerne sanntidskanten — siste måned(er) der terminkjøringen ennå ikke er gjennomført og verdien derfor er null, ikke manglende:
+
+```{r}
+#| label: met-dv
+oslo_termin <- d$oslo |>
+  transmute(dato,
+            M        = ant_husstander_termin,
+            soknader = ant_soknader,
+            avslag   = ant_avslag) |>
+  filter(!(dato == max(dato) & M == 0))
+
+# Verifikasjon 1: kalenderidentiteten (eq-kalenderidentitet), hele serien
+identitet <- d$oslo |>
+  transmute(dato_neste = dato %m+% months(1), termin = ant_husstander_termin) |>
+  inner_join(d$oslo |> select(dato, utb = ant_husstander_utbetaling),
+             by = c("dato_neste" = "dato")) |>
+  filter(termin > 0, utb > 0) |>
+  summarise(par = n(), konsistente = sum(termin == utb))
+stopifnot(identitet$par == identitet$konsistente)
+
+oslo_est <- oslo_termin |> filter(dato >= as.Date("2017-01-01"))
+identitet
+```
+
+Serien dekker januar 2010 til juni 2026. Estimeringsutvalget avgrenses til januar 2017 og senere ($n = 114$), som operasjonaliserer måleregimeargumentet i @sec-teori-beholdning: før 2017 ble inntektsgrunnlaget oppdatert årlig med ligningstall i juli, og serien bærer artefakten. Avgrensningen er ikke bare sitert, den er synlig i dataene:
+
+```{r}
+#| label: met-regime
+oslo_termin |>
+  mutate(aar = year(dato), mnd = month(dato),
+         regime = if_else(aar <= 2016, "2010–2016", "2017–2025")) |>
+  filter(aar <= 2025) |>
+  group_by(regime, mnd) |>
+  summarise(M = mean(M), .groups = "drop_last") |>
+  mutate(rel = M / mean(M)) |>
+  filter(mnd %in% 6:8) |>
+  select(regime, mnd, rel) |>
+  pivot_wider(names_from = mnd, values_from = rel, names_prefix = "m")
+```
+
+Før 2017 faller juli-terminen rundt tre prosent under årsnivået umiddelbart etter en juni-topp — ligningsoppdateringens signatur; etter 2017 er juli-fallet borte. At juni i stedet er svak i det nye regimet er ingen anomali, men de deterministiske regelverkspunktene fra @sec-met-x: grunnbeløpsregulering fra mai og prisjustering av satsene fra juni treffer inntektsgrunnlag og satser i nettopp dette vinduet. Full serie fra 2010 beholdes til kontekst og robusthetsanalyse, men ingen parameter estimeres på tvers av regimeskiftet.
+
+Bydelsdimensjonen konstrueres med eksakt summeringskonsistens som krav, ikke som håp. Husbankens kommunenummerering legger Oslos femten bydeler på 0311–0325; resten (0301) er en marginal, ufordelt kategori som beholdes som egen node slik at hierarkiet summerer eksakt — en forutsetning for avstemt hierarkisk prognose i kapitlets andre del [@wickramasuriya2019]:
+
+```{r}
+#| label: met-bydel
+bydel_termin <- d$oslo_bydel |>
+  mutate(bydel = if_else(kommunenr == "0301", "Ufordelt (0301)", bydel)) |>
+  transmute(kommunenr, bydel, dato, M = ant_husstander_termin) |>
+  filter(dato >= as.Date("2017-01-01"), dato <= max(oslo_est$dato))
+
+bydel_termin |>
+  group_by(dato) |>
+  summarise(M_sum = sum(M)) |>
+  left_join(oslo_est |> select(dato, M), by = "dato") |>
+  summarise(maks_avvik = max(abs(M_sum - M)))
+```
+
+Tilsvarende summerer de fem brukergruppene (eldre, unge uføre, uføre for øvrig, midlertidige trygdeytelser, uten trygdeytelser) eksakt til totalen — brukergruppesnittet brukes i @sec-met-kalender som kalibreringsgrunnlag og i evalueringen som mekanismekontroll.
+
+## Regelverksinformasjon som design: intervensjonsmatrisen {#sec-met-x}
+
+Intervensjonsmatrisen oversetter den primærkildebelagte regelverkskalenderen — kuratert i `intervensjonstabell.csv` med kilde og verifiseringsstatus per hendelse — til deterministiske regressorer i terminkalenderen. Hver hendelse tilordnes en funksjonsform fra @eq-transfer etter sin institusjonelle mekanikk, med fortegn og form som *prediksjoner* som kan felles empirisk, jf. asymmetriproposisjonen i @sec-teori-beholdning:
+
+| Regressor | Termindatering | Form | Mekanisme og forventning |
+|---------------|---------------|---------------|---------------------------|
+| `win_covid` | 2020m4–2020m10 | vindu (trinn inn/ut) | Midlertidige koronaregler; positivt nivåskift [@husbanken2021aars] |
+| `win_strom` | 2021m12–2024m3 | vindu | Redusert progressivt egenandelsledd (0,28 → 0,12 %) løftet den implisitte inntektsgrensen $\tilde y^{*}$; om lag 25 000 husstander nasjonalt inn — og ut igjen ved avvikling. Inn-kanten forventes gradvis (søknadsbasert, $\delta > 0$), ut-kanten skarp (automatisk omregning, $\delta = 0$) [@husbanken2023aars; @husbanken2024aars] |
+| `step_tak` | 2024m7– | trinn | Boutgiftstak + 4 000 kr/år for alle, samt forenklet egenandel; positivt, moderat [@husbanken2024aars] |
+| `step_oppv` | 2024m9– | trinn | Oppvarmingstillegg utvidet til alle mottakere; positivt, lite [@husbanken2024aars] |
+| `step_1819` | 2024m10– | trinn | Hjemmeboende 18–19-åringers inntekt ut av grunnlaget; positivt, lite [@husbanken2024rnb] |
+| `step_skjerm` | 2025m1– | trinn (kandidat) | AAP/dagpenger-skjermingen virker primært gjennom kalenderregressoren (@sec-met-kalender); et eventuelt residualt nivåløft testes som kandidatregressor, ikke pålegges [@kdd2025; @husbanken2025aars] |
+| `strom_belop` | 2021m2–2024m3 | intensitet (kr) | Ekstrautbetalingenes kronebeløp per husstand, forskjøvet til termin; går i beløpsmodeller, ikke i antallsmodellen — engangsutbetalinger endret ikke berettigelse |
+
+: Intervensjonsmatrisens kolonner med funksjonsform og teoretisk forventning. {#tbl-intervensjoner}
+
+```{r}
+#| label: met-intervensjoner
+#| output: false
+mnd_seq <- tibble(dato = seq(as.Date("2010-01-01"), as.Date("2027-12-01"),
+                             by = "month"))
+X <- mnd_seq |>
+  mutate(
+    win_covid   = as.integer(dato >= "2020-04-01" & dato <= "2020-10-01"),
+    win_strom   = as.integer(dato >= "2021-12-01" & dato <= "2024-03-01"),
+    step_tak    = as.integer(dato >= "2024-07-01"),
+    step_oppv   = as.integer(dato >= "2024-09-01"),
+    step_1819   = as.integer(dato >= "2024-10-01"),
+    step_skjerm = as.integer(dato >= "2025-01-01")
+  )
+# Kronekanalen: strømbeløp per husstand, utbetalingsmåned -> termin
+strom_termin <- d$stromstotte |>
+  transmute(dato = dato_utbetaling %m-% months(1), strom_belop = belop_husstand)
+X <- X |>
+  left_join(strom_termin, by = "dato") |>
+  mutate(strom_belop = replace_na(strom_belop, 0))
+```
+
+To deterministiske *gjentakende* regelverkspunkter holdes utenfor matrisen med vilje: grunnbeløpsreguleringen (virkning 1. mai, `grunnbelop_historisk.csv`) og prisjusteringen av forskriftssatsene (1. juni, dokumenterte prosenter 2023–2025). Begge er årvisse og absorberes i utgangspunktet av sesongkomponenten $\gamma_t$ i @eq-ssm; de reaktiveres som eksplisitte mai/juni-regressorer bare dersom residualdiagnostikken i del 2 viser at sesongkomponenten ikke bærer dem — et valg som holder antall frie parametre nede i en serie med 114 observasjoner.
+
+## Kalenderregressoren: konstruksjon og fasekalibrering {#sec-met-kalender}
+
+Meldekortytelser utbetales per 14. dag i nasjonalt synkroniserte perioder [@kdd2025]. Kalendermåned $t$ inneholder dermed $u_t \in \{2, 3\}$ utbetalinger, med 26 utbetalinger per år. Grid-strukturen er kjent; det eneste frie er *fasen* — hvilken av de 14 mulige forskyvningene den nasjonale syklusen faktisk følger. I stedet for å importere fasen fra en ekstern kalender, kalibreres den fra dataene selv, med NAVs publiserte datoer som driftskilde fremover [@navUtbetaling]:
+
+$$u_t(\varphi) = \#\{k : a_\varphi + 14k \in t\}, \qquad a_\varphi = a_0 + \varphi, \quad \varphi \in \{0, \dots, 13\}$$ {#eq-fase}
+
+Kalibreringen bruker behandlingsgruppens egen terminserie — husstander med midlertidige trygdeytelser, nasjonalt — der mekanismen må ligge hvis den finnes. La $z_t$ være seriens relative avvik fra en sentrert $2\times12$-MA-trend i førperioden (2017–2024, koronavinduet ekskludert). Fasen velges som
+$$\hat\varphi = \arg\min_{\varphi} \; t\text{-verdi}\Big(\bar z_{\,u(\varphi)=3} - \bar z_{\,u(\varphi)=2}\Big)$$ {#eq-kalibrering}
+
+```{r}
+#| label: met-kalender
+u_av_fase <- function(phi, fra = as.Date("2016-01-01"),
+                      til = as.Date("2027-12-31")) {
+  anker  <- as.Date("2014-01-06") + phi   # vilkårlig mandag som origo
+  datoer <- seq(anker, til, by = "14 days")
+  tibble(dato = floor_date(datoer[datoer >= fra], "month")) |>
+    count(dato, name = "u")
+}
+
+w   <- c(0.5, rep(1, 11), 0.5) / 12
+beh <- d$nasjonalt_brukergruppe |>
+  filter(brukergruppe == "Husstander med midlertidige trygdeytelser") |>
+  transmute(dato, M = ant_husstander_termin) |>
+  filter(M > 0) |>
+  arrange(dato) |>
+  mutate(MA = as.numeric(stats::filter(M, w, sides = 2)), z = M / MA - 1) |>
+  filter(!is.na(z),
+         dato >= "2017-01-01", dato <= "2024-12-01",
+         !(dato >= "2020-03-01" & dato <= "2020-12-01"))
+
+kalibrering <- purrr::map_dfr(0:13, function(phi) {
+  beh |>
+    inner_join(u_av_fase(phi), by = "dato") |>
+    summarise(fase = phi,
+              gap  = mean(z[u == 3]) - mean(z[u == 2]),
+              t    = gap / sqrt(var(z[u == 3]) / sum(u == 3) +
+                                var(z[u == 2]) / sum(u == 2)))
+})
+fase_valgt <- kalibrering |> slice_min(t, n = 1)
+kalibrering |> arrange(t) |> head(3)
+```
+
+Kalibreringen er entydig: én fase gir et gap på om lag $-16$ prosent mellom tre- og to-utbetalingsmåneder ($t \approx -10$), den nest beste er syv dager forskjøvet — ukes-aliaset av samme signal — og alle øvrige faser er støy. Størrelsesordenen fortjener en setning: i månedene med tre meldekortutbetalinger lå behandlingsgruppens mottakertall seksten prosent under egen trend. Det administrativt skapte sesongfallet som skjermingen fra 2025 skulle fjerne [@kdd2025], er med andre ord ikke en fotnote i serien, men dens nest største systematiske bevegelse etter regelendringene selv.
+
+Regressoren defineres i tråd med @eq-meldekort, splittet ved regimeskiftet:
+
+```{r}
+#| label: met-kalender-reg
+#| output: false
+u_serie <- u_av_fase(fase_valgt$fase)
+X <- X |>
+  left_join(u_serie, by = "dato") |>
+  mutate(
+    k_pre  = (u - 26 / 12) * as.integer(dato <= "2024-12-01"),
+    k_post = (u - 26 / 12) * as.integer(dato >= "2025-01-01")
+  )
+```
+
+Skjermingens mekanikk skjerper teoriens prediksjon fra «nær null» til et punktnullpunkt: når bare to tredeler av ytelsen medregnes i tre-utbetalingsmåneder, blir telt inntekt $3 \times \tfrac{2}{3} = 2$ utbetalinger — *identisk med en normalmåned*. Gitt korrekt administrasjon er kalendereffekten mekanisk eksakt nøytralisert, slik at $\beta_{k,\text{post}} = 0$ er en skarp nullhypotese, ikke en approksimasjon. Konstruksjonens validitet har dessuten en uavhengig kontroll utenfor kalibreringsvinduet: behandlingsgruppens gjennomsnittlige absolutte månedsendring falt fra 3 986 husstander i 2024 til 1 006 i 2025 nasjonalt — akkurat det mekanikken tilsier når $u_t$-kanalen lukkes [@husbanken2025aars].
+
+## Kovariater og hjelpeserier {#sec-met-kovariater}
+
+Hovedspesifikasjonen er med hensikt *deterministisk informert*: den bruker bare regressorer som er perfekt kjent på alle horisonter (intervensjonsmatrisen, kalenderregressoren). Stokastiske kovariater — husleieindeksen (SSB 03013, serie 04.1, med 14710 som bro etter basisskiftet), leienivåene fra LMU, befolkning (kvartalsserien interpolert til måned, med Oslo kommunes bydelsframskriving som forlengelse) og bydelskovariatene — ville selv måtte prognostiseres på horisontene 1–12, og usikkerheten deres ville forplante seg til intervallene uten dokumentert presisjonsgevinst; i @sec-teori-modeller sin terminologi kjøpes fleksibilitet da for struktur serien ikke har råd til. Kovariatene har i stedet tre definerte roller: som prediktorer i ML-referanseklassen (som nettopp skal teste om slik informasjon hjelper), som forklaringsvariabler i driftsdiagnostikken for underspørsmålet om drift ($UB$), og som nevnere i bydelsrater. Konstruksjonen:
+
+```{r}
+#| label: met-kovariater
+#| output: false
+kpi_husleie <- d$kpi_husleie |>
+  filter(Konsumgrp_kode == "04.1", ContentsCode_kode == "KpiIndMnd") |>
+  transmute(dato, kpi_husleie = verdi)
+
+lmu_oslo <- d$leiemarked |>
+  filter(Soner2_kode == "01", AntRom_kode == "2",
+         ContentsCode_kode == "Husleie") |>
+  transmute(aar = year(dato), leie_2rom = verdi)
+
+bef_mnd <- mnd_seq |>
+  left_join(d$befolkning_oslo |>
+              filter(ContentsCode_kode == "Folketallet1") |>
+              transmute(dato, N = verdi),
+            by = "dato") |>
+  mutate(N = approx(as.numeric(dato[!is.na(N)]), N[!is.na(N)],
+                    xout = as.numeric(dato), rule = 2)$y)
+```
+
+## Analysesett, transformasjon og hierarki {#sec-met-sett}
+
+Modelleringen skjer på logskala, $y_t = \ln M^{T}_t$: nivåserien er strengt positiv, regelendringenes effekter er multiplikative i @eq-takeup sin dekomponering, og logtransformasjonen gjør intervallene asymmetriske på nivåskala der de skal være det. Populasjonsoffset brukes ikke i hovedspesifikasjonen — Oslos befolkning beveger seg under én prosent på tolv måneder og er ute av stand til å forklare variasjonen som betyr noe her; rater reserveres for bydelsanalysen og driftsdiagnostikken. Analysesettet:
+
+```{r}
+#| label: met-analysesett
+analyse <- oslo_est |>
+  left_join(X, by = "dato") |>
+  left_join(kpi_husleie, by = "dato") |>
+  left_join(bef_mnd, by = "dato") |>
+  mutate(log_M = log(M))
+stopifnot(!anyNA(analyse$u), !anyNA(analyse$k_pre))
+analyse |>
+  select(dato, M, win_strom, step_tak, u, k_pre, k_post) |>
+  slice_tail(n = 3)
+```
+
+Hierarkiet består av sytten serier — Oslo totalt, femten bydeler og den ufordelte resten — med eksakt summeringskonsistens verifisert i @sec-met-dv, klargjort for avstemming med MinT i del 2 [@wickramasuriya2019]. Brukergruppesnittet (fem serier, eksakt summerende) er det alternative snittet og bærer mekanismetestene: skjermingen skal synes i gruppen med midlertidige ytelser og bare der. Prikking forekommer ikke på noen av disse nivåene; finere kryss (bydel × brukergruppe) brukes ikke.
+
+<!-- =========================================================================
+DEL 2 — bygges som neste trinn (stub):
+
+## Modellspesifikasjoner {#sec-met-modeller}
+   Referanser (naiv, sesongnaiv, ETS, SARIMA — ordensvalg via AICc i
+   treningsvinduet); hovedklasse RegARIMA/strukturell modell med X fra
+   sec-met-x og k fra sec-met-kalender; BSTS med spike-and-slab over
+   kandidatregressorene (step_skjerm testes her); XGBoost-referanse med
+   lag/kalender/kovariat-features; MinT-avstemming av bydelshierarkiet.
+   R-pakker: fable/fabletools, bsts, xgboost, hts/fabletools-reconcile.
+
+## Prognoseprotokoll {#sec-met-protokoll}
+   Rullerende opprinnelse: første opprinnelse des 2022 (72 obs trening),
+   ekspanderende vindu, siste opprinnelse jun 2025 (h=12 innenfor data),
+   re-estimering per opprinnelse; alle valg (ordre, hyperparametre,
+   spike-slab-inklusjon) tas kun på informasjon t.o.m. opprinnelsen.
+
+## Evaluering og inferens {#sec-met-evaluering}
+   MASE (eq-mase), RMSE per horisont; Diebold–Mariano med
+   Harvey-korreksjon; dekning 80/95 og intervallskår (eq-winkler);
+   stratifisert evaluering: rolige vinduer vs bruddvinduer (T2/H5);
+   konformal etterkalibrering (EnbPI-familien) der dekningen svikter.
+
+## Reproduserbarhet {#sec-met-repro}
+   renv-låst miljø, seeds, datapakkens versjonsstempel, skriptkart.
+========================================================================== -->
+
+<!-- Forslag til nye .bib-oppføringer (fyll inn/juster URL-er ved behov):
+
+@techreport{husbanken2021aars, author={{Husbanken}}, title={Husbankens årsrapport 2021}, institution={Husbanken}, year={2022}}
+@techreport{husbanken2022aars, author={{Husbanken}}, title={Husbankens årsrapport 2022}, institution={Husbanken}, year={2023}}
+@techreport{husbanken2023aars, author={{Husbanken}}, title={Husbankens årsrapport 2023}, institution={Husbanken}, year={2024}}
+@techreport{husbanken2024aars, author={{Husbanken}}, title={Husbankens årsrapport 2024}, institution={Husbanken}, year={2025}}
+@techreport{husbanken2025aars, author={{Husbanken}}, title={Husbankens årsrapport 2025}, institution={Husbanken}, year={2026}}
+@misc{ssb01222, author={{Statistisk sentralbyrå}}, title={Tabell 01222: Endringar i befolkninga i løpet av kvartalet}, year={2026}, howpublished={PxWeb-API}}
+@misc{ssb03013, author={{Statistisk sentralbyrå}}, title={Tabell 03013: Konsumprisindeks etter konsumgruppe (2015=100)}, year={2026}, howpublished={PxWeb-API}}
+@misc{ssb14710, author={{Statistisk sentralbyrå}}, title={Tabell 14710: Konsumprisindeks, historisk serie (2025=100)}, year={2026}, howpublished={PxWeb-API}}
+@misc{oslostatbank, author={{Oslo kommune}}, title={Statistikkbanken for Oslo}, year={2026}, howpublished={PxWeb-API, statistikkbanken.oslo.kommune.no}}
+@misc{navGrunnbelop, author={{NAV}}, title={Grunnbeløpet i folketrygden}, year={2026}, howpublished={nav.no/grunnbelopet}}
+-->
