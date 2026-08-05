@@ -1,0 +1,50 @@
+name: Phase 1 CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: phase1-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  data-contract:
+    name: Data contract and Python syntax
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Validate frozen phase-1 data
+        run: >-
+          python scripts/validate_phase1.py
+          --manifest artifacts/phase1-validation.json
+
+      - name: Compile Python sources
+        run: >-
+          python -m compileall -q
+          scripts
+          velferdsetaten-data/scripts
+
+      - name: Upload validation manifest
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase1-validation-manifest
+          path: artifacts/phase1-validation.json
+          if-no-files-found: warn
+          retention-days: 14
