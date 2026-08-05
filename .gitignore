@@ -26,3 +26,11 @@
 # --- OS ---
 .DS_Store
 Thumbs.db
+
+# --- Python-bytekode (regenereres av tolkeren) ---
+__pycache__/
+*.py[cod]
+
+# --- Quarto/Typst-artefakter (regenereres av `quarto render`) ---
+/unt_1.typ
+/mal/**/*.pdf
