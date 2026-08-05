@@ -927,31 +927,118 @@ bg_termin <- bg_est
 Modelleringen skjer på logskala, $y_t = \ln M^{T}_t$: nivåserien er strengt positiv, regelendringenes effekter er multiplikative i @eq-takeup sin dekomponering, og logtransformasjonen gjør intervallene asymmetriske på nivåskala der de skal være det. Populasjonsoffset brukes ikke i hovedspesifikasjonen — Oslos befolkning beveger seg under én prosent på tolv måneder; rater reserveres for bydelsanalysen og driftsdiagnostikken. Analysesettet er dermed `r nb(nrow(analyse))` terminer × `r nb(ncol(analyse))` kolonner der alt foran er destillert: utfallet fra form 1, regressorene generert fra form 4, kalendertrioen fra det kalibrerte gridet, kovariatene fra form 3 låst ned til én kolonne hver. Hierarkiet — Oslo, femten bydeler og ufordelt-noden, med brukergruppene som alternativt snitt — står summeringskonsistent klart for MinT-avstemming i del 2 [@wickramasuriya2019].
 
 
-<!-- =========================================================================
-DEL 2 — bygges som neste trinn (stub):
-
 ## Modellspesifikasjoner {#sec-met-modeller}
-   Referanser (naiv, sesongnaiv, ETS, SARIMA — ordensvalg via AICc i
-   treningsvinduet); hovedklasse RegARIMA/strukturell modell med X og k;
-   BSTS med spike-and-slab over kandidatregressorene (enkelttrinnene i
-   2024-pakken og step_skjerm testes her); XGBoost-referanse; MinT.
-   R-pakker: fable/fabletools/feasts, distributional, urca; ev. bsts, xgboost.
+
+Modellvalget følger hierarkiet i @sec-teori-modeller, men med én tilleggsbetingelse som kommer fra forskningsspørsmålet selv. Spørsmålet er ikke bare *hvor presist* serien kan prognostiseres, men *hvor mye det hjelper* å modellere kjente regelendringer eksplisitt. Et slikt spørsmål besvares ikke av én god modell mot én dårlig; det besvares av en **nøstet stige** der modellene skiller seg fra hverandre i nøyaktig én informasjonskilde av gangen. @tbl-modeller er bygget slik.
+
+| Id | Modell | Informasjon utover $y_t$ | Rolle i designet |
+|:-----|:-------------------|:---------------------|:--------------------------|
+| **M0** | Naiv (tilfeldig gang) | ingen | nedre grense; @eq-stockflow gjør denne sterk |
+| **M1** | Sesongnaiv | 12-måneders lag | referanse og nevner i @eq-mase |
+| **M2** | ETS, automatisk klasse | ingen | etablert referanse [@hyndman2002] |
+| **M3** | SARIMA, automatisk orden | ingen | etablert referanse [@box2015]; utgangspunktet stigen måles mot |
+| **M4** | RegARIMA $+\ k$ | kalenderregressoren | isolerer kalenderbidraget |
+| **M5** | RegARIMA $+\ X$ | intervensjonsmatrisen | isolerer regelverksbidraget |
+| **M6** | RegARIMA $+\ X + k$ | begge | **hovedspesifikasjon** |
+
+: Modellstigen. Hvert trinn legger til nøyaktig én informasjonskilde, slik at differansen mellom to modeller kan tilskrives den kilden og ikke et modellbytte. {#tbl-modeller}
+
+Stigen gjør tre sammenlikninger til kontrollerte eksperimenter. M6 mot M3 er den samlede gevinsten av deterministisk informasjon — hovedspørsmålets kjerne. M6 mot M4 isolerer regelverkets bidrag, M6 mot M5 kalenderens. Uten stigen kunne en gevinst like gjerne skyldtes at RegARIMA tilfeldigvis passer serien bedre enn SARIMA.
+
+**Hovedklassen.** Innenfor hovedklassen estimeres RegARIMA-varianten: ARIMA-feilledd med deterministiske regressorer,
+
+$$\ln M^{T}_{t} \;=\; \beta' x_t \;+\; \eta_t,
+\qquad \phi_p(L)\,\Phi_P(L^{12})\,(1-L)^{d}(1-L^{12})^{D}\,\eta_t \;=\; \theta_q(L)\,\Theta_Q(L^{12})\,\varepsilon_t$$ {#eq-regarima}
+
+der $x_t$ er kolonnene fra @sec-met-x og @sec-met-kalender. Dette er standardarkitekturen i offisiell statistikk for nettopp denne problemklassen [@findley1998]. Den strukturelle tilstandsromsvarianten av samme dekomponering (@eq-ssm) er utsatt til BSTS-utvidelsen, der den hører sammen med spike-and-slab-utvelgelsen av kandidatregressorer [@scott2014] — å estimere den her uten den utvelgelsen ville gitt samme dekomponering med færre verktøy.
+
+**Hovedspesifikasjonens regressorsett.** $X$ inneholder `win_covid`, `win_strom` og `pakke_2024h2`; $k$ inneholder `k_pre` og `k_post`. Tre valg fortjener begrunnelse. Enkelttrinnene `step_tak`, `step_oppv` og `step_1819` holdes ute fordi de er kollineære på månedsdata (@sec-met-ideal) og hører hjemme i spike-and-slab-klassen. `step_skjerm` holdes ute av hovedspesifikasjonen fordi teorien sier at skjermingen virker gjennom $k_{\text{post}}$, ikke gjennom et nivåskift (@sec-met-kalender); den testes som kandidat i robusthetsanalysen, slik at et eventuelt residualt nivåløft blir et *funn* og ikke en antakelse. Og `strom_belop` inngår ikke i antallsmodellene: engangsutbetalinger endret beløp, ikke berettigelse.
+
+**Transformasjon og tilbaketransformasjon.** Modelleringen skjer på logskala (@sec-met-kovariater). Punktprognosen i @eq-estimand er *medianen*, og medianen tilbaketransformeres ved ren eksponensiering. Det er et bevisst valg og ikke en forglemmelse: en forventningsriktig tilbaketransformasjon ville krevd et Jensen-ledd og gitt et annet estimand enn det forskningsspørsmålet definerer. Intervallgrensene tilbaketransformeres på samme måte, hvilket bevarer den asymmetrien nivåskalaen skal ha.
+
+**Ordensvalg.** $(p,d,q)(P,D,Q)_{12}$ velges automatisk ved AICc, med differensieringsgradene bestemt av enhetsrot- og sesongstyrketest. Det avgjørende er *når*: valget gjentas ved hver prognoseopprinnelse, på treningsvinduet alene. Å velge orden én gang på hele utvalget og deretter «rulle» er en av de vanligste og minst synlige formene for informasjonslekkasje i denne litteraturen, og den ville gjort evalueringen optimistisk uten å etterlate spor.
+
+**Asymmetriproposisjonen.** @eq-regarima estimerer statiske regresjonskoeffisienter og uttrykker dermed rene trinn, ikke transferfunksjonens $\delta$ (@eq-transfer). Asymmetriproposisjonen fra @sec-teori-beholdning testes derfor på to måter i stedet for å pålegges. For det første estimeres en variant der `win_strom` suppleres med en tre måneders innfasingsrampe ved inn-kanten; rampekoeffisienten er det direkte estimatet av gradvis innfasing, og variantene sammenliknes med AICc. For det andre inspiseres residualene ved hver kant: en skarp ut-kant skal ikke etterlate mønster, mens en gradvis inn-kant modellert som trinn skal etterlate en serie residualer med samme fortegn. De to testene peker på samme parameter fra hver sin side.
 
 ## Prognoseprotokoll {#sec-met-protokoll}
-   Rullerende opprinnelse: første opprinnelse des 2022 (72 obs trening),
-   ekspanderende vindu, siste opprinnelse jun 2025 (h=12 innenfor data),
-   re-estimering per opprinnelse; alle valg tas kun på informasjon t.o.m.
-   opprinnelsen (vintage-disiplin fra sec-met-estimand).
+
+```{r}
+#| label: protokoll
+#| include: false
+
+MIN_TRENING <- 72   # minste treningsvindu: 6 år, nok til sesong + 5 regressorer
+H_MAKS      <- 12
+
+opprinnelser <- oslo_est$dato[
+  seq_len(nrow(oslo_est)) >= MIN_TRENING &
+  seq_len(nrow(oslo_est)) <= (nrow(oslo_est) - H_MAKS)
+]
+n_opprinnelser <- length(opprinnelser)
+n_modeller     <- 7
+n_prognosepkt  <- n_opprinnelser * H_MAKS
+```
+
+Designet er rullerende opprinnelse med ekspanderende vindu [@tashman2000], som er den gyldige kryssvalideringsformen for avhengige data [@bergmeir2012]. Protokollen er fullstendig bestemt av tre parametre og utleder resten fra estimeringsutvalget:
+
+*Treningsminimum.* `r nb(MIN_TRENING)` observasjoner — seks år. Det er nok til å identifisere en sesongkomponent og fem regressorer med margin, og korter man det ned, estimeres de første modellene på for lite data til at sammenlikningen sier noe om modellene framfor om utvalgsstørrelsen.
+
+*Første opprinnelse* blir dermed `r mnd(min(opprinnelser))`, *siste* `r mnd(max(opprinnelser))` — den siste måneden der hele horisonten $h = 1,\dots,`r H_MAKS`$ ligger innenfor observerte data. Det gir `r nb(n_opprinnelser)` opprinnelser, `r nb(H_MAKS)` prognoser hver, altså `r nb(n_prognosepkt)` prognosepunkter per modell og `r nb(n_opprinnelser)` observasjoner per horisont. Med `r nb(n_modeller)` modeller blir det `r nb(n_modeller * n_opprinnelser)` modelltilpasninger og `r nb(n_modeller * n_prognosepkt)` prognosepunkter i alt.
+
+*Evalueringsvinduet* strekker seg dermed fra `r mnd(min(opprinnelser) %m+% months(1))` til `r est_til`. Det er ikke en tilfeldig periode: den inneholder avviklingen i termin april 2024 — seriens største enkeltbevegelse (@sec-met-observasjoner) — høstpakken samme år og skjermingen fra januar 2025. Evalueringen stresstestes altså på nøyaktig de hendelsene studien handler om, og ikke bare på rolige måneder.
+
+Fire regler gjelder ved hver opprinnelse.
+
+1.  **Alt re-estimeres.** Ordensvalg, regresjonskoeffisienter og feilleddets parametre bestemmes på nytt fra treningsvinduet. Ingenting bæres over fra en tidligere opprinnelse.
+2.  **Ingen informasjon utover opprinnelsen.** Treningsvinduet slutter ved opprinnelsen, og enhver modellbeslutning tas på det vinduet alene. De deterministiske regressorene er unntaket som beviser regelen: de er *per konstruksjon* kjent for alle framtidige måneder — regelverkskalenderen fordi vedtakene er fattet, meldekortgridet fordi det er en kalender (@sec-met-kalender). Nettopp derfor kan de brukes på hele horisonten uten å bryte disiplinen, og nettopp derfor er de verdifulle.
+3.  **Vedtatt, men ikke ikrafttrådt, regelverk regnes som kjent.** Det er den operative situasjonen en prognose i drift står i, og det er innholdet i underspørsmål **UB**.
+4.  **Pseudo-sanntid, ikke sanntid.** Serien revideres bakover ved etterkontroll mot skatteoppgjøret, og historiske vintages er ikke offentlig tilgjengelige (@sec-met-dv). Evalueringen bruker derfor gjeldende vintage gjennomgående. Det er en kjent optimistisk skjevhet, den gjelder alle modellene likt, og den er den eneste avviket fra ekte sanntidsdisiplin i protokollen.
+
+**Stratifisering.** Hvert prognosepunkt merkes som *bruddnært* dersom målmåneden ligger innenfor tre måneder av en datert intervensjon fra `intervensjonstabell.csv`, ellers som *rolig*. Evalueringen rapporteres samlet og stratifisert. Grunnen er at gjennomsnittet over alle måneder kan skjule det som betyr mest: en modell som er marginalt bedre i rolige perioder, men vesentlig bedre rundt bruddene, er den nyttige modellen i drift — og den forskjellen forsvinner i et samlet MASE-tall.
 
 ## Evaluering og inferens {#sec-met-evaluering}
-   MASE (eq-mase), RMSE per horisont; Diebold–Mariano med Harvey-korreksjon;
-   dekning 80/95 og intervallskår (eq-winkler); stratifisert evaluering:
-   rolige vinduer vs bruddvinduer; konformal etterkalibrering der dekningen
-   svikter.
+
+**Punktpresisjon.** MAE og RMSE per horisont, og MASE (@eq-mase) som skalafritt hovedmål. Nevneren er sesongnaiv gjennomsnittlig absoluttfeil beregnet *innenfor treningsvinduet ved hver opprinnelse* [@hyndmankoehler2006] — ikke på hele utvalget, som ville gjort nevneren avhengig av data modellen ikke hadde sett.
+
+**Signifikans, og en fallgruve som må navngis.** Forskjeller i prognosepresisjon testes med Diebold–Mariano [@diebold1995] med småutvalgskorreksjon [@harvey1997]. Testen forutsetter imidlertid ikke-nøstede modeller, og de sammenlikningene vi er mest interessert i — M6 mot M3, M6 mot M4, M6 mot M5 — er nøstede i populasjonen: den enklere modellen er den generelle med koeffisienter satt til null. Under nullhypotesen blir tapsdifferansen degenerert, og DM-testen er da underdimensjonert. Protokollen håndterer dette eksplisitt:
+
+*   nøstede par testes med Clark–Wests justerte statistikk, som korrigerer for nettopp dette;
+*   ikke-nøstede par (for eksempel M6 mot M2) testes med DM–Harvey;
+*   og hovedbeviset for forskningsspørsmålet hviler uansett ikke på en punktprognosetest alene, men på intervalldekningen, der problemet ikke oppstår på samme form.
+
+Å velge test etter om paret er nøstet, er ikke pedanteri: en DM-test som feilaktig ikke forkaster, ville fått studien til å konkludere med at regelverksinformasjon *ikke* hjelper, når den i virkeligheten bare hadde brukt feil test.
+
+**Intervaller.** Empirisk dekning på 80 og 95 prosent, rapportert per horisont, sammen med intervallskåren i @eq-winkler — en strengt proper skåringsregel som ikke kan spilles ved å være systematisk for bred eller for smal [@gneiting2007]. Dekning uten skarphet er verdiløs: et intervall fra null til uendelig dekker alltid. De to rapporteres derfor sammen, aldri hver for seg.
+
+**Konformal etterkalibrering.** Der modellintervallene underdekker — forventet rundt brudd [@makridakis2022b] — kalibreres de konformalt. Skjemaet er rullerende og respekterer tidsretningen: for horisont $h$ og opprinnelse $\tau$ bygges intervallet av den empiriske kvantilen til $|e_h|$ fra *alle opprinnelser strengt før* $\tau$. Kalibreringssettet inneholder dermed aldri informasjon fra prognosepunktet det kalibrerer. Dekningsgarantien i den klassiske konformale teorien hviler på utvekslbarhet [@vovk2005; @romano2019], som en tidsserie med brudd ikke oppfyller; garantien er derfor tilnærmet, og varianten er den som er utviklet for avhengige data [@xu2023]. Denne forutsetningen sies her framfor å underforstås, siden en eksakt garanti er nettopp det metoden ofte selges på.
+
+**Residualdiagnostikk.** Ljung–Box på standardiserte residualer med frihetsgrader justert for estimerte parametre, ACF og PACF, og fordelingssjekk av de standardiserte residualene. Én presisering: normalitet i residualene er ikke et mål i seg selv. Det som avgjør intervallenes kvalitet, er den *prediktive* fordelingen ut av utvalget, og den måles av dekning og intervallskår. Residualdiagnostikken brukes til å finne umodellert struktur — særlig ved intervensjonskantene (@sec-met-modeller) — ikke til å attestere modellen.
+
+**Fra teori til teststatistikk.** De fire implikasjonene i @sec-teori-syntese oversettes i @tbl-tester til fire avgjørbare størrelser:
+
+| | Implikasjon | Operasjonalisering | Faller dersom |
+|:----|:-----------------|:-----------------------|:----------------------|
+| **T1** | Struktur slår naive referanser | MASE for M6 mot M1 og M0, per horisont 1–12 | MASE $\geq 1$ på flertallet av horisontene |
+| **T2** | Eksplisitte intervensjoner hjelper — mest på intervallene | M6 mot M3, stratifisert på bruddnære og rolige punkter; Clark–West på punktfeil, dekningsdifferanse på intervaller | ingen dekningsgevinst i de bruddnære vinduene |
+| **T3** | Kalendereffekten er stor før 2025 og eksakt null etter | $\hat\beta_{k,\text{pre}}$ negativ og signifikant; for $\hat\beta_{k,\text{post}}$ en ekvivalenstest mot grensen $\delta = \tfrac{1}{2}\lvert\hat\beta_{k,\text{pre}}\rvert$ | $\hat\beta_{k,\text{pre}}$ ikke negativ, eller ekvivalens for $\hat\beta_{k,\text{post}}$ forkastes |
+| **T4** | Nominell dekning krever brudd og kalender; resten fikses konformalt | dekning ved 80/95 for M3 og M6, før og etter konformal kalibrering, med intervallskår | M6 dekker ikke bedre enn M3, eller kalibreringen ikke lukker gapet |
+
+: Teoriens implikasjoner som avgjørbare teststatistikker. Kolonnen «faller dersom» er skrevet før estimeringen, slik at utfallet ikke kan omtolkes i etterkant. {#tbl-tester}
+
+To ting i tabellen fortjener en kommentar. **T3** er formulert som en *ekvivalenstest*, ikke som en vanlig nullhypotesetest. Grunnen er at teorien predikerer at effekten er null, og en ordinær test kan aldri bekrefte en nullhypotese — den kan bare unnlate å forkaste, hvilket like gjerne kan skyldes lite data. Ekvivalensformuleringen snur bevisbyrden riktig vei: den krever at konfidensintervallet for $\hat\beta_{k,\text{post}}$ ligger *innenfor* en grense vi har satt på forhånd, og gir dermed teorien en reell mulighet til å falle. Grensen er satt til halvparten av den estimerte førperiodeeffekten, altså i seriens egne enheter framfor en vilkårlig konstant. **T2** er formulert med intervalldekning som det avgjørende kriteriet, ikke punktfeil. Det er ikke en flukt fra det vanskelige målet, men følger av @clements1998: umodellerte nivåskift skader intervallene mer og lenger enn de skader punktprognosene, og det er der gevinsten skal vise seg om teorien stemmer.
 
 ## Reproduserbarhet {#sec-met-repro}
-   renv-låst miljø, seeds, datapakkens versjonsstempel, skriptkart.
-========================================================================== -->
+
+Kontrakten fra kapitlets åpning gjelder også modelldelen: hver størrelse skal kunne regenereres av navngitt kode fra navngitt kilde.
+
+*Beregningen ligger i dokumentet.* Estimering, rullerende kryssvalidering og diagnostikk kjører når `unt_1.qmd` bygges. Det gir den sterkeste formen for konsistens mellom tekst og tall — de kan ikke komme i utakt, fordi de er samme kjøring — og prisen er byggetid: `r nb(n_modeller * n_opprinnelser)` modelltilpasninger per render. Blir det upraktisk, er `execute: freeze: auto` i YAML-hodet den dokumenterte utveien; den fryser chunk-resultatene til kildefilen endres, uten å endre noe ved beregningen.
+
+*Determinisme.* Løypa inneholder ingen tilfeldighet: ordensvalget er en deterministisk søkeprosedyre, den konformale kalibreringen er empiriske kvantiler, og kalenderfasen kalibreres fra data (@sec-met-kalender). To renderinger av samme kildefil mot samme datapakke gir derfor identisk resultat, og det er kontrollert ved å sammenlikne tekstinnholdet i to bygg framfor å anta det. Seeds settes likevel eksplisitt, slik at stokastiske metoder kan legges til senere uten at determinismen stilltiende forsvinner.
+
+*Miljø.* Pakkeversjonene låses med `renv`, og låsefilen versjoneres. R- og Quarto-versjon, samt datapakkens uttrekksdato (`r UTTREKKSDATO`), stemples i dokumentet. Typst-malen bruker bare fonter Typst har innebygd; det er et typografisk valg, men det hører hjemme her, fordi det er grunnen til at PDF-en blir identisk uansett vertsmaskin.
+
+*Kart over løypa.* Datalasting og verifikasjon i chunkene `oppsett` til `tbl-kontroller`; regressorkonstruksjon i `met-intervensjoner` og `met-kalender-reg`; analysesettet i `met-analysesett`; protokollparametrene i `protokoll`. Uttrekksskriptene som produserer datapakken, ligger i `velferdsetaten-data/scripts/` og er dokumentert i `datakilder.md` og `kodebok.md`.
+
+*Feil skal stoppe byggingen, ikke passere stille.* Verifikasjonskontrollene i @sec-met-verifikasjon avbryter renderingen ved avvik. Samme prinsipp gjelder modelldelen: dimensjonskrav på analysesettet, krav om at de deterministiske regressorene er komplette over hele prognosehorisonten, og krav om at antall prognosepunkter per horisont stemmer med protokollen, håndheves med eksplisitte krav i koden framfor å kontrolleres ved øyemål.
 
 # Referanser {.unnumbered}
 
