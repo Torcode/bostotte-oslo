@@ -31,7 +31,7 @@ Variabelnivå-dokumentasjon for alle 20 datasett i `last_alt()` pluss de konstru
 
 Snittkolonnene er tomme (NA) i måneder uten utbetalinger (typisk januar 2010 og sanntidskanten).
 
-**`oslo_bydel` i tillegg:** `kommunenr` (chr, behold ledende null!) og `bydel`. Nøkkel: kommunenr = 310 + bydelsnr → 0311 Gamle Oslo, 0312 Grünerløkka, 0313 Sagene, 0314 St. Hanshaugen, 0315 Frogner, 0316 Ullern, 0317 Vestre Aker, 0318 Nordre Aker, 0319 Bjerke, 0320 Grorud, 0321 Stovner, 0322 Alna, 0323 Østensjø, 0324 Nordstrand, 0325 Søndre Nordstrand. **0301 er en nesten tom restkategori (0–3 husstander) — aldri bruk den som Oslo-total**; i metodekapitlet beholdes den som «Ufordelt (0301)» så hierarkiet summerer eksakt.
+**`oslo_bydel` i tillegg:** `kommunenr` (chr, behold ledende null!) og `bydel`. Nøkkel: kommunenr = 310 + bydelsnr → 0311 Gamle Oslo, 0312 Grunerløkka (kilden skriver navnet uten omlyd — bruk kildens skrivemåte ved join, normalisér først ved presentasjon), 0313 Sagene, 0314 St. Hanshaugen, 0315 Frogner, 0316 Ullern, 0317 Vestre Aker, 0318 Nordre Aker, 0319 Bjerke, 0320 Grorud, 0321 Stovner, 0322 Alna, 0323 Østensjø, 0324 Nordstrand, 0325 Søndre Nordstrand. **0301 er en nesten tom restkategori (0–3 husstander) — aldri bruk den som Oslo-total**; i metodekapitlet beholdes den som «Ufordelt (0301)» så hierarkiet summerer eksakt.
 
 **`brukergruppe`-verdiene (5, summerer eksakt til total):** Eldre · Unge uføre · Uføre forøvrig · Husstander med midlertidige trygdeytelser (= AAP/dagpenger m.m. — skjermingens behandlingsgruppe, ca. 1/3 av Oslo-mottakerne) · Husstander uten trygdeytelser.
 
@@ -65,7 +65,7 @@ Geografiverdiene inkluderer «Oslo i alt» + bydelsnavn; totalrader må filtrere
 
 ## 4. Kuraterte regelverkstabeller (4 objekter)
 
-**`intervensjoner`** (20×14). Kolonner: `id` (I01–I20), `dato_virkning`/`termin_fra`/`termin_til`/`utbetaling_fra`/`utbetaling_til` (Date, første i måneden; NA = åpen/ikke relevant), `hendelse`, `type` (vindu/trinn/beløp/parameter/kalender), `mekanisme` (fritekst med tall), `forventet_effekt_antall`/`_belop` (opp/ned/nøytral/ingen), `geografi`, `kilde`, `verifisering` (bekreftet/delvis). Hendelsene i kortform: I01 covid-vindu 2020m4–m10 · I02/I03/I04 engangs strøm 2021 (mars nasjonalt; november kun Sør-Norge inkl. Oslo; desember nasjonalt) · **I05 strømvinduet termin 2021m12–2024m3: progressivt egenandelsledd 0,28 %→0,12 %** · I06/I07 strømbeløp per måned 2022/2023 · I08 barnetillegg + vekt 0,13→0,15 (feb 2023) · I09 minstepensjonskompensasjon (mar 2023) · I10 trygdeoppgjørsskjerming juni 2023 · I11 siste strømvindu jan–apr 2024 (delvis: månedsbeløp) · **I12 vinduslukking termin april 2024 (~25 000 ut nasjonalt; −21,6 % i Oslo på én termin)** · I13 prisjustering juni 2024 (+4,2/+4,7 %) · **I14 tak +4 000 + lineær egenandel (juli 2024)** · I15 oppvarmingstillegg til alle (sep 2024) · I16 18/19-åringers inntekt ut (okt 2024) · **I17 AAP/dagpenger-skjermingen (jan 2025)** · I18 økt minsteytelse mai 2025 (delvis) · I19 prisjustering juni 2025 (+2,7/+4,1 %) · I20 statsbudsjett 2026: ingen regelendring.
+**`intervensjoner`** (20×14). Kolonner: `id` (I01–I20), `dato_virkning`/`termin_fra`/`termin_til`/`utbetaling_fra`/`utbetaling_til` (Date, første i måneden; NA = åpen/ikke relevant), `hendelse`, `type` (vindu/trinn/beløp/parameter/kalender), `mekanisme` (fritekst med tall), `forventet_effekt_antall`/`_belop` (opp/ned/nøytral/ingen), `geografi`, `kilde`, `verifisering` (bekreftet/delvis). Hendelsene i kortform: I01 covid-vindu 2020m4–m10 · I02/I03/I04 engangs strøm 2021 (mars nasjonalt; november kun Sør-Norge inkl. Oslo; desember nasjonalt) · **I05 strømvinduet termin 2021m12–2024m3: progressivt egenandelsledd 0,28 %→0,12 %** · I06/I07 strømbeløp per måned 2022/2023 · I08 barnetillegg + vekt 0,13→0,15 (feb 2023) · I09 minstepensjonskompensasjon (mar 2023) · I10 trygdeoppgjørsskjerming juni 2023 · I11 siste strømvindu jan–apr 2024 (delvis: månedsbeløp) · **I12 vinduslukking termin april 2024 (~25 000 ut nasjonalt; −25,2 % i Oslo på én termin, termin mars → termin april)** · I13 prisjustering juni 2024 (+4,2/+4,7 %) · **I14 tak +4 000 + lineær egenandel (juli 2024)** · I15 oppvarmingstillegg til alle (sep 2024) · I16 18/19-åringers inntekt ut (okt 2024) · **I17 AAP/dagpenger-skjermingen (jan 2025)** · I18 økt minsteytelse mai 2025 (delvis) · I19 prisjustering juni 2025 (+2,7/+4,1 %) · I20 statsbudsjett 2026: ingen regelendring.
 
 **`parametre`** (32×6). NB: `verdi` er tekstkolonne (én rad er en dato) — konverter per rad ved bruk. Gruppene: dekningsgrad (73,7 %) · boutgiftstak: 5 grunnsatser etter husstandsstørrelse (92 234–150 385 kr/år) + 4 tillegg (Oslo +27 982; storbygruppe +19 079; gruppe 3 +12 720; spesialtilpasset +5 724) · egenandel: minste 26 576; ledd 1 16,44 % over 137 462; ledd 2 63,56 % over 245 278; egne grenser unge uføre (295 795) og enslige pensjonister (148 275/256 613) · vekter 1,0/0,13/0,15 · minsteutbetaling 63 kr/mnd · utbetalingsdag 20. · meldekortregel 66,67 % · prisjustering 1. juni + prosentene 2023–2025 · midlertidig progressivt ledd 0,28/0,12 %.
 
@@ -75,7 +75,7 @@ Geografiverdiene inkluderer «Oslo i alt» + bydelsnavn; totalrader må filtrere
 
 ## 5. Konstruerte variabler (analysesettet, metode 3.1–3.2)
 
-Bygges av chunkene i `03-metode-del1.qmd`; 114 rader (2017m1–2026m6) × 17 kolonner:
+Bygges av chunkene i metodekapitlet i `unt_1.qmd` (avsnitt 3.1–3.5); 114 rader (2017m1–2026m6) × 19 kolonner. Radtallet er ikke hardkodet i dokumentet — det utledes av estimeringsutvalget, og en ny datavintage utvider settet uten at renderingen brekker:
 
 | Variabel | Definisjon | Rolle |
 |---|---|---|
@@ -102,3 +102,5 @@ Bygges av chunkene i `03-metode-del1.qmd`; 114 rader (2017m1–2026m6) × 17 kol
 6. `parametre$verdi` er tekst (én rad er en dato).
 7. Snittkolonner er NA der antall = 0 — ikke behandl som 0.
 8. Kvartals-/årskovariater er interpolert/trappet der de møter månedsserien — dokumentér valget der det brukes.
+9. Bydelspanelet er ubalansert på ett punkt: node 0301 er bare til stede i måneder der den har minst én husstand (162 av 199 måneder mangler). Aggregering til Oslo-total er likevel eksakt, og det verifiseres i `tbl-kontroller`.
+10. Node 0301 heter «Oslo» i kilden. Den er ikke Oslo. Metodekapitlet gir den merkelappen «Ufordelt (0301)» før bruk (vaskeinngrep V2).

@@ -86,4 +86,4 @@ Husbankens årsrapport 2025, tabell 3.16 (2021–2025): søkere, mottakere, utbe
 
 ## 7. Reproduserbarhet
 
-`scripts/qlik_engine.py` (Engine-klient), `extract_bostotte_v2.py` (kjerneuttrekk), `fetch_ssb.py`, `fetch_oslo_statbank.py`, `explore_app.py`/`explore_vars.py`/`debug_kommune.py` (kartleggingen av datamodellen). Alle kjørbare på nytt; Qlik-appen reloades daglig, så en re-kjøring gir ferskeste vintage.
+`scripts/qlik_engine.py` (Engine-klient), `extract_bostotte_v2.py` (kjerneuttrekk), `fetch_ssb.py`, `fetch_oslo_statbank.py`. Kartleggingsskriptene fra byggedagen (`explore_app.py`, `explore_vars.py`, `debug_kommune.py`) ligger i `scripts/utforsking/`; de er ikke del av uttrekksløypa, men dokumenterer hvordan datamodellen ble kartlagt. Alle er kjørbare på nytt; Qlik-appen reloades daglig, så en re-kjøring gir ferskeste vintage.

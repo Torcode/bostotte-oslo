@@ -1,0 +1,352 @@
+# Endringslogg: revisjon av datakapitlet og dokumentoppsettet (5. august 2026)
+
+Full omskriving av datadelen i metodekapitlet (`unt_1.qmd`, avsnitt 3.1), pluss et
+dokumentoppsett som gjør PDF-en presentabel og en opprydding i repoet. Denne loggen
+oppgir for hver endring hva som ble endret, og hvorfor. Tallene i «etter»-kolonnene
+er beregnet ved rendering fra datapakken i `velferdsetaten-data/`, uttrekk 4. august
+2026, ikke skrevet av for hånd.
+
+Utløsende tilbakemelding: kapitlet forklarte dårlig, dekning var oppgitt som om det
+var vask, ingenting var reelt vasket, formbegrepet var udefinert, og PDF-en var
+uleselig. Alle fem punktene er adressert nedenfor.
+
+---
+
+## A. Struktur og forklaring
+
+**A1. Nytt åpningsavsnitt: idealdata mot faktisk datagrunnlag (3.1.1).**
+Før: kapitlet startet med «Studiens datagenererende objekt er Husbankens
+bostøttestatistikk» — altså med det vi har, uten å si hva problemet ber om.
+Etter: et avsnitt som først spesifiserer det ideelle datagrunnlaget (månedlig
+husstandspanel over alle husstander i Oslo, med inntekt, boutgifter, vedtaks-
+hendelser og gjeldende regelparametre), så hva et slikt panel ville gitt som
+aggregatet ikke kan gi (observert take-up; simulert i stedet for estimert
+regeleffekt; separert identifikasjon av høstpakken 2024; talte strømmer), så
+hvorfor vi ikke har det (personopplysninger, krever hjemmel og utleveringsavtale;
+åpne data er et designvalg; historiske vintages arkiveres uansett ikke), så hva
+aggregatet faktisk gir, og til slutt hva forskjellen koster — fire konsekvenser,
+hver med sitt designsvar.
+Begrunnelse: forskjellen mellom ideelt og faktisk datagrunnlag er ikke en
+beklagelse, men listen over hvilke spørsmål studien kan besvare. Uten den blir
+begrensningene noe leseren må oppdage selv, og det er den typen mangel en fagkomité
+leser som manglende oversikt over eget design. Avsnittet gir også begrunnelsen for
+at UA er formulert deskriptivt og for at høstpakken 2024 estimeres samlet — to valg
+som tidligere sto som påstander uten forankring i datagrunnlaget.
+
+**A2. Formbegrepet definert (3.1.4).**
+Før: «De har fire *former*, og formen bestemmer den kanoniske operasjonen» — uten
+å si hva en form er.
+Etter: en form defineres eksplisitt som *kornet* (hvilken enhet én rad
+representerer), og @tbl-former gir for hver av de fire formene kornet, det kanoniske
+grepet og den karakteristiske feilen formen inviterer til.
+Begrunnelse: «form» var terminologi uten definisjon. Definisjonen gjør inndelingen
+operativ: den sier ikke bare hva datasettene heter, men hva man har lov til å gjøre
+med dem og hvilken feil man gjør hvis man glemmer det.
+
+**A3. Kildekartet flyttet fra eget avsnitt inn i datadelen (3.1.3).**
+Før: `## Datagrunnlag og proveniens` sto som eget avsnitt *etter* datadelen, med
+overlappende innhold.
+Etter: kildekartet står i datadelen der det hører hjemme, og frekvenskolonnen er
+fjernet fra tabellen fordi den nå beregnes i @tbl-dekning.
+Begrunnelse: to steder som beskriver kildene, holdes ikke i takt. Frekvens oppgitt
+to steder — én gang for hånd og én gang beregnet — er en feilkilde uten gevinst.
+
+**A4. Kalenderidentiteten flyttet fra estimandavsnittet til datadelen (3.1.2).**
+Før: @eq-kalenderidentitet ble definert i 3.2 (estimand), men brukt i 3.1
+(verifikasjonstabellen) — en foroverreferanse.
+Etter: identiteten defineres der de to kalendrene først beskrives, og
+estimandavsnittet refererer tilbake.
+Begrunnelse: identiteten er en egenskap ved dataene, ikke ved estimanden. Med
+flyttingen leses kapitlet forlengs.
+
+---
+
+## B. Dekning skilt fra vask
+
+**B1. Dekning er nå en egen, beregnet tabell (3.1.5, @tbl-dekning).**
+Før: «Dekning» var en hardkodet kolonne i datasettoversikten, i et avsnitt som het
+«Verifikasjon og vask».
+Etter: eget avsnitt med en tabell som leser frekvens, første og siste periode og
+antall perioder direkte fra objektene, pluss en kolonne for avstanden fra hver
+kildes siste observasjon til utfallsseriens estimeringskant.
+Begrunnelse: (i) dekning er en observasjon om kilden, vask er et inngrep vi gjør —
+å oppgi dem under samme overskrift skjuler det skillet; (ii) hardkodet dekning går
+ut på dato ved neste vintage; (iii) avstandskolonnen gjør argumentet for en
+*deterministisk informert* hovedspesifikasjon synlig i en tabell istedenfor å ligge
+som en påstand i løpende tekst.
+
+**B2. Påstanden om at oversiktstabellen er «generert fra datasettene selv» gjort
+sann.**
+Før: tabelltekst hevdet at tabellen var generert fra datasettene, men bare rad- og
+kolonnetall var beregnet; korn og dekning var skrevet for hånd.
+Etter: dekning beregnes; korn er fortsatt kuratert, og tabellteksten sier nå
+eksplisitt at det er den eneste kuraterte kolonnen. Oppslaget mot formtabellen er
+sikret med `stopifnot(setequal(names(d), korn$objekt))`, slik at et uklassifisert
+objekt i datapakken stopper renderingen.
+Begrunnelse: en dokumentasjonspåstand som ikke holder, er verre enn ingen påstand.
+
+---
+
+## C. Vask: fra tom påstand til fullstendig regnskap
+
+**C1. Vasken er nå spesifisert som to navngitte inngrep (3.1.7, @tbl-vask).**
+Før: «Vaskingen er tilsvarende minimal og fullt spesifisert» etterfulgt av to
+setninger, hvorav den ene («snittstørrelser beholdes som manglende») ikke er et
+inngrep, men et ikke-inngrep.
+Etter: tabell med Id, inngrep, omfang, begrunnelse og hva alternativet ville kostet.
+V1 er fjerning av sanntidskanten; V2 er ommerking av node 0301 fra kildens «Oslo»
+til «Ufordelt (0301)». Deretter en eksplisitt liste over de fem tingene vi ikke gjør
+— ingen imputering, ingen uteliggerbehandling, ingen glatting eller
+forhåndssesongjustering, ingen revisjon av historikk, ingen enhetsharmonisering —
+med begrunnelse for hver.
+Begrunnelse: påstanden «ingenting er vasket» må bæres av et argument, ikke av at
+listen er kort. Argumentet er at en administrativ totaltelling ikke har målefeil å
+vaske bort — tallet *er* antallet vedtak — men at den har representasjonsvalg som
+må håndteres. Uten det argumentet står deskriptivdelen på løs grunn: leseren vet
+ikke om tallene er kildens egne eller våre.
+
+**C2. V2 er et nytt, tidligere udokumentert inngrep.**
+Ommerkingen av 0301 lå i koden (`met-paneler`-chunken) uten å være omtalt som
+databehandling.
+Begrunnelse: kilden gir restkategorien samme navn som totalen. Å endre etiketten er
+riktig, men det er et inngrep og skal stå i regnskapet.
+
+**C3. Ubalansen i bydelspanelet dokumentert.**
+Nytt: node 0301 er bare til stede i måneder der den har minst én husstand (162 av
+199 måneder mangler). Panelet er altså ubalansert.
+Begrunnelse: setningen «aggregér over enheter og få totalen» forutsetter at
+manglende rader er nuller. Det er sant her, og at det er sant, verifiseres — men
+det skulle vært sagt.
+
+---
+
+## D. Verifikasjon
+
+**D1. Kontrollen stopper nå faktisk renderingen (3.1.6, @tbl-kontroller).**
+Før: teksten lovet at «feiler én av dem etter en fremtidig dataoppdatering, feiler
+renderingen av tabellen — ikke analysen stille». Koden beregnet og skrev ut, men
+kastet ingen feil. Påstanden var usann.
+Etter: chunken avsluttes med en `stop()` dersom noen kontroll feiler, og tabellen
+har en statuskolonne.
+Begrunnelse: en kontroll som ikke kan feile, er ikke en kontroll.
+
+**D2. Prikkingskontrollen omformulert fra NA-telling til avstand til grensen.**
+Før: «Prikking (celler < 4) på analysenivåene / ingen manglende antallsverdier /
+0 NA». Fravær av NA er svakt bevis: en prikket celle trenger ikke komme som NA.
+Etter: to uavhengige argumenter. Minste observerte positive celle på analysenivåene
+er 277 husstander, to størrelsesordener over grensen på fire; og summeringsidentitetene
+holder eksakt, hvilket de ikke ville gjort dersom en celle var maskert. NA-tellingen
+beholdes som egen kontroll (K6), men gjør nå ikke jobben til prikkingskontrollen.
+Begrunnelse: den gamle formuleringen brukte ett svakt bevis der to sterke var
+tilgjengelige i dataene.
+
+**D3. To nye kontroller.**
+K4 (sammenhengende månedsrekke uten hull) og K6 (ingen manglende antallsverdier)
+er skilt ut som egne kontroller.
+Begrunnelse: hull i månedsrekka ville ødelagt både lag-operatorer og
+sesongkomponent, og var tidligere ikke sjekket i det hele tatt.
+
+---
+
+## E. Deskriptiv del: fra oppsummering til observasjoner
+
+**E1. Deskriptivdelen omskrevet til fem nummererte observasjoner med konsekvens
+(3.1.9).**
+Før: én tabell, ett avsnitt om nivå og volatilitet, og en figur.
+Etter: fem observasjoner, hver med et beregnet tall og en eksplisitt konsekvens for
+modellvalget.
+Begrunnelse: en deskriptiv del som bare rapporterer, gir leseren ingen grunn til å
+lese den. Hver observasjon skal enten begrunne et modellvalg eller felle et.
+
+**E2. Ny tabell: de seks største månedsendringene slått opp mot regelverkskalenderen
+(@tbl-hendelser).**
+Nytt funn: fem av de seks største månedsendringene i estimeringsutvalget faller på
+en datert regelendring (I01 inn og ut, I05 inn, I12, I14). Den sjette (termin mai
+2021) gjør det ikke, og er meldekortsagtannen.
+Begrunnelse: dette er den empiriske begrunnelsen for intervensjonsanalyse framfor
+uteliggerdeteksjon, og den sto ingen steder. Oppslaget er automatisk, ikke manuelt.
+
+**E3. Ny figur: mekanismetesten for 2025-skjermingen (@fig-vol).**
+Nytt funn, beregnet på Oslo-data: gjennomsnittlig absolutt månedsendring i
+behandlingsgruppen («husstander med midlertidige trygdeytelser») faller med faktor
+5,0 fra 2025, mens de fire øvrige brukergruppene faller med faktor 1,3 til 2,3.
+Begrunnelse: kapitlet hadde bare det nasjonale tallet (3 986 → 1 006 husstander) og
+brukte det som en fotnote til kalenderregressoren. Oslo-versjonen med
+kontrollgrupper er en helt annen type bevis: studien har ingen kontrollenhet i
+tidsdimensjonen — hele landet er behandlet samtidig — men den har fire kontroller i
+mekanismedimensjonen. Det gjør T3 til en skarp hypotese med en gruppe der effekten
+skal finnes og fire der den ikke skal.
+
+**E4. Aprilfallet 2024 presisert fra «over en femtedel» til beregnet verdi.**
+Før: «tok ut over en femtedel av bestanden på én termin».
+Etter: −25,2 %, beregnet ved rendering.
+Begrunnelse: se G1 — det gamle anslaget stammet fra en feil i kodeboken.
+
+---
+
+## F. Reproduserbarhet i selve dokumentet
+
+**F1. Hardkodede tall erstattet med inline-beregning.**
+Før: «114 månedsobservasjoner», «rundt sytten tusen mottakere», «om lag åtte
+prosent», «114 terminer × 17 kolonner», «(2017m1–2026m6)» — skrevet av for hånd i
+kapittel 2 og 3, seks steder.
+Etter: alle beregnes i oppsettchunken og settes inn med inline-R.
+Begrunnelse: neste datavintage gir 115 observasjoner. Hardkodede tall blir da feil
+uten at noe varsler om det, og et dokument med tall som ikke stemmer med sin egen
+datapakke, er verdiløst som kunnskapsgrunnlag.
+
+**F2. `stopifnot(nrow(analyse) == 114)` erstattet med `nrow(analyse) == n_est`.**
+Før: en magisk konstant som ville brutt renderingen ved neste dataoppdatering — og
+brutt den *feilaktig*, siden en lengre serie ikke er en feil.
+Etter: kravet utledes av estimeringsutvalget.
+Begrunnelse: en assertion skal fange feil, ikke fange normal utvikling.
+
+**F3. Ny kontroll mot duplisering i strømstøtte-joinen.**
+`left_join` mot `stromstotte` ville stille duplisert rader i X dersom kilden fikk
+mer enn én rad per utbetalingsmåned (for eksempel ved geografisk oppdeling, som
+allerede forekommer i kolonnen `geografi`). Lagt til
+`stopifnot(!any(duplicated(strom_termin$dato)))` og `stopifnot(nrow(X) == nrow(mnd_seq))`.
+Begrunnelse: joins mot oppslagstabeller er den vanligste stille feilen i denne typen
+kode, og den ville gitt feil regressorlengde uten noen synlig feilmelding.
+
+**F4. Meldekortgridet dekker nå hele serieperioden.**
+Før: `u_av_fase()` genererte 14-dagersgridet fra ankerdatoen 2014-01-06 og framover,
+slik at `u` var NA for alle måneder før 2014. Det gikk upåaktet hen fordi
+estimeringsutvalget starter i 2017.
+Etter: gridet rygges tilbake i hele 14-dagerssteg til før startdatoen, og
+`stopifnot(!anyNA(X$u), all(X$u %in% c(2, 3)))` fanger avviket dersom det oppstår
+igjen.
+Begrunnelse: en regressor med usynlige hull utenfor estimeringsvinduet er en felle
+for enhver robusthetsanalyse som utvider vinduet.
+
+**F5. UTF-8 sikret uavhengig av vertsmaskin.**
+Nytt: oppsettchunken setter UTF-8-locale dersom sesjonen ikke allerede har det.
+Begrunnelse: i C-locale skriver `knitr::kable()` ikke-ASCII-tegn som `<U+00E5>`.
+Dokumentet renderer riktig på Windows, men blir uleselig i container og i CI. Uten
+dette kan ikke byggingen automatiseres.
+
+**F6. Tusenskille byttet til hardt mellomrom (U+00A0).**
+Begrunnelse: med vanlig mellomrom brakk «20 849» over to linjer i tabellene. Det er
+den enkeltfeilen som gjorde de gamle tabellene vanskeligst å lese.
+
+**F7. Kodeekko slått av (`echo: false`).**
+Før: samtlige chunks skrev koden sin inn i PDF-en, som dermed inneholdt rå
+dplyr-pipelines midt i løpende tekst.
+Etter: koden er utelatt; kapitlet sier eksplisitt at koden ligger i `unt_1.qmd` og i
+`velferdsetaten-data/scripts/`, og hver tabell oppgir hvilket objekt den er beregnet
+fra.
+Begrunnelse: proveniens sikres av at koden er versjonert og navngitt, ikke av at den
+er limt inn i et dokument som skal leses av fagfolk i etaten.
+
+---
+
+## G. Faktafeil rettet i datapakkens dokumentasjon
+
+**G1. Aprilfallet 2024 i kodeboken.**
+Før: «I12 vinduslukking termin april 2024 (~25 000 ut nasjonalt; −21,6 % i Oslo på
+én termin)».
+Etter: «−25,2 % i Oslo på én termin, termin mars → termin april».
+Begrunnelse: −21,6 % er endringen fra termin mars (20 849) til termin **mai**
+(16 353), altså over to terminer og forbi bunnpunktet i april. Endringen på én
+termin er 20 849 → 15 588 = −25,2 %. Feilen understøttet formuleringen «over en
+femtedel» i metodekapitlet; begge er rettet.
+
+**G2. Skrivemåten av bydel 0312.**
+Kodeboken skrev «Grünerløkka», kilden skriver «Grunerløkka». Kodeboken sier nå
+eksplisitt at kildens skrivemåte gjelder ved join, og at navnet normaliseres først
+ved presentasjon.
+Begrunnelse: en join på bydelsnavn med kodebokens skrivemåte ville gitt tom match.
+
+**G3. Referanse til slettet fil.**
+Kodebokens avsnitt 5 pekte på `03-metode-del1.qmd`. Peker nå på metodekapitlet i
+`unt_1.qmd`, og kolonnetallet er oppdatert fra 17 til 19.
+
+**G4. To nye feller lagt til kodebokens felleliste.**
+Ubalansen i bydelspanelet (felle 9) og navnekollisjonen for node 0301 (felle 10).
+
+---
+
+## H. Dokumentoppsett
+
+**H1. Egen Typst-mal (`mal/typst-template.typ`).**
+Før: Quartos standardmal. Resultatet var brede tabeller med kolliderende kolonner,
+tall som brakk over linjeskift, engelske kryssreferanser («Section 2.2»), numeriske
+siteringer i klammeparentes, ingen tittelside, ingen innholdsfortegnelse og ingen
+kolumnetittel.
+Etter: A4 med tilpassede marger, tittelside, innholdsfortegnelse, kolumnetittel,
+kapitler på ny side, booktabs-tabeller (linje over, under hodet og under tabellen —
+ingen vertikale streker), venstrejusterte figur- og tabelltekster med halvfet
+etikett, tabularfigurer slik at sifrene flukter, og brekkbare tabeller slik at en
+lang tabell ikke etterlater en halvtom side.
+Begrunnelse: dokumentet skal kunne legges fram for fagfolk i etaten. Standardrenderingen
+signaliserte at ingen hadde sett på resultatet.
+
+**H2. Språk satt til norsk bokmål (`lang: nb`).**
+Effekt: «Tabell», «Figur», «Ligning» i kryssreferanser i stedet for engelske
+prefikser, og korrekt norsk orddeling. `crossref: sec-prefix: "avsnitt"` overstyrer
+Quartos «Seksjon», som er et anglisisme.
+Begrunnelse: «jf. Section 2.2» midt i en norsk setning, og orddelingen
+«inntek-tssikring», er feil et fagfellevurderende blikk fester seg ved umiddelbart.
+
+**H3. Siteringer lagt om fra nummer til forfatter–år (`citeproc: true`).**
+Før: «modelleres etter G. E. P. Box and G. C. Tiao [15]» — Typsts egen numeriske
+stil, med engelsk «and».
+Etter: «modelleres etter Box og Tiao (1975)», med referanseliste i forfatter–år og
+norske bindeord.
+Begrunnelse: nummerert IEEE-stil hører ikke hjemme i norsk samfunnsøkonomisk
+litteratur, og engelske bindeord midt i norsk tekst er en språkfeil.
+
+**H4. Bare innebygde fonter.**
+Malen bruker Libertinus Serif og DejaVu Sans Mono, som Typst har innebygd.
+Begrunnelse: en fontstabel gir ulikt resultat på ulike maskiner og fyller
+byggeloggen med «unknown font family». Med innebygde fonter er PDF-en identisk på
+Windows, macOS og i CI, og byggeloggen er ren.
+
+**H5. To ligningsfeil rettet.**
+`\!` (negativt tynt mellomrom) støttes ikke av Typst og ble satt som en skråstrek
+midt i uttrykket — synlig i @eq-bostotte og @eq-estimand. Fjernet begge steder.
+
+**H6. Y-aksen i @fig-serie er ikke lenger nullpunktforankret.**
+Begrunnelse: bevegelsene kapitlet beskriver, er på 5–25 prosent av nivået. Mot en
+akse fra null forsvant de. Valget er notert i figurteksten, slik at leseren ikke
+villedes.
+
+**H7. @fig-vol satt som hantelfigur, ikke helningsfigur.**
+Begrunnelse: med fem grupper og tette verdier kolliderte serieetikettene. I
+hantelfiguren bærer y-aksen identiteten, og avstanden mellom punktene er selve
+budskapet.
+
+---
+
+## I. Opprydding i repoet
+
+| Fjernet eller flyttet | Begrunnelse |
+|:---|:---|
+| `velferdsetaten-data/scripts/__pycache__/` | Python-bytekode. Regenereres av tolkeren; skal aldri versjoneres. Lagt inn i `.gitignore`. |
+| `velferdsetaten-data/data/raw/hb_aarsrapporter.html` | Duplikat-scrape av samme side som `hb_arsrapporter.html`, ulikt innhold fordi den ble hentet på nytt. To kopier av samme kilde uten at det er sagt hvilken som gjelder, er verre enn én. |
+| `velferdsetaten-data/scripts/extract_bostotte.py` | Erstattet av `extract_bostotte_v2.py`. Datakildedokumentasjonen viser bare til v2. |
+| `03-metode-del1.qmd` | 66 % av linjene var duplisert inn i `unt_1.qmd`, med avvikende avsnittsrekkefølge og en `sec-met-sett`-referanse som ikke lenger fantes. To versjoner av samme kapittel holdes ikke i takt. |
+| `explore_app.py`, `explore_vars.py`, `debug_kommune.py` → `scripts/utforsking/` | Kartleggingsskript fra byggedagen. De hører til dokumentasjonen av hvordan datamodellen ble funnet, ikke til uttrekksløypa. Flyttet, ikke slettet, og omtalt i `datakilder.md`. |
+
+`.gitignore` utvidet med `__pycache__/`, `*.py[cod]` og Typst-mellomfiler.
+
+---
+
+## Ikke endret — bevisste valg
+
+Kapittel 1 og 2 er ikke revidert på nytt i denne runden; endringene der er begrenset
+til de seks hardkodede tallene i F1. Modell-, protokoll- og evalueringsdelen (del 2)
+er fortsatt en stub. Intervensjonsmatrisen og kalenderregressoren er innholdsmessig
+uendret; endringene i de avsnittene er de tre nye kontrollene (F3, F4) og
+oppdaterte referanser. De to PDF-ene i rotkatalogen er ikke rørt — de er ikke sitert
+i `referanser.bib`, men det er en beslutning om litteraturgrunnlag, ikke om rydding.
+
+## Reproduksjon
+
+```
+quarto render unt_1.qmd
+```
+
+Bygger dokumentet uten advarsler. Feiler en av verifikasjonskontrollene i 3.1.6,
+stopper byggingen med melding om hvilken. Avhengigheter: R med `tidyverse` og
+`knitr`, Quarto ≥ 1.7 (Typst-motoren følger med). Ingen LaTeX kreves.
