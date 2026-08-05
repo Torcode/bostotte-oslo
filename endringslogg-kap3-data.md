@@ -572,3 +572,49 @@ et konstruert tall.
 protokolltallene oppdatert til åtte modeller),
 `velferdsetaten-data/data/clean/forhandsanslag.csv` (ny),
 `velferdsetaten-data/scripts/velferdsetaten_data.R`, `kodebok.md`, `datakilder.md`.
+
+## M4. Kildesøk etter de manglende anslagene (5. august 2026)
+
+Søkt etter husstandstall for høstpakken 2024, som M3 flagget som åpen oppgave.
+Ett nytt anslag funnet, ett hull bekreftet lukket som ikke-eksisterende, og ett
+metodisk funn på kjøpet.
+
+**Funnet: koronavinduet har et publisert anslag.** Husbankens pressemelding
+14. juni 2020 oppgir at «om lag 13 000 husstander ekstra kan få bostøtte som følge
+av økte inntektsgrenser». Lagt inn som I01 med `anslag_type = samtidig`, ikke
+`forhaand`: den ble publisert to terminer *inn* i vinduet, og kunne derfor ikke
+vært brukt i en prognose laget før april 2020. Skillet står i tabellen fordi det
+avgjør om anslaget kan brukes operativt eller bare til å kalibrere metoden.
+
+Med I01 har tre hendelser nå både et publisert anslag og en estimerbar koeffisient:
+koronavinduet, strømvinduets åpning og avviklingen i april 2024. T5 har dermed tre
+kalibreringspunkter i stedet for ett.
+
+**Hullet er bekreftet, ikke bare antatt.** Fire kildefamilier gjennomsøkt for
+høstpakken 2024: Husbankens årsrapporter 2024 og 2025, Prop. 104 S (2023–2024),
+Husbankens egen pressemelding om revidert nasjonalbudsjett, og Innst. 16 S
+(2024–2025). Alle oppgir kroner — 85 mill. for boutgiftstaket, 22 mill. for
+oppvarmingstillegget, 8 mill. for 18/19-årsregelen — og ingen oppgir husstander.
+Radene står nå som `ingen` med søkedato og kildeliste, slik at neste person ikke
+gjentar søket. For oppvarmingstillegget ville en omregning fra kroner dessuten vært
+direkte feil: tillegget gikk til *eksisterende* mottakere og hevet beløp framfor å
+utvide kretsen.
+
+**Det metodiske funnet: rå før-og-etter-differanser duger ikke til kalibrering.**
+Ved å regne realisert endring mot publisert anslag for de tre hendelsene, kommer
+forholdet ut mellom om lag 0,5 og 0,8 — altså at anslagene systematisk overdriver.
+Den konklusjonen holder ikke, og grunnen er tre forhold kapitlet allerede har
+dokumentert hver for seg: positive endringer fases inn gradvis, så en kort
+etterperiode undervurderer effekten; hendelsene overlapper, så nedgangen etter
+april 2024 motvirkes delvis av høstpakken fra juli; og kalendersagtannen på 7–10 %
+dominerer enhver enkeltmåneds differanse. Spriket måler altså metoden, ikke
+anslagene.
+
+Avsnitt 3.6.1 har fått et eget punkt om dette, og T5 er allerede formulert mot den
+estimerte koeffisienten framfor mot en differanse — nå med begrunnelsen skrevet ut.
+Tallene fra det rå regnestykket er bevisst *ikke* tatt inn i kapitlet: de ville
+blitt lest som et resultat, og de er ikke det.
+
+**Filer endret:** `velferdsetaten-data/data/clean/forhandsanslag.csv` (I01 lagt til,
+kildelister og søkedato på 2024-radene), `unt_1.qmd` (3.6.1), `kodebok.md`,
+`datakilder.md`.
