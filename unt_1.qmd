@@ -67,7 +67,7 @@ if (!isTRUE(l10n_info()[["UTF-8"]])) {
 # to linjer i tabellene — den feilen preget den forrige versjonen av PDF-en.
 nb  <- function(x, d = 0) formatC(x, format = "f", digits = d,
                                   big.mark = " ", decimal.mark = ",")
-pst <- function(x, d = 1) paste0(nb(x, d), " %")
+pst <- function(x, d = 1) paste0(nb(x, d), "\u00a0%")
 mnd <- function(x) paste0(lubridate::year(x), "m", lubridate::month(x))
 kab <- function(x, ...) {
   knitr::kable(x, format.args = list(big.mark = " ", decimal.mark = ","), ...)
@@ -363,7 +363,7 @@ To hull dokumenteres like eksplisitt som kildene, fordi et kjent hull er en anne
 
 ### Fire former — hva formen bestemmer {#sec-met-former}
 
-Datagrunnlaget består av tjue datasett. De er ikke tjue ulike ting å lære seg. En *form* sier ikke hva et datasett handler om, men hvordan det er lagret: hvilken enhet én rad representerer — **kornet** — og dermed hvilken operasjon som er lovlig uten videre bearbeiding. Fire former dekker alle tjue. @tbl-former gir for hver av dem kornet, det kanoniske grepet og den karakteristiske feilen formen inviterer til.
+Datagrunnlaget består av tjueen datasett. De er ikke tjue ulike ting å lære seg. En *form* sier ikke hva et datasett handler om, men hvordan det er lagret: hvilken enhet én rad representerer — **kornet** — og dermed hvilken operasjon som er lovlig uten videre bearbeiding. Fire former dekker alle sammen. @tbl-former gir for hver av dem kornet, det kanoniske grepet og den karakteristiske feilen formen inviterer til.
 
 | Form | Kornet: én rad er | Kanonisk grep | Karakteristisk feil |
 |:---------|:------------------|:------------------|:----------------------------|
@@ -380,9 +380,9 @@ Datagrunnlaget består av tjue datasett. De er ikke tjue ulike ting å lære seg
 
 *Form 3 — statistikk-kuber i langformat* (SSB- og Oslo-statbanktabellene). Én rad er én celle, med kode-, navn- og verdikolonner. En kube er ikke en serie før alle dimensjoner unntatt tid er låst. Toromsleien i Oslo og Bærum krever for eksempel `Soner2_kode == "01"`, `AntRom_kode == "2"` og `ContentsCode_kode == "Husleie"` — tre filtre for én tallrekke. Uten full nedlåsing summerer man over en glemt dimensjon og får et tall som ser plausibelt ut. Det er kubefellen, og grunnen til at hver kube i denne analysen bare brukes gjennom navngitte filteroppskrifter, dokumentert i kodeboken.
 
-*Form 4 — oppslagstabeller* (`intervensjoner`, `parametre`, `stromstotte`, `grunnbelop`). Én rad er én datert regelendring med mekanisme, forventet fortegn og verifiseringsstatus; en regelparameter; et månedsbeløp; et G-vedtak. Disse brukes aldri som serier. De *genererer* de deterministiske regressorene i @sec-met-x og forsyner regelmotorens konstanter.
+*Form 4 — oppslagstabeller* (`intervensjoner`, `parametre`, `stromstotte`, `grunnbelop`, `arsrapport`). Én rad er én datert regelendring med mekanisme, forventet fortegn og verifiseringsstatus; en regelparameter; et månedsbeløp; et G-vedtak; et publisert nasjonalt årstall. Disse brukes aldri som serier. De *genererer* de deterministiske regressorene i @sec-met-x og forsyner regelmotorens konstanter.
 
-@tbl-datasett plasserer alle tjue objektene i denne inndelingen. Rad- og kolonnetall er telt programmatisk fra objektene, og oppslaget mot formtabellen er sikret med en konsistenssjekk: dersom datapakken en dag inneholder et objekt som ikke er klassifisert, stopper renderingen.
+@tbl-datasett plasserer alle objektene i denne inndelingen. Rad- og kolonnetall er telt programmatisk fra objektene, og oppslaget mot formtabellen er sikret med en konsistenssjekk: dersom datapakken en dag inneholder et objekt som ikke er klassifisert, stopper renderingen.
 
 ```{r}
 #| label: tbl-datasett
@@ -409,7 +409,8 @@ korn <- tribble(
   "intervensjoner",          "4 oppslag",  "én datert regelendring",
   "parametre",               "4 oppslag",  "én regelparameter",
   "stromstotte",             "4 oppslag",  "én utbetalingsmåned",
-  "grunnbelop",              "4 oppslag",  "ett G-vedtak (1. mai)"
+  "grunnbelop",              "4 oppslag",  "ett G-vedtak (1. mai)",
+  "arsrapport",              "4 oppslag",  "ett publisert årstall (nasjonalt)"
 )
 
 # Kontrakt: hvert objekt i datapakken skal være klassifisert, og hver
@@ -540,6 +541,28 @@ k6 <- sum(is.na(d$oslo$ant_husstander_termin),
           is.na(d$oslo_bydel$ant_husstander_termin),
           is.na(d$brukergruppe$ant_husstander_termin))
 
+# K7 saksidentiteten: behandlede saker = innvilget + avslag. Holder den, er
+# ant_soknader en lineærkombinasjon og ikke selvstendig informasjon (@sec-met-observasjoner).
+k7 <- d$oslo |> filter(ant_husstander_termin > 0) |>
+  summarise(mx = max(abs(ant_soknader - ant_avslag - ant_husstander_termin))) |> pull(mx)
+
+# K8 summeringskonsistens for ALLE mål, ikke bare antallet
+maal <- c("ant_husstander_utbetaling", "ant_husstander_termin", "ant_soknader",
+          "ant_avslag", "utbetalt_belop", "ant_over_tak")
+avvik_maal <- function(panel) {
+  max(map_dbl(maal, \(m) {
+    panel |> summarise(s = sum(.data[[m]], na.rm = TRUE), .by = dato) |>
+      inner_join(d$oslo |> select(dato, tot = all_of(m)), by = "dato") |>
+      summarise(mx = max(abs(s - tot))) |> pull(mx)
+  }))
+}
+k8 <- max(avvik_maal(d$oslo_bydel), avvik_maal(d$brukergruppe))
+
+# K9 beløpsidentiteten: utbetalt beløp delt på antall skal gi snittkolonnen
+k9 <- d$oslo |> filter(ant_husstander_utbetaling > 0, !is.na(gjsnitt_bostotte)) |>
+  summarise(mx = max(abs(utbetalt_belop / ant_husstander_utbetaling - gjsnitt_bostotte))) |>
+  pull(mx)
+
 kontroller <- tribble(
   ~Kontroll, ~Krav, ~Resultat, ~ok,
   "K1  Kalenderidentitet: termin(m) = utbetaling(m+1)",
@@ -553,7 +576,13 @@ kontroller <- tribble(
   "K5  Prikkingsgrense (kilden prikker celler < 4)",
     "minste celle ≥ 4 utenom restnoden", sprintf("minste celle: %s", nb(minste)), minste >= 4,
   "K6  Manglende antallsverdier",
-    "ingen NA", sprintf("%s NA", nb(k6)), k6 == 0
+    "ingen NA", sprintf("%s NA", nb(k6)), k6 == 0,
+  "K7  Saksidentitet: søknader − avslag = mottakere",
+    "avvik = 0", sprintf("%s husstander", nb(k7)), k7 == 0,
+  "K8  Begge disaggregeringer summerer for alle seks mål",
+    "maks avvik = 0", sprintf("%s", nb(k8)), k8 == 0,
+  "K9  Beløpsidentitet: beløp / antall = snittkolonne",
+    "avvik < 1 øre", sprintf("%s kr", nb(k9, 3)), k9 < 0.01
 )
 
 # Kontrakten dokumentet gir leseren: bygger PDF-en, holdt alle kontrollene.
@@ -568,7 +597,48 @@ kontroller |>
   kab(align = "lllc")
 ```
 
-Kontrollene sier tre ting. Begge kalendrene bærer identisk informasjon, slik @eq-kalenderidentitet krever, og forskyvningen kan derfor brukes uten informasjonstap. Hierarkiet og brukergruppesnittet summerer eksakt, hvilket er forutsetningen for avstemt prognose — og samtidig et bevis for at prikkingen ikke har truffet: en maskert celle ville brutt summen. Og minste observerte celle blant de femten bydelene og de fem brukergruppene er `r nb(minste)` husstander — to størrelsesordener over prikkingsgrensen på fire, så avstanden til maskeringssonen er ikke marginal. Ett unntak fortjener å nevnes framfor å skjules: den ufordelte restnoden 0301 ligger på 0–`r nb(maks_0301)` husstander og er dermed *inne i* prikkingssonen. Nettopp derfor er summeringskontrollen det bærende argumentet — hadde noden vært maskert i én måned, ville bydelssummen avveket fra totalen den måneden, og K2 ville feilet.
+Kontrollene sier fire ting. Begge kalendrene bærer identisk informasjon, slik @eq-kalenderidentitet krever, og forskyvningen kan derfor brukes uten informasjonstap. Hierarkiet og brukergruppesnittet summerer eksakt, hvilket er forutsetningen for avstemt prognose — og samtidig et bevis for at prikkingen ikke har truffet: en maskert celle ville brutt summen. Og minste observerte celle blant de femten bydelene og de fem brukergruppene er `r nb(minste)` husstander — to størrelsesordener over prikkingsgrensen på fire, så avstanden til maskeringssonen er ikke marginal. Ett unntak fortjener å nevnes framfor å skjules: den ufordelte restnoden 0301 ligger på 0–`r nb(maks_0301)` husstander og er dermed *inne i* prikkingssonen. Nettopp derfor er summeringskontrollen det bærende argumentet — hadde noden vært maskert i én måned, ville bydelssummen avveket fra totalen den måneden, og K2 ville feilet. Og K7 til K9 sier noe kontrollene i den forrige versjonen ikke fanget: summeringen holder for *alle seks* mål og ikke bare for antallet, beløpskolonnene er aritmetisk forenlige med hverandre — og søknadsserien er en lineærkombinasjon av de to andre. Det siste er ikke bare en bestått kontroll; det endrer hva serien kan brukes til, og behandles derfor som et funn i @sec-met-observasjoner.
+
+### Ekstern validering: uttrekket mot publiserte tall {#sec-met-ekstern}
+
+Regnskapsidentitetene i @sec-met-verifikasjon er *interne*: de viser at uttrekket er konsistent med seg selv. De ville også holdt om hele uttrekket var systematisk feil. Den sterkeste tilgjengelige kontrollen er derfor ekstern: å regne uttrekket opp mot tall Husbanken selv har publisert.
+
+Årsrapportenes tabell 3.1 gir nasjonale årstall for antall husstander som mottok bostøtte i løpet av året og for utbetalt beløp [@husbanken2025aars]. Beløpet er direkte sammenliknbart — summen av månedlige utbetalinger over kalenderåret skal treffe det publiserte tallet. Antallet er det ikke: det publiserte tallet teller *unike* husstander gjennom året, mens uttrekket er en månedsbeholdning. Forholdet mellom de to er likevel informativt, fordi det måler gjennomstrømmingen, og en brå endring i det forholdet ville tydet på et brudd i telleregelen. @tbl-ekstern stiller de to opp mot hverandre.
+
+```{r}
+#| label: tbl-ekstern
+#| tbl-cap: "Uttrekket mot Husbankens publiserte nasjonale årstall (årsrapport 2025, tabell 3.1). Beløp er direkte sammenliknbart. Antall er ikke: publisert tall er unike husstander gjennom året, uttrekket er månedsbeholdning — forholdet mellom dem måler gjennomstrømming."
+
+ekstern <- d$nasjonalt |>
+  filter(aar %in% d$arsrapport$aar) |>
+  summarise(uttrekk_mill = sum(utbetalt_belop, na.rm = TRUE) / 1e6,
+            snitt_mnd    = mean(ant_husstander_utbetaling),
+            maks_mnd     = max(ant_husstander_utbetaling), .by = aar) |>
+  inner_join(d$arsrapport, by = "aar") |>
+  mutate(avvik_pst = 100 * (uttrekk_mill - utbetalt_bostotte_mill) / utbetalt_bostotte_mill,
+         omlop     = husstander_unike_aaret / snitt_mnd) |>
+  arrange(aar)
+
+# Ekstern validering er bare en kontroll hvis den kan feile.
+stopifnot(max(abs(ekstern$avvik_pst)) < 5,
+          all(ekstern$maks_mnd <= ekstern$husstander_unike_aaret))
+
+ekstern |>
+  transmute(År = as.character(aar),
+            `Publisert (mill. kr)` = nb(utbetalt_bostotte_mill),
+            `Uttrekk (mill. kr)`   = nb(uttrekk_mill),
+            `Avvik`                = pst(avvik_pst, 2),
+            `Publiserte unike`     = nb(husstander_unike_aaret),
+            `Snitt mnd.`           = nb(snitt_mnd),
+            `Omløp`                = nb(omlop, 2)) |>
+  kab(align = "lrrrrrr")
+```
+
+Valideringen gir to svar, og det ene av dem er en begrensning.
+
+*Uttrekket treffer.* Avviket i utbetalt beløp er `r pst(max(abs(ekstern$avvik_pst)), 1)` eller mindre i alle fem år, og omløpstallet ligger stabilt mellom `r nb(min(ekstern$omlop), 2)` og `r nb(max(ekstern$omlop), 2)` — ingen endring i telleregelen har sneket seg inn i serien. Maks månedsbeholdning er lavere enn antall unike husstander i alle år, som den må være.
+
+*Men uttrekket er omregnet rett, ikke utbetalt beløp.* Avviket er ensidig negativt fra 2022 og framover, mens `r ekstern$aar[which.min(abs(ekstern$avvik_pst))]` stemmer eksakt. Et systematisk underskudd på om lag én prosent er akkurat det etterkontrollen mot skatteoppgjøret produserer: statistikkbanken viser omregnet rett etter tilbakekreving, årsrapporten viser hva som faktisk ble utbetalt det året. Dette er den empiriske bekreftelsen på revisjonsmekanismen @sec-met-dv beskriver, og den har en konsekvens: beløpsserien modellerer *rett*, ikke kasse. For antallsserien — studiens utfall — er forskjellen uten betydning, siden et vedtak som senere omregnes i kroner fortsatt var et positivt vedtak.
 
 ### Vask: to inngrep, og de vi ikke gjør {#sec-met-vask}
 
@@ -648,7 +718,9 @@ oslo_est |>
 
 **Observasjon 1: nivået er høyt og persistensen sterk.** @tbl-deskriptiv gir tallene: rundt `r nb(M_snitt)` mottakere med et standardavvik på `r nb(M_sd)` — `r pst(M_cv)` av snittet. Det bekrefter beholdningsstrukturen i @eq-stockflow og forklarer hvorfor naive referanser er sterke motstandere: å gjenta forrige måned er en god prognose i en serie der bare inn- og utstrømmen kan flytte nivået. Konsekvens: enhver mer kompleks modell må slå sesongnaiv i ekte ut-av-utvalg-test, ikke i tilpasning (T1).
 
-**Observasjon 2: saksvolumet er mangedoblet mottakstallet.** Søknadsserien ligger godt over mottakstallet fordi den teller terminbehandlede saker inkludert maskinell videreføring, og avslagene er verken trivielle eller konstante. Begge er kandidater til ledende informasjon om strømmene i @eq-stockflow, men inngår ikke i hovedspesifikasjonens antallsmodell — de er strømningsstørrelser i samme kalender, ikke prediktorer som er kjent på forhånd.
+**Observasjon 2: av de tre seriene er bare to uavhengige — og den tredje leder ingenting.** Kontroll K7 i @tbl-kontroller viser at søknader minus avslag er *identisk lik* mottakertallet, i hver eneste måned og på hvert aggregeringsnivå. `ant_soknader` er altså ikke en observasjon ved siden av utfallet, men summen av innvilgede og avslåtte saker i terminkjøringen — en definisjonsmessig identitet, ikke data. Av de tre seriene i @tbl-deskriptiv er det derfor bare to frihetsgrader, og den ekstra informasjonen ligger i avslagene alene.
+
+Avslagene er heller ikke ledende. Avslagsandelen samvarierer negativt med endringen i mottakertallet i *samme* måned og positivt i den neste — mekanisk tilbakeslag — men korrelasjonen forsvinner ved to måneders lag. En serie som først røper seg samtidig med utfallet, kan ikke varsle det. Konsekvens: verken søknader eller avslag inngår som prediktorer, og begrunnelsen er nå empirisk framfor en henvisning til at de ligger i samme kalender. Det er samtidig en presisering av kapittel 2: strømmene $I_t$ og $U_t$ i @eq-stockflow er ikke observert i dette datagrunnlaget, og lar seg ikke rekonstruere fra søknads- og avslagskolonnene.
 
 **Observasjon 3: de store bevegelsene er daterte regelendringer, ikke trend.** @tbl-hendelser lister de seks største månedsendringene i estimeringsutvalget og slår dem opp mot den kuraterte regelverkskalenderen.
 
@@ -995,6 +1067,67 @@ Fire regler gjelder ved hver opprinnelse.
 
 **Stratifisering.** Hvert prognosepunkt merkes som *bruddnært* dersom målmåneden ligger innenfor tre måneder av en datert intervensjon fra `intervensjonstabell.csv`, ellers som *rolig*. Evalueringen rapporteres samlet og stratifisert. Grunnen er at gjennomsnittet over alle måneder kan skjule det som betyr mest: en modell som er marginalt bedre i rolige perioder, men vesentlig bedre rundt bruddene, er den nyttige modellen i drift — og den forskjellen forsvinner i et samlet MASE-tall.
 
+### En regressor kan ikke estimeres før hendelsen har skjedd {#sec-met-identifikasjon}
+
+Protokollen over har en konsekvens som er lett å overse fram til den bryter kjøringen, og som endrer hva studien kan konkludere med. En intervensjonsregressor er null helt til hendelsen inntreffer. Ved en prognoseopprinnelse *før* hendelsen er kolonnen derfor identisk null i treningsvinduet, designmatrisen er rangdefekt, og koeffisienten finnes ikke — uansett hvor godt regelendringen er dokumentert i regelverkskalenderen.
+
+@tbl-identifikasjon viser omfanget. Det er ikke marginalt.
+
+```{r}
+#| label: tbl-identifikasjon
+#| tbl-cap: "Identifiserbarhet per prognoseopprinnelse. «Ikke-null i trening» er antall observasjoner der regressoren er forskjellig fra null i treningsvinduet; en regressor med færre enn seks slike kan ikke estimeres meningsfullt. «Rammede punkter» teller prognosepunkter der regressoren er aktiv i målmåneden, men ikke var estimerbar ved opprinnelsen."
+
+MIN_NZ <- 6   # minste antall ikke-null observasjoner for at en regressor slipper inn
+REG    <- c("win_covid", "win_strom", "pakke_2024h2", "k_pre", "k_post")
+
+X_est <- oslo_est |> select(dato) |> left_join(X, by = "dato")
+
+# Er regressoren estimerbar i treningsvinduet ved hver opprinnelse?
+estimerbar <- expand_grid(opprinnelse = opprinnelser, regressor = REG) |>
+  mutate(nz = map2_int(opprinnelse, regressor,
+                       \(t0, r) sum(X_est[[r]][X_est$dato <= t0] != 0)),
+         ok = nz >= MIN_NZ)
+
+# Er regressoren aktiv i målmåneden?
+aktiv <- expand_grid(opprinnelse = opprinnelser, h = 1:H_MAKS, regressor = REG) |>
+  mutate(maal = opprinnelse %m+% months(h),
+         paa  = map2_lgl(maal, regressor, \(m, r) {
+           v <- X[[r]][X$dato == m]; length(v) == 1 && v != 0
+         }))
+
+# Et prognosepunkt er rammet dersom en aktiv regressor ikke var estimerbar
+rammet <- aktiv |>
+  left_join(estimerbar, by = c("opprinnelse", "regressor")) |>
+  mutate(mangler = paa & !ok)
+
+celler <- rammet |> summarise(udekket = sum(mangler), .by = c(opprinnelse, h))
+andel_rammet <- 100 * mean(celler$udekket > 0)
+
+estimerbar |>
+  summarise(uten = sum(!ok),
+            inn  = if (any(ok)) mnd(min(opprinnelse[ok])) else "aldri",
+            .by = regressor) |>
+  left_join(rammet |> summarise(punkter = sum(mangler), .by = regressor),
+            by = "regressor") |>
+  transmute(Regressor = regressor,
+            `Opprinnelser uten identifikasjon` = uten,
+            `Første opprinnelse der den slipper inn` = inn,
+            `Rammede punkter` = punkter) |>
+  kab(align = "lrlr")
+```
+
+Av de `r nb(n_prognosepkt)` prognosepunktene er `r pst(andel_rammet, 0)` slik at minst én aktiv regressor ikke kunne estimeres ved opprinnelsen. Andelen stiger med horisonten — fra `r pst(100 * mean(celler$udekket[celler$h == 1] > 0), 0)` på én måned til `r pst(100 * mean(celler$udekket[celler$h == H_MAKS] > 0), 0)` på tolv — fordi lengre horisonter når lenger inn i regelendringer som ennå ikke har inntruffet.
+
+**Protokollens svar: en eksplisitt inngangsregel.** En regressor inngår i spesifikasjonen ved opprinnelse $\tau$ hvis og bare hvis den har minst `r nb(MIN_NZ)` ikke-null observasjoner i treningsvinduet; ellers utelates den for den opprinnelsen. Regelen er deterministisk og logges, slik at spesifikasjonen ved hver opprinnelse er kjent. Alternativet — å la modelltilpasningen selv droppe kollineære kolonner — ville gitt samme resultat i stillhet, og «M6» ville da vært syv ulike modeller uten at noen sto oppført.
+
+**Og en presisering av hva studien kan konkludere med.** Gevinsten av å modellere kjente regelendringer eksplisitt deler seg i to regimer som må rapporteres hver for seg:
+
+*Regelendringen har trådt i kraft.* Koeffisienten er estimert på observerte data, og modellen kan framskrive nivået. Dette er det gunstige regimet, og det er her T2 skal slå ut.
+
+*Regelendringen er vedtatt, men ikke trådt i kraft.* Koeffisienten finnes ikke i serien. Regelverkskalenderen forteller modellen at noe kommer og nøyaktig når — men ikke hvor mye. En prognose kan da bare bære endringen dersom effektstørrelsen hentes *utenfor* serien.
+
+Det andre regimet er ikke en svakhet ved designet; det er innholdet i underspørsmål **UB**, og datagrunnlaget gir det et skarpere svar enn spørsmålet ble stilt med. Studien har dessuten kilden som trengs: for avviklingen i april 2024 forelå departementets anslag på 20 000–25 000 mottakere nasjonalt *på forhånd* [@dagsavisen2024; @pensjonistforbundet2024], og Husbankens årsrapport bekreftet om lag 25 000 i etterkant [@husbanken2024aars]. Et forhåndsanslag omregnet til Oslos andel er dermed en tilgjengelig, datert og etterprøvbar prior — nøyaktig den informasjonen en prognose i drift ville hatt. Om den skal brukes som pålagt koeffisient i en egen modellvariant, er et designvalg som tas i kapitlets andre del; her fastslås bare at muligheten finnes og at den er den eneste som finnes.
+
 ## Evaluering og inferens {#sec-met-evaluering}
 
 **Punktpresisjon.** MAE og RMSE per horisont, og MASE (@eq-mase) som skalafritt hovedmål. Nevneren er sesongnaiv gjennomsnittlig absoluttfeil beregnet *innenfor treningsvinduet ved hver opprinnelse* [@hyndmankoehler2006] — ikke på hele utvalget, som ville gjort nevneren avhengig av data modellen ikke hadde sett.
@@ -1007,6 +1140,8 @@ Fire regler gjelder ved hver opprinnelse.
 
 Å velge test etter om paret er nøstet, er ikke pedanteri: en DM-test som feilaktig ikke forkaster, ville fått studien til å konkludere med at regelverksinformasjon *ikke* hjelper, når den i virkeligheten bare hadde brukt feil test.
 
+**Stratifisering på identifikasjon.** I tillegg til bruddnær og rolig stratifiseres evalueringen på om alle aktive regressorer var estimerbare ved opprinnelsen (@sec-met-identifikasjon). Uten den delingen blander hovedtallet sammen to regimer som svarer på hvert sitt spørsmål, og gjennomsnittet undervurderer M6 der modellen faktisk har informasjonen — samtidig som det overvurderer den der modellen umulig kan ha den.
+
 **Intervaller.** Empirisk dekning på 80 og 95 prosent, rapportert per horisont, sammen med intervallskåren i @eq-winkler — en strengt proper skåringsregel som ikke kan spilles ved å være systematisk for bred eller for smal [@gneiting2007]. Dekning uten skarphet er verdiløs: et intervall fra null til uendelig dekker alltid. De to rapporteres derfor sammen, aldri hver for seg.
 
 **Konformal etterkalibrering.** Der modellintervallene underdekker — forventet rundt brudd [@makridakis2022b] — kalibreres de konformalt. Skjemaet er rullerende og respekterer tidsretningen: for horisont $h$ og opprinnelse $\tau$ bygges intervallet av den empiriske kvantilen til $|e_h|$ fra *alle opprinnelser strengt før* $\tau$. Kalibreringssettet inneholder dermed aldri informasjon fra prognosepunktet det kalibrerer. Dekningsgarantien i den klassiske konformale teorien hviler på utvekslbarhet [@vovk2005; @romano2019], som en tidsserie med brudd ikke oppfyller; garantien er derfor tilnærmet, og varianten er den som er utviklet for avhengige data [@xu2023]. Denne forutsetningen sies her framfor å underforstås, siden en eksakt garanti er nettopp det metoden ofte selges på.
@@ -1018,7 +1153,7 @@ Fire regler gjelder ved hver opprinnelse.
 | | Implikasjon | Operasjonalisering | Faller dersom |
 |:----|:-----------------|:-----------------------|:----------------------|
 | **T1** | Struktur slår naive referanser | MASE for M6 mot M1 og M0, per horisont 1–12 | MASE $\geq 1$ på flertallet av horisontene |
-| **T2** | Eksplisitte intervensjoner hjelper — mest på intervallene | M6 mot M3, stratifisert på bruddnære og rolige punkter; Clark–West på punktfeil, dekningsdifferanse på intervaller | ingen dekningsgevinst i de bruddnære vinduene |
+| **T2** | Eksplisitte intervensjoner hjelper — mest på intervallene | M6 mot M3, stratifisert på bruddnære og rolige punkter *og* på om regressoren var estimerbar (@sec-met-identifikasjon); Clark–West på punktfeil, dekningsdifferanse på intervaller | ingen dekningsgevinst i de bruddnære vinduene der regressoren var estimerbar |
 | **T3** | Kalendereffekten er stor før 2025 og eksakt null etter | $\hat\beta_{k,\text{pre}}$ negativ og signifikant; for $\hat\beta_{k,\text{post}}$ en ekvivalenstest mot grensen $\delta = \tfrac{1}{2}\lvert\hat\beta_{k,\text{pre}}\rvert$ | $\hat\beta_{k,\text{pre}}$ ikke negativ, eller ekvivalens for $\hat\beta_{k,\text{post}}$ forkastes |
 | **T4** | Nominell dekning krever brudd og kalender; resten fikses konformalt | dekning ved 80/95 for M3 og M6, før og etter konformal kalibrering, med intervallskår | M6 dekker ikke bedre enn M3, eller kalibreringen ikke lukker gapet |
 

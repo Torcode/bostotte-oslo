@@ -1,6 +1,6 @@
 # Kodebok — Velferdsprosjektet
 
-Variabelnivå-dokumentasjon for alle 20 datasett i `last_alt()` pluss de konstruerte variablene i analysesettet. Kildenivå-dokumentasjon (URL-er, uttrekksmetode, hull) ligger i `datakilder.md`; denne fila svarer på «hva betyr hver kolonne». Generert og verifisert mot pakken 4. august 2026.
+Variabelnivå-dokumentasjon for alle 21 datasett i `last_alt()` pluss de konstruerte variablene i analysesettet. Kildenivå-dokumentasjon (URL-er, uttrekksmetode, hull) ligger i `datakilder.md`; denne fila svarer på «hva betyr hver kolonne». Generert og verifisert mot pakken 4. august 2026.
 
 ## 0. Lesenøkkel
 
@@ -71,6 +71,8 @@ Geografiverdiene inkluderer «Oslo i alt» + bydelsnavn; totalrader må filtrere
 
 **`stromstotte`** (31×9). Én rad per utbetalingsmåned 2021m3–2024m4: `dato_utbetaling` (loaderen; termin = denne minus én måned), `belop_husstand` (kr; 0 i måneder uten utbetaling), `tillegg_per_ekstra_medlem` (120 kr i 2021-engangsrundene, ellers 150), `geografi` (nasjonal / Sør-Norge inkl. Oslo), `verifisering` (jan–apr 2024 «delvis»).
 
+**`arsrapport`** (5×7). Publiserte nasjonale årstall fra Husbankens årsrapport 2025, tabell 3.1, brukt til ekstern validering av Qlik-uttrekket. `aar` (2021–2025), `husstander_unike_aaret` (**unike** husstander gjennom året — *ikke* en månedsbeholdning og ikke direkte sammenliknbar med kjerneseriene), `utbetalt_bostotte_mill` (direkte sammenliknbar med årssummen av `utbetalt_belop`), `utbetalt_stromstotte_mill` (publisert separat, inngår ikke i beløpet over), `geografi`, `kilde`, `verifisering`.
+
 **`grunnbelop`** (17×5). `virkningsdato` (1. mai 2010–2026), `g_belop` (75 641 → 136 549), `g_snitt_kalenderaar`, `merknad` (2020: utsatt oppgjør, tilbakevirkende).
 
 ## 5. Konstruerte variabler (analysesettet, metode 3.1–3.2)
@@ -92,6 +94,18 @@ Bygges av chunkene i metodekapitlet i `unt_1.qmd` (avsnitt 3.1–3.5); 114 rader
 | `kpi_husleie` | 04.1-indeksen (t.o.m. 2025m12) | ML-klasse + driftsdiagnostikk |
 | `N` | befolkning, kvartal→måned interpolert | rater/drift; ikke i hovedspek |
 
+## 5b. Identiteter som holder i kildene (verifisert 5. august 2026)
+
+Disse er testet på hele materialet og brukes som kontroller i metodekapitlet. De er også *tolkningsregler*: en identitet som holder eksakt, betyr at de to sidene ikke er uavhengig informasjon.
+
+| Identitet | Status |
+|---|---|
+| `ant_soknader − ant_avslag = ant_husstander_termin` | Eksakt i alle måneder, alle nivåer (nasjonalt: ett månedspar avviker med ≤ 2, avrunding). **`ant_soknader` er derfor en lineærkombinasjon, ikke selvstendig informasjon.** |
+| `utbetalt_belop / ant_husstander_utbetaling = gjsnitt_bostotte` | Maks avvik 0,005 kr over 198 måneder |
+| Bydelssum og brukergruppesum = Oslo-total | Eksakt for **alle seks** mål, ikke bare antallet |
+| Oslo ≤ Norge | Holder på alle seks mål i alle måneder; Oslo-andelen er ca. 18,5 % |
+| Årssum `utbetalt_belop` mot årsrapportens tabell 3.1 | Avvik 0,00 til −2,10 % (se `arsrapport`); ensidig negativt fra 2022, konsistent med etterkontroll mot skatteoppgjøret |
+
 ## 6. Vanlige feller
 
 1. 0301 er ikke Oslo (bruk `geo=="Oslo"`-objektet eller summér bydelene + ufordelt).
@@ -104,3 +118,7 @@ Bygges av chunkene i metodekapitlet i `unt_1.qmd` (avsnitt 3.1–3.5); 114 rader
 8. Kvartals-/årskovariater er interpolert/trappet der de møter månedsserien — dokumentér valget der det brukes.
 9. Bydelspanelet er ubalansert på ett punkt: node 0301 er bare til stede i måneder der den har minst én husstand (162 av 199 måneder mangler). Aggregering til Oslo-total er likevel eksakt, og det verifiseres i `tbl-kontroller`.
 10. Node 0301 heter «Oslo» i kilden. Den er ikke Oslo. Metodekapitlet gir den merkelappen «Ufordelt (0301)» før bruk (vaskeinngrep V2).
+11. `ant_soknader` er ikke en observasjon ved siden av utfallet — den er innvilget pluss avslag (se 5b). Å bruke den som prediktor for mottakertallet er å regressere en størrelse på seg selv.
+12. Avslagsserien er ikke ledende: korrelasjonen med endringen i mottakertallet forsvinner ved to måneders lag.
+13. `husstander_unike_aaret` i `arsrapport` er unike husstander gjennom året, ikke en beholdning. Forholdet til snittbeholdningen ligger stabilt på 1,4–1,6.
+14. En intervensjonsregressor er null før hendelsen og kan ikke estimeres ved en prognoseopprinnelse som ligger før den. `pakke_2024h2` og `k_post` er uidentifiserbare ved henholdsvis 24 og 30 av 31 opprinnelser i protokollen.

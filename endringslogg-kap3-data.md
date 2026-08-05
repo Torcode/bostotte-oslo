@@ -350,3 +350,146 @@ quarto render unt_1.qmd
 Bygger dokumentet uten advarsler. Feiler en av verifikasjonskontrollene i 3.1.6,
 stopper byggingen med melding om hvilken. Avhengigheter: R med `tidyverse` og
 `knitr`, Quarto ≥ 1.7 (Typst-motoren følger med). Ingen LaTeX kreves.
+
+---
+
+# Datakvalitetsrevisjon (5. august 2026, andre runde)
+
+Full revisjon av datagrunnlaget før estimeringen settes i gang. Revisjonen testet
+det verifikasjonen i første runde ikke dekket: aritmetikken *mellom* kolonnene,
+uttrekket mot en ekstern kilde, og om regressorene i det hele tatt lar seg estimere
+i et rullerende treningsvindu. Den fant to reelle problemer og bekreftet resten.
+
+## Konklusjon først
+
+Datagrunnlaget holder. Alle interne regnskapsidentiteter holder eksakt, uttrekket
+reproduserer Husbankens publiserte nasjonale beløp innenfor 2,1 % i alle fem år, og
+kovariatene stemmer med sine kilder. To ting må likevel endres, og den ene av dem
+ville brutt estimeringskjøringen.
+
+## R1. `ant_soknader` er ikke data — den er en identitet
+
+**Funn.** `ant_soknader − ant_avslag = ant_husstander_termin` holder *eksakt*, i hver
+måned, på hvert aggregeringsnivå (nasjonalt avviker ett månedspar med ≤ 2 husstander,
+avrunding). Søknadsserien er altså summen av innvilgede og avslåtte saker i
+terminkjøringen — en definisjonsmessig identitet.
+
+**Hva som var galt.** Observasjon 2 i @sec-met-observasjoner sa at søknader og avslag
+«er kandidater til ledende informasjon om strømmene i @eq-stockflow». For søknader er
+det uriktig per konstruksjon: den kan ikke lede en størrelse den er en
+lineærkombinasjon av. For avslag er det empirisk uriktig: korrelasjonen mellom
+avslagsandelen og endringen i mottakertallet er −0,58 samtidig og +0,50 på én måneds
+lag (mekanisk tilbakeslag), men 0,04 og 0,02 på to og tre måneders lag. En serie som
+først røper seg samtidig med utfallet, varsler ingenting.
+
+**Endring.** Observasjon 2 skrevet om fra «saksvolumet er mangedoblet mottakstallet»
+til «av de tre seriene er bare to uavhengige — og den tredje leder ingenting», med
+begge tallene. Identiteten lagt inn som kontroll K7. Kodeboken har fått et nytt
+avsnitt 5b med de verifiserte identitetene og to nye feller (11 og 12).
+
+**Hvorfor det betyr noe.** Deskriptivtabellen presenterer tre serier. Uten dette
+funnet ville en leser — eller vi selv i del 2 — kunne brukt søknadsserien som
+prediktor for mottakertallet, altså regressert en størrelse på seg selv.
+
+## R2. Regressorene kan ikke estimeres før hendelsen har skjedd
+
+**Funn.** En intervensjonsregressor er null helt til hendelsen inntreffer. Ved en
+prognoseopprinnelse før hendelsen er kolonnen identisk null i treningsvinduet, og
+koeffisienten finnes ikke. Omfanget:
+
+| Regressor | Opprinnelser uten identifikasjon (av 31) | Rammede prognosepunkter |
+|:---|---:|---:|
+| `pakke_2024h2` | 24 | 138 |
+| `k_post` | 30 | 138 |
+
+210 av 372 prognosepunkter (56 %) har minst én aktiv regressor som ikke var
+estimerbar ved opprinnelsen. Andelen stiger fra 39 % på horisont 1 til 74 % på
+horisont 12, og er konsentrert i opprinnelsesårene 2024 (90 %) og 2025 (83 %).
+
+**Hva som ville skjedd uten funnet.** Enten en rangdefekt designmatrise og en
+avbrutt kjøring, eller — verre — at modelltilpasningen stilltiende dropper de
+kollineære kolonnene. I det andre tilfellet ville «M6» vært syv ulike modeller over
+de 31 opprinnelsene uten at noen sto oppført, og sammenlikningen M6 mot M3 ville
+målt noe annet enn den utgir seg for.
+
+**Endring.** Nytt avsnitt 3.7.1 med (i) en eksplisitt inngangsregel — en regressor
+inngår ved opprinnelse τ hvis og bare hvis den har minst seks ikke-null observasjoner
+i treningsvinduet, ellers utelates den og det logges; (ii) tabell `tbl-identifikasjon`
+som beregner omfanget ved rendering; og (iii) en presisering av hva studien kan
+konkludere med. Evalueringen i 3.8 stratifiseres nå også på om regressoren var
+estimerbar, og T2 i `tbl-tester` er omformulert tilsvarende.
+
+**Og en gevinst.** Funnet gir underspørsmål **UB** et skarpere svar enn spørsmålet
+ble stilt med. For en regelendring som er *vedtatt, men ikke trådt i kraft*, kan
+effektstørrelsen ikke estimeres fra serien — den må hentes utenfra. Studien har
+allerede kilden: departementets forhåndsanslag på 20 000–25 000 mottakere nasjonalt
+for avviklingen i april 2024, bekreftet til om lag 25 000 i etterkant. Et
+forhåndsanslag omregnet til Oslos andel er en datert, etterprøvbar prior — nøyaktig
+den informasjonen en prognose i drift ville hatt. Om den skal brukes som pålagt
+koeffisient, avgjøres i del 2.
+
+## R3. Ekstern validering lagt til (ny seksjon 3.1.7)
+
+Regnskapsidentitetene er interne: de ville holdt også om hele uttrekket var
+systematisk feil. Uttrekket er derfor regnet opp mot Husbankens publiserte nasjonale
+årstall (årsrapport 2025, tabell 3.1), lagt inn i datapakken som
+`arsrapport_nokkeltall.csv`.
+
+| År | Publisert (mill.) | Uttrekk (mill.) | Avvik | Omløp |
+|---:|---:|---:|---:|---:|
+| 2021 | 2 714 | 2 714 | 0,00 % | 1,47 |
+| 2022 | 3 262 | 3 193 | −2,10 % | 1,48 |
+| 2023 | 3 610 | 3 569 | −1,15 % | 1,44 |
+| 2024 | 3 781 | 3 747 | −0,90 % | 1,57 |
+| 2025 | 4 100 | 4 062 | −0,93 % | 1,41 |
+
+To svar. Uttrekket treffer, og omløpstallet (unike husstander gjennom året delt på
+snittbeholdning) ligger stabilt på 1,41–1,57 — ingen endring i telleregelen har
+sneket seg inn. Men avviket er *ensidig negativt* fra 2022, mens 2021 stemmer
+eksakt. Et systematisk underskudd på om lag én prosent er akkurat det etterkontrollen
+mot skatteoppgjøret produserer: statistikkbanken viser omregnet rett etter
+tilbakekreving, årsrapporten viser hva som faktisk ble utbetalt. Dette er den
+empiriske bekreftelsen på revisjonsmekanismen 3.1.2 beskriver — som til nå bare var
+sitert — og den har en konsekvens: beløpsserien modellerer *rett*, ikke kasse. For
+antallsserien er forskjellen uten betydning.
+
+## R4. Tre nye kontroller
+
+| | Kontroll | Resultat |
+|:---|:---|:---|
+| **K7** | Saksidentitet: søknader − avslag = mottakere | avvik 0 |
+| **K8** | Begge disaggregeringer summerer for **alle seks** mål, ikke bare antallet | avvik 0 |
+| **K9** | Beløpsidentitet: beløp / antall = snittkolonnen | maks 0,005 kr |
+
+K8 er den som utvider dekningen mest: første runde testet bare antallsserien, og
+lot beløp, søknader, avslag og over-tak stå usjekket på begge disaggregeringene.
+Alle fire holder eksakt.
+
+## R5. Bekreftet uten endring
+
+* **Kovariatene stemmer med sine kilder.** KPI-broen 03013/14710 har konstant forhold
+  i overlappet (variasjonskoeffisient 0,0008 over 564 måneder). Bydelssummene av
+  folkemengde treffer SSBs kvartalstall innenfor 0,51 %. Befolkningsframskrivingen
+  for 2025 treffer observert folketall på 12 personer av 724 290 — som den skal,
+  siden 2025 er framskrivingens basisår, men det bekrefter at aggregeringen fra
+  delbydel er riktig.
+* **Intervensjonstabellen er internt konsistent.** `termin_fra ≤ termin_til` i alle
+  rader, og `utbetaling_fra = termin_fra + 1 måned` i alle 20. To rader er flagget
+  «delvis» og gjelder strømbeløp, ikke datering.
+* **Regelmotoren er forenlig med snittkolonnene.** Egenandelen implisert av observert
+  snittboutgift og snittbostøtte ligger på 31–54 % av snittinntekten, og faller i
+  2020 og 2022 — nøyaktig der koronareglene og strømtiltakene senket den. Det er en
+  uavhengig bekreftelse på at intervensjonsdateringene er riktige.
+* **Designmatrisen er velkondisjonert** når alle regressorer er aktive:
+  kondisjonstall 4,8, ingen parvis korrelasjon over 0,3.
+* **Snittkolonnene bærer lite selvstendig informasjon.** Snittboutgift og
+  snittinntekt korrelerer 0,87, og andelen over boutgiftstaket ligger stabilt på
+  83–85 %. De er nærmere en prisindeks enn en atferdsindikator, og brukes ikke som
+  prediktorer.
+
+## Filer endret
+
+`unt_1.qmd` (ny seksjon 3.1.7 og 3.7.1, omskrevet observasjon 2, tre nye kontroller,
+stratifisering på identifikasjon), `velferdsetaten-data/data/clean/arsrapport_nokkeltall.csv`
+(ny), `velferdsetaten-data/scripts/velferdsetaten_data.R` (laster den),
+`kodebok.md` (nytt avsnitt 5b, nytt datasett, fire nye feller), `datakilder.md`.

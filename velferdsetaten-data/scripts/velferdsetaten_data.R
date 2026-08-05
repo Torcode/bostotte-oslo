@@ -9,6 +9,7 @@
 #   d$oslo            # Oslo månedlig 2010-2026 (termin- og utbetalingskalender)
 #   d$oslo_bydel      # 15 bydeler x måned
 #   d$brukergruppe    # Oslo x brukergruppe x måned (skjermingens behandlingsgruppe)
+#   d$arsrapport      # publiserte nasjonale årstall (ekstern validering)
 #   sjekk_data(d)     # kjører de seks QA-kontrollene
 #   plot_oslo(d)      # rask serieplott med intervensjonslinjer (krever ggplot2)
 #
@@ -123,7 +124,11 @@ last_alt <- function(sti = NULL) {
     # Kuraterte regel-/intervensjonstabeller
     intervensjoner           = les_intervensjoner(file.path(cln, "intervensjonstabell.csv")),
     parametre                = read_csv(file.path(cln, "regelparametre_gjeldende.csv"), show_col_types = FALSE),
-    stromstotte              = les_stromstotte(file.path(cln, "stromstotte_manedlig.csv"))
+    stromstotte              = les_stromstotte(file.path(cln, "stromstotte_manedlig.csv")),
+    # Publiserte nasjonale årstall fra Husbankens årsrapport, brukt til ekstern
+    # validering av Qlik-uttrekket (se metodekapitlets avsnitt om validering).
+    arsrapport               = read_csv(file.path(cln, "arsrapport_nokkeltall.csv"),
+                                        show_col_types = FALSE)
   )
 }
 
