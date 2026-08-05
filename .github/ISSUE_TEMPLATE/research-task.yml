@@ -1,0 +1,68 @@
+name: Forsknings- eller utviklingsoppgave
+description: Avgrenset oppgave med data, faglige rammer og testbar ferdigdefinisjon
+title: ""
+labels: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Én issue skal normalt gi én branch og én PR. Beskriv det som ikke skal gjøres like tydelig som leveransen.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem og motivasjon
+      description: Hvilket konkret problem løses, og hvorfor betyr det noe?
+    validations:
+      required: true
+
+  - type: textarea
+    id: deliverable
+    attributes:
+      label: Konkret leveranse
+      description: Filer, tabeller, kode, rapportdel eller beslutning som skal finnes når oppgaven er ferdig.
+    validations:
+      required: true
+
+  - type: textarea
+    id: data
+    attributes:
+      label: Datagrunnlag og kilder
+      description: Kilder, vintage, geografi, frekvens, definisjoner og tilgang.
+    validations:
+      required: true
+
+  - type: textarea
+    id: constraints
+    attributes:
+      label: Faglige begrensninger
+      description: Estimand, informasjonssett, personvern, identifikasjon og andre ufravikelige rammer.
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Akseptansekriterier
+      description: Skriv avkryssbare, observerbare kriterier.
+      placeholder: |
+        - [ ] ...
+        - [ ] ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: tests
+    attributes:
+      label: Tester og kontroller
+      description: Kommandoer, manuelle kontroller og forventet resultat.
+    validations:
+      required: true
+
+  - type: textarea
+    id: non_goals
+    attributes:
+      label: Eksplisitte ikke-mål
+      description: Tilgrensende arbeid som skal holdes utenfor denne PR-en.
+    validations:
+      required: true
