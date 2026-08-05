@@ -11,7 +11,7 @@ Statusverdier:
 | ID | Status | Beslutning | Begrunnelse og konsekvens |
 |---|---|---|---|
 | D-001 | Vedtatt | GitHub-repoet er prosjektets kanoniske kode-, tekst- og beslutningshistorikk. | Chat og notebooks er arbeidsflater; godkjente endringer skal ende i issue, branch og PR. |
-| D-002 | Vedtatt | Prosjektet deles i tre faser: data/revidde, modeller/ML og operasjonalisering/MLOps. | Hver fase har en port; senere teknologi skal ikke brukes som erstatning for dokumentert datakvalitet eller modellverdi. |
+| D-002 | Vedtatt | Prosjektet deles i tre faser: data/rekkevidde, modeller/ML og operasjonalisering/MLOps. | Hver fase har en port; senere teknologi skal ikke brukes som erstatning for dokumentert datakvalitet eller modellverdi. |
 | D-003 | Vedtatt | Prosjektet er i fase 1. | Nåværende leveranse er datakvalitets- og mulighetsrapport, ikke en modellkonkurranse. |
 | D-004 | Foreløpig | Månedlig antall husstander med positivt terminvedtak i Oslo, $M^T_t$, er arbeidende hovedserie. | Serien er tilgjengelig månedlig og følger regelverkskalenderen. Endelig fase-2-kontrakt krever eksplisitt godkjenning. |
 | D-005 | Vedtatt | Termin- og utbetalingskalender holdes separat, med $M^U_{t+1}=M^T_t$ som datakontroll. | Sammenblanding gir feil datering av intervensjoner og tilgjengelig informasjon. |
