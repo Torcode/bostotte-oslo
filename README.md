@@ -25,6 +25,29 @@ trend og utbetalingskalender som sesong, og framskriver begge deler feil.
 > Filene og arbeidetet inneholder ikke-verfisert KI-informasjon.
 > 
 
+## Læringsprosjekt i faser — les dette først
+
+Formålet er å forstå bostøttefeltet og hele analysekjeden ved å bygge den. Arbeidet er
+gjort **med KI som verktøy hele veien**, og **repoet inneholder innhold som ennå ikke er
+verifisert.** Prosjektet er derfor delt i faser, der hver fase har som eneste jobb å feste
+én hjørnestein: først at dataene er det de utgir seg for, så at modellmekanikken holder,
+så at teksten stemmer med tallene, og til slutt at kildene er kontrollert mot original.
+Ingenting regnes som ferdig før det er etterprøvd mot kilde eller mot kjørt kode.
+
+Det betyr at ikke alt her har samme status, og forskjellen skal være lett å se:
+
+| Hva | Status |
+|---|---|
+| **Datagrunnlaget** | Verifisert. 47 maskinelle datakontrakter ved hver push, ni regnskapsidentiteter ved hver rendering, og ekstern validering mot Husbankens publiserte nasjonale årstall |
+| **Evalueringsmekanikken** | Backtestet. 31 prognoseopprinnelser × 8 modeller × horisont 1–12, med Clark–West på nøstede par |
+| **Litteraturlista** | Delvis verifisert. 30 av 81 oppføringer har ukontrollert utgiver, URL og sidetall |
+| **Enkelte resultatpåstander** | Under retting. Se [åpne issues](https://github.com/Torcode/bostotte-oslo/issues) — blant annet en kodefeil som gjør at modell M7 ikke gjør det teksten beskriver |
+
+Feil som blir funnet, legges ut som issues med hva som er galt, hvordan det ble oppdaget
+og hva rettelsen er — framfor å bli stille rettet. Begrunnelsen for hver endring ligger i
+[`logg/`](logg/). En rapport som skal kunne etterprøves, må vise sine egne feil like
+tydelig som sine funn; det er dét fasene og loggen er til for.
+
 ## Hovedfunn
 
 **Ikke-stasjonariteten i serien *er* regelendringene.** Den rå logserien krever
@@ -184,9 +207,24 @@ skapte utviklingen.
 
 Kapittel 1–4 er skrevet og bygger uten advarsler. Rullerende opprinnelse er kjørt: 31
 opprinnelser, 8 modeller, horisont 1–12, med Clark–West på nøstede par og konformal
-etterkalibrering. Resultatene i kapittel 4 er dermed backtestede, ikke påstander.
+etterkalibrering. Resultatene for M1–M6 er dermed backtestede, ikke påstander.
+
+**Åpne feil som påvirker hvordan kapittel 4 skal leses.** De står som issues, med
+diagnose og rettelse:
+
+- **M7 påfører aldri det pålagte bidraget.** En variabel maskeres inne i `mutate()`, slik
+  at testen for om regressoren manglet aldri slår til. M7 er identisk med M6 i alle 372
+  punktene. Avsnitt 4.6 og påstanden om verdien av et forhåndsanslag er dermed ikke
+  avgjort, og underspørsmål **UB** står ubesvart til dette er rettet og kjørt på nytt.
+- **Den konformale kalibreringen bruker feil som ikke var realisert ved opprinnelsen.**
+  Dekningen etter kalibrering er derfor bedre enn den ville vært i drift, og effekten
+  vokser med horisonten.
+- **To ulike dekningstall for samme størrelse** i kapittel 4, fordi tabell og brødtekst
+  regner på ulike utvalg uten at det er notert.
+- **Siteringsapparatet** har en hengende referanse og en topptekst i `referanser.bib` som
+  ikke lenger stemmer.
 
 Modellklassene bayesiansk strukturell tidsserie, gradientboosting og hierarkisk
-avstemming er spesifisert i teorikapitlet, men **ikke estimert**. Det finnes ingen
-publisert framtidsprognose og ingen produksjonsmodell. Neste steg er beskrevet sist i
-kapittel 4; åpne oppgaver ligger som [issues](https://github.com/Torcode/bostotte-oslo/issues).
+avstemming er spesifisert i teorikapitlet, men **ikke estimert**. Bydelsnivået er
+dokumentert i datagrunnlaget, men ikke analysert. Det finnes ingen publisert
+framtidsprognose og ingen produksjonsmodell.
