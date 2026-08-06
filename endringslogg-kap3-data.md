@@ -618,3 +618,70 @@ blitt lest som et resultat, og de er ikke det.
 **Filer endret:** `velferdsetaten-data/data/clean/forhandsanslag.csv` (I01 lagt til,
 kildelister og søkedato på 2024-radene), `unt_1.qmd` (3.6.1), `kodebok.md`,
 `datakilder.md`.
+
+## M5. Repoet ryddet, dokumentet omdøpt (5. august 2026)
+
+Arbeidsfila het `unt_1.qmd` — et internt utkastnavn. Den heter nå
+`bostotte_oslo.qmd`, som er det en leser av repoet leter etter. Innholdet er
+uendret ved omdøpingen; det er utelukkende et navnebytte, gjort i sitt eget steg
+nettopp for at diffen skal vise det.
+
+**README skrevet om for en leser, ikke for forfatteren.** Den åpner nå med
+spørsmålet, en uavhengighetserklæring (privat prosjekt, ikke på oppdrag fra Oslo
+kommune, Velferdsetaten eller Husbanken, uttrekk frosset 4. august 2026), fire
+hovedfunn med tall, byggeinstruks, kildetabell med lenker, og en egen liste over
+kjente begrensninger. Begrensningene står der fordi de begrenser hva som kan
+konkluderes — ikke som pliktløp.
+
+**To feil i min egen README, rettet.** Jeg oppga `patchwork` som avhengighet; den
+brukes ikke i dokumentet, bare i et frittstående figurskript jeg lagde underveis.
+Og jeg skrev «fire plassholdere i `referanser.bib`». Det tallet var galt i min
+favør: seks oppføringer trykker plassholdertekst i selve referanselisten, og 37 av
+83 er merket `note = {PLASSHOLDER}` — forfatter, tittel og år er kontrollert, men
+utgiver, URL og sidetall er ikke verifisert mot primærkilde. Det er samme feiltype
+som kapitlet ellers kritiserer, begått av meg, og står nå med riktig tall i README.
+
+**PDF-en versjoneres bevisst.** `bostotte_oslo.pdf` er tatt ut av `.gitignore`.
+Genererte filer hører normalt ikke hjemme i et repo, men her er PDF-en selve
+leveransen: en leser skal kunne se resultatet uten å installere R, Quarto og ni
+pakker først. Kostnaden er at den må bygges på nytt før hver innlevering, ellers
+ligger den i utakt med kilden.
+
+**`oppsett.R` lagt til.** Installerer bare det som faktisk mangler, sjekker at
+pakkene lar seg laste, at filene ligger der de skal, at datapakken lastes, og
+rapporterer Quarto-versjon. Den finnes fordi «kjør `install.packages`» ikke er en
+byggeinstruks — den sier ikke hva som gikk galt når noe går galt.
+
+**Filer endret:** `unt_1.qmd` → `bostotte_oslo.qmd`, `README.md`, `oppsett.R` (ny),
+`.gitignore`, `mal/typst-template.typ`.
+
+## M6. Portabilitetsfeil i oppsett-chunken (6. august 2026)
+
+Dokumentet renderte hos meg og feilet hos brukeren, med
+`Error in file(): cannot open the connection` på `source()`-kallet i chunk
+`oppsett` — samtidig som `source("oppsett.R")` i konsollen lastet datapakken uten
+problemer. Feilen er min, og typen er verdt å notere: jeg hadde skrevet
+
+```r
+DATASTI <- "velferdsetaten-data"
+```
+
+altså en relativ sti, med den underforståtte antakelsen at render-prosessen står i
+samme mappe som konsollen. Det gjør den ikke nødvendigvis. Arbeidsmappa under
+rendering avhenger av om det bygges fra konsollen, fra Render-knappen i RStudio,
+fra `quarto preview`, eller fra CI — og en antakelse som holder på én maskin er
+ikke en antakelse, det er flaks.
+
+**Rettelsen leter på tre steder** — arbeidsmappa, dokumentets egen mappe
+(`knitr::current_input(dir = TRUE)`), og full sti — og **åpner** fila før
+kandidaten godtas, framfor bare å sjekke at den finnes. Den siste forskjellen er
+ikke pedanteri: prosjektmappa ligger i OneDrive, og en fil som bare finnes i skyen
+gir nøyaktig samme feilmelding selv om `file.exists()` er sann. De to årsakene har
+ulik løsning, så feilmeldingen skiller dem nå og navngir både arbeidsmappa og
+dokumentmappa i klartekst.
+
+Jeg vet ikke sikkert hvilken av de to som var årsaken hos brukeren — begge passer
+med observasjonen. Det står her framfor å bli glattet over, og rettelsen dekker
+begge. Skulle den komme tilbake, sier meldingen selv hvilken det var.
+
+**Filer endret:** `bostotte_oslo.qmd` (chunk `oppsett`).

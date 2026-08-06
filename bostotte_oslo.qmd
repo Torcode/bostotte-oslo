@@ -43,6 +43,18 @@ editor: visual
 # chunk lenger nede, slik at teksten ikke kan komme i utakt med datapakken.
 # =============================================================================
 
+# Sjekk avhengigheter først, med en melding som sier hva som mangler og hva som
+# fikser det. Uten dette feiler dokumentet nedstrøms med «could not find
+# function \"ARIMA\"», som ikke forteller noen hva de skal gjøre.
+.pakker <- c("tidyverse", "knitr", "tsibble", "fable", "fabletools",
+             "feasts", "urca", "distributional")
+.mangler <- .pakker[!vapply(.pakker, requireNamespace, logical(1), quietly = TRUE)]
+if (length(.mangler)) {
+  stop("\n\nManglende R-pakker: ", paste(.mangler, collapse = ", "),
+       "\n\nKjør source(\"oppsett.R\") i repo-roten, eller:\n  install.packages(c(",
+       paste0('\"', .mangler, '\"', collapse = ", "), "))\n", call. = FALSE)
+}
+
 suppressPackageStartupMessages({
   library(tidyverse)
   library(knitr)
@@ -80,7 +92,49 @@ kab <- function(x, ...) {
 }
 
 # --- Datapakken ---------------------------------------------------------------
-DATASTI <- "velferdsetaten-data"
+# Finn datapakken robust. Arbeidsmappa under rendering er ikke nødvendigvis den
+# samme som dokumentets mappe — den avhenger av om det renderes fra konsollen,
+# fra Render-knappen, fra «quarto preview» eller fra CI. Vi prøver arbeidsmappa
+# først, deretter dokumentets egen mappe.
+#
+# Kandidaten må ikke bare finnes, den må la seg åpne. Ligger mappa i OneDrive
+# kan file.exists() være sann for en fil som ennå ikke er lastet ned lokalt, og
+# da feiler source() med «cannot open the connection» uten å si hvorfor. Vi
+# prøver derfor å åpne fila, og skiller de to feilene i meldingen.
+.leselig <- function(f) {
+  con <- suppressWarnings(tryCatch(file(f, "r", encoding = "UTF-8"),
+                                   error = function(e) NULL))
+  if (is.null(con)) return(FALSE)
+  on.exit(close(con), add = TRUE)
+  isTRUE(tryCatch({ readLines(con, n = 1); TRUE }, error = function(e) FALSE))
+}
+.dokumentmappe <- tryCatch(dirname(knitr::current_input(dir = TRUE)),
+                           error = function(e) getwd())
+DATASTI <- NULL
+.ulesbar <- character()
+for (.k in unique(c("velferdsetaten-data",
+                    file.path(.dokumentmappe, "velferdsetaten-data"),
+                    file.path(getwd(), "velferdsetaten-data")))) {
+  .f <- file.path(.k, "scripts", "velferdsetaten_data.R")
+  if (!file.exists(.f)) next
+  if (.leselig(.f)) { DATASTI <- .k; break }
+  .ulesbar <- c(.ulesbar, .f)
+}
+if (is.null(DATASTI)) {
+  stop("\n\nFant ingen lesbar datapakke «velferdsetaten-data/».",
+       "\n  Arbeidsmappe:       ", getwd(),
+       "\n  Dokumentets mappe:  ", .dokumentmappe,
+       if (length(.ulesbar))
+         paste0("\n\nFila finnes, men lar seg ikke åpne:\n  ",
+                paste(.ulesbar, collapse = "\n  "),
+                "\n\nDet skjer når prosjektmappa ligger i OneDrive og filene bare",
+                "\nfinnes i skyen. Høyreklikk mappa i Utforsker og velg",
+                "\n«Behold alltid på denne enheten», og render på nytt.\n")
+       else
+         paste0("\n\nÅpne Velferdsprosjekt.Rproj i RStudio og render derfra, ",
+                "eller kjør\n  quarto render bostotte_oslo.qmd\nfra repo-roten.\n"),
+       call. = FALSE)
+}
 source(file.path(DATASTI, "scripts", "velferdsetaten_data.R"))
 d <- last_alt(DATASTI)
 
