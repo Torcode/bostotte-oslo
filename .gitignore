@@ -11,11 +11,11 @@
 
 # --- Quarto render-artefakter (regenereres) ---
 /.quarto/
-/unt_1.html
-/unt_1.pdf
-/unt_1.typ
-/unt_1.knit.md
-/unt_1_files/
+/bostotte_oslo.html
+/bostotte_oslo.pdf
+/bostotte_oslo.typ
+/bostotte_oslo.knit.md
+/bostotte_oslo_files/
 /*_files/
 *.knit.md
 
@@ -32,5 +32,11 @@ __pycache__/
 *.py[cod]
 
 # --- Quarto/Typst-artefakter (regenereres av `quarto render`) ---
-/unt_1.typ
-/mal/**/*.pdf
+/bostotte_oslo.typ
+
+# --- Lokale opprydningsmapper (skal aldri versjoneres) ---
+_to_delete/
+
+# --- Quarto/knitr-cache (regenereres) ---
+/_freeze/
+/bostotte_oslo_cache/

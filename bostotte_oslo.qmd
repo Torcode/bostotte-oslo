@@ -46,6 +46,12 @@ editor: visual
 suppressPackageStartupMessages({
   library(tidyverse)
   library(knitr)
+  library(tsibble)
+  library(fable)
+  library(fabletools)
+  library(feasts)
+  library(urca)
+  library(distributional)
 })
 
 knitr::opts_chunk$set(
@@ -143,7 +149,7 @@ Under strenge forutsetninger viser det første velferdsteoremet at en frikonkurr
 
 Problemstillingen er særlig aktuell i Oslo. Ifølge Statistisk sentralbyrå har Oslo landets høyeste husleienivå. I 2025 var gjennomsnittlig månedlig leie for en toroms bolig i Oslo og Bærum 15 260 kroner, 29 prosent over landsgjennomsnittet. Kombinasjonen av høye boutgifter og store forskjeller i husholdningenes inntekter innebærer at markedsløsningen alene ikke nødvendigvis gir en sosialt ønskelig fordeling av boligkonsumet. Statlig bostøtte er derfor et sentralt virkemiddel for å redusere boutgiftsbelastningen blant økonomisk vanskeligstilte husstander.
 
-For Velferdsetaten er bostøtten imidlertid ikke bare et virkemiddel som skal begrunnes, men en størrelse det skal planlegges rundt. Ordningen er statlig finansiert og forvaltet av Husbanken, men kommunen er førstelinje, og mottakstallet inngår i kunnskapsgrunnlaget for tilgrensende kommunale tjenester som økonomisk sosialhjelp og kommunal bostøtte. Hvor mange husstander som mottar bostøtte de kommende månedene, har dermed betydning for dimensjonering av veiledning og saksbehandling i bydelene og for tidlig varsling når utviklingen avviker fra det forventede. Dette arbeidet anlegger derfor prognoseperspektivet.
+For Velferdsetaten er bostøtten imidlertid ikke bare et virkemiddel som skal begrunnes, men en størrelse det skal planlegges rundt. Ordningen er statlig finansiert og forvaltet av Husbanken, men kommunen er førstelinje, og mottakstallet inngår i kunnskapsgrunnlaget for tilgrensende kommunale tjenester som økonomisk sosialhjelp og kommunal bostøtte. Størrelsesordenen på det kommunale behovet kartlegges annethvert år: i uke 48 i 2024 registrerte bydelene 3 826 husstander med behov for kommunal hjelp til å skaffe bolig, 480 flere enn i 2022 [@velferdsetaten2025bolig]. Statlig bostøtte virker i grenseflaten mot dette behovet, og hvor mange husstander som mottar den de kommende månedene, har dermed betydning for dimensjonering av veiledning og saksbehandling i bydelene og for tidlig varsling når utviklingen avviker fra det forventede. Dette arbeidet anlegger derfor prognoseperspektivet.
 
 En prognose for bostøttemottak står overfor en særegen metodisk utfordring: serien er regelstyrt. Antall mottakere bestemmes ikke bare av inntekter, husleier og søkeatferd, men av hvordan retten til bostøtte til enhver tid er definert. Regelverket er endret flere ganger i seriens levetid: midlertidig utvidede satser og ekstraordinær strømstøtte fra termin desember 2021 til og med termin mars 2024, tilbakeføring til ordinært regelverk fra termin april 2024, økte boutgiftstak og forenklet egenandelsberegning fra juli 2024 med ytterligere utvidelser utover høsten, og fra januar 2025 en korreksjon av inntektsgrunnlaget som skal motvirke et administrativt skapt sesongfall for mottakere av arbeidsavklaringspenger og dagpenger. En modell som ikke kjenner disse endringene, vil lese vedtak som trend og utbetalingskalender som naturlig sesong, og fremskrive begge deler feil.
 
@@ -220,7 +226,7 @@ Den økonomiske grunnmodellen behandler stigma som en kostnad i deltakelsesbeslu
 
 Atferdsøkonomien har flyttet feltet fra å postulere kostnadene til å måle dem. Et felteksperiment med 35 000 amerikanske husholdninger viste at forenklet informasjon alene økte take-up vesentlig — kompleksitet og psykologiske friksjoner holder folk ute selv når beløpene er store [@bhargava2015]. Knapphet beslaglegger dessuten kognitiv båndbredde nettopp hos målgruppen, slik at de som trenger ordningen mest, har minst kapasitet til å navigere den [@shah2012; @mullainathan2013]. Statsvitenskapen samler dette som *administrative byrder* — lærings-, etterlevelses- og psykologiske kostnader som fungerer som politikkutforming med andre midler [@moynihan2015; @herd2018]. Og friksjonene er ikke fordelingsnøytrale: eksperimentelt øker assistanse både take-up og endrer *hvem* som kommer inn i ordningen [@finkelstein2019]. Ekspertgruppens karakteristikk av det norske regelverket som vanskelig å forstå [@ekspertgruppe2022] er i dette lyset ikke en stilanmerkning, men en take-up-mekanisme.
 
-Norsk empiri rammer inn ordningen som et tvetydig instrument mellom boligpolitikk og inntektssikring [@nordvik2014; @fjelltoft2024], med egenandelsprinsippene analysert i egen utredning [@astrup2024; @menon2020]. Husbankens egen samspillsanalyse dokumenterer to drivere med direkte prognoserelevans: økende overlapp med økonomisk sosialhjelp, og at bosatte fordrevne fra Ukraina løftet mottaket nasjonalt fra om lag 5 100 husstander i 2022 til 18 400 i 2024 — et rent sammensetningssjokk i $E_t$ [@husbanken2025samspill]. Til slutt incidensen: internasjonal forskning viser at deler av en bostøtte kan kapitaliseres i husleiene [@fack2006; @gibbons2006; @eerola2021; @kemp2007]. For denne studien er incidens andreordens på 12-måneders horisont, men den virker på sikt gjennom boutgiftene og dermed grensen $\tilde y^{*}$.
+Norsk empiri rammer inn ordningen som et tvetydig instrument mellom boligpolitikk og inntektssikring [@nordvik2014; @fjelltoft2024], med egenandelsprinsippene analysert i egen utredning [@astrup2024; @menon2020]. Husbankens egen treffsikkerhetsanalyse for 2025 stiller det spørsmålet denne studien låner sitt begrep fra — i hvilken grad ordningen faktisk setter husstander med lave inntekter og høye boutgifter i stand til å bo egnet — og gjennomgår samtidig konsekvensene av regelendringene de siste årene [@fjelltoft2025]. Den analysen er tverrsnittsorientert; dette arbeidet stiller det komplementære spørsmålet om samme regelendringer lar seg *framskrive*. Husbankens egen samspillsanalyse dokumenterer to drivere med direkte prognoserelevans: økende overlapp med økonomisk sosialhjelp, og at bosatte fordrevne fra Ukraina løftet mottaket nasjonalt fra om lag 5 100 husstander i 2022 til 18 400 i 2024 — et rent sammensetningssjokk i $E_t$ [@husbanken2025samspill]. Til slutt incidensen: internasjonal forskning viser at deler av en bostøtte kan kapitaliseres i husleiene [@fack2006; @gibbons2006; @eerola2021; @kemp2007]. For denne studien er incidens andreordens på 12-måneders horisont, men den virker på sikt gjennom boutgiftene og dermed grensen $\tilde y^{*}$.
 
 Fire prognoseimplikasjoner følger. (i) *Mekanisk ≠ realisert:* effekten av en regelendring kan ikke regnes ut fra forskriften alene — $\theta$ demper og forsinker; intervensjonseffekter må estimeres. (ii) *Asymmetri:* jf. @sec-teori-beholdning — automatisk utstrømming, søknadsbasert innstrømming. (iii) *Salience:* kriser og medieoppmerksomhet (strømkrisen 2021–2023) kan løfte $\theta$ midlertidig og modelleres som transiente effekter. (iv) *Sammensetning:* bosettingssjokk flytter $E_t$ uavhengig av regelverket og motiverer eksterne kontrollserier.
 
@@ -1008,8 +1014,6 @@ Diagnostikken hører logisk sett tidlig, men den kan ikke kjøres tidligere enn 
 #| label: tbl-diagnostikk
 #| tbl-cap: 'Seriediagnostikk før og etter at de deterministiske leddene er trukket ut. «Betinget» er OLS-residualen fra en regresjon av logserien på intervensjonsmatrisen og kalenderregressoren. KPSS tester nullhypotesen om stasjonaritet: lav teststatistikk og høy p-verdi betyr at nullhypotesen står.'
 
-suppressPackageStartupMessages({library(tsibble); library(feasts); library(urca)})
-
 ts_diag <- analyse |> mutate(mnd = yearmonth(dato)) |> as_tsibble(index = mnd)
 det <- lm(log_M ~ win_covid + win_strom + pakke_2024h2 + k_pre + k_post, data = ts_diag)
 tr_diag <- tibble(mnd = ts_diag$mnd, e = as.numeric(residuals(det))) |> as_tsibble(index = mnd)
@@ -1032,7 +1036,7 @@ diag_tab |>
   kab(align = "lrrrrrr")
 ```
 
-Resultatet er studiens kanskje reneste enkeltfunn. Den rå logserien forkaster stasjonaritet og krever én differensiering. Trekker man ut de fem deterministiske leddene, står nullhypotesen om stasjonaritet, og ingen differensiering er nødvendig. **Ikke-stasjonariteten i serien er regelendringene.** De samme fem leddene forklarer `r pst(100 * summary(det)$r.squared)` av variansen i $\ln M^T_t$ alene.
+@tbl-diagnostikk gir studiens kanskje reneste enkeltfunn. Den rå logserien forkaster stasjonaritet og krever én differensiering. Trekker man ut de fem deterministiske leddene, står nullhypotesen om stasjonaritet, og ingen differensiering er nødvendig. **Ikke-stasjonariteten i serien er regelendringene.** De samme fem leddene forklarer `r pst(100 * summary(det)$r.squared)` av variansen i $\ln M^T_t$ alene.
 
 Funnet er ikke bare et diagnostisk kuriosum: det bekreftes uavhengig av modellvalget i @sec-met-modeller. Referansemodellen uten regressorer velger $d = 1$ — den må differensiere bruddene bort. Spesifikasjonene med intervensjonsmatrisen velger $d = 0$. To ulike prosedyrer, samme konklusjon, og det er den beste formen for bekreftelse en diagnostikk kan få.
 
@@ -1243,6 +1247,334 @@ Kontrakten fra kapitlets åpning gjelder også modelldelen: hver størrelse skal
 *Kart over løypa.* Datalasting og verifikasjon i chunkene `oppsett` til `tbl-kontroller`; regressorkonstruksjon i `met-intervensjoner` og `met-kalender-reg`; analysesettet i `met-analysesett`; protokollparametrene i `protokoll`. Uttrekksskriptene som produserer datapakken, ligger i `velferdsetaten-data/scripts/` og er dokumentert i `datakilder.md` og `kodebok.md`.
 
 *Feil skal stoppe byggingen, ikke passere stille.* Verifikasjonskontrollene i @sec-met-verifikasjon avbryter renderingen ved avvik. Samme prinsipp gjelder modelldelen: dimensjonskrav på analysesettet, krav om at de deterministiske regressorene er komplette over hele prognosehorisonten, og krav om at antall prognosepunkter per horisont stemmer med protokollen, håndheves med eksplisitte krav i koden framfor å kontrolleres ved øyemål.
+
+# Resultater {#sec-res}
+
+Kapitlet rapporterer den rullerende kryssvalideringen som @sec-met-protokoll spesifiserer, og holder utfallet opp mot «faller dersom»-kolonnen i @tbl-tester. Tre av de fem implikasjonene holder, én holder i retning men ikke i styrke, og én faller — motsatt vei av det som var forventet.
+
+```{r}
+#| label: res-cv
+#| include: false
+#| cache: true
+#| cache.extra: !expr list(nrow(analyse), max(analyse$dato), UTTREKKSDATO)
+
+# --- Rullerende opprinnelse. Dette er dokumentets tunge beregning: åtte modeller
+# --- ved hver av opprinnelsene, med ordensvalg og re-estimering per opprinnelse.
+LAMBDA_ORAKEL <- NULL   # settes under; full-utvalgsestimatet for pakke_2024h2
+
+kjor_opprinnelse <- function(t0) {
+  tr <- analyse |> mutate(mnd = yearmonth(dato)) |> filter(dato <= t0) |> as_tsibble(index = mnd)
+  nd <- analyse |> mutate(mnd = yearmonth(dato)) |>
+    filter(dato > t0, dato <= t0 %m+% months(H_MAKS)) |> as_tsibble(index = mnd)
+
+  # Inngangsregelen fra @sec-met-identifikasjon
+  slipper <- function(v) v[map_lgl(v, \(r) sum(tr[[r]] != 0) >= MIN_NZ)]
+  iv  <- slipper(c("win_covid", "win_strom", "pakke_2024h2"))
+  kal <- slipper(c("k_pre", "k_post"))
+  ute <- setdiff(REG, c(iv, kal))
+  form <- function(v) if (length(v)) as.formula(paste("log_M ~", paste(v, collapse = " + "))) else log_M ~ 1
+
+  fit <- tr |> model(
+    M0 = NAIVE(log_M), M1 = SNAIVE(log_M ~ lag("year")), M2 = ETS(log_M), M3 = ARIMA(log_M),
+    M4 = ARIMA(form(kal)), M5 = ARIMA(form(iv)), M6 = ARIMA(form(c(iv, kal))))
+
+  ut <- forecast(fit, new_data = nd, times = 0) |> as_tibble() |>
+    transmute(.model, dato = as.Date(mnd), mu = .mean,
+              sd = sqrt(distributional::variance(log_M))) |>
+    left_join(nd |> as_tibble() |> select(dato, log_M_sant = log_M, M_sant = M), by = "dato") |>
+    mutate(opprinnelse = t0, h = as.integer(round(as.numeric(dato - t0) / 30.44)),
+           ute = paste(ute, collapse = ","))
+
+  # M7: pålagt bidrag der regressoren ikke slapp inn. Anslaget er her
+  # full-utvalgskoeffisienten, ikke et publisert tall (se @sec-res-prior).
+  m7 <- ut |> filter(.model == "M6") |>
+    left_join(nd |> as_tibble() |> select(dato, pakke_2024h2), by = "dato") |>
+    mutate(.model = "M7",
+           mu = mu + if ("pakke_2024h2" %in% ute) LAMBDA_ORAKEL * pakke_2024h2 else 0) |>
+    select(-pakke_2024h2)
+  bind_rows(ut, m7)
+}
+
+LAMBDA_ORAKEL <- analyse |> mutate(mnd = yearmonth(dato)) |> as_tsibble(index = mnd) |>
+  model(m = ARIMA(log_M ~ win_covid + win_strom + pakke_2024h2 + k_pre + k_post)) |>
+  tidy() |> filter(term == "pakke_2024h2") |> pull(estimate)
+
+cv <- map_dfr(opprinnelser, kjor_opprinnelse)
+stopifnot(nrow(cv) == length(opprinnelser) * H_MAKS * 8,
+          !anyNA(cv$mu), !anyNA(cv$sd), all(cv$sd > 0),
+          all(cv$dato == cv$opprinnelse %m+% months(cv$h)))
+
+# --- Evaluering
+z80 <- qnorm(0.90); z95 <- qnorm(0.975)
+nevner <- map_dfr(opprinnelser, \(t0) {
+  x <- oslo_est |> filter(dato <= t0) |> arrange(dato)
+  tibble(opprinnelse = t0, q = mean(abs(x$M - lag(x$M, 12)), na.rm = TRUE))
+})
+iv_dato <- bind_rows(d$intervensjoner |> filter(!is.na(termin_fra)) |> transmute(dato = termin_fra),
+                     d$intervensjoner |> filter(!is.na(termin_til)) |> transmute(dato = termin_til))
+
+R <- cv |> left_join(nevner, by = "opprinnelse") |>
+  mutate(pred = exp(mu), e = M_sant - pred, mase = abs(e) / q, le = log_M_sant - mu,
+         l80 = exp(mu - z80*sd), u80 = exp(mu + z80*sd),
+         l95 = exp(mu - z95*sd), u95 = exp(mu + z95*sd),
+         dekk80 = M_sant >= l80 & M_sant <= u80, dekk95 = M_sant >= l95 & M_sant <= u95,
+         ws80 = (u80-l80) + 10*(l80-M_sant)*(M_sant<l80) + 10*(M_sant-u80)*(M_sant>u80),
+         pakke_ute = str_detect(ute, "pakke_2024h2"),
+         bruddnaer = map_lgl(dato, \(m) any(abs(as.numeric(m - iv_dato$dato))/30.44 <= 3)))
+
+# Konformal kalibrering: kvantil av |logfeil| fra alle TIDLIGERE opprinnelser
+K <- R |> arrange(.model, h, opprinnelse) |> group_by(.model, h) |>
+  mutate(q80 = map_dbl(row_number(), \(i) if (i <= 3) NA_real_ else quantile(abs(le[seq_len(i-1)]), .80, names = FALSE)),
+         q95 = map_dbl(row_number(), \(i) if (i <= 3) NA_real_ else quantile(abs(le[seq_len(i-1)]), .95, names = FALSE))) |>
+  ungroup() |>
+  mutate(kdekk80 = M_sant >= exp(mu-q80) & M_sant <= exp(mu+q80),
+         kdekk95 = M_sant >= exp(mu-q95) & M_sant <= exp(mu+q95),
+         kws80 = (exp(mu+q80)-exp(mu-q80)) + 10*(exp(mu-q80)-M_sant)*(M_sant<exp(mu-q80)) +
+                 10*(M_sant-exp(mu+q80))*(M_sant>exp(mu+q80))) |>
+  filter(!is.na(q80))
+
+# Diebold–Mariano / Clark–West
+dmtest <- function(a, b, nested, hh) {
+  x <- R |> filter(.model %in% c(a,b), h == hh) |> select(.model, opprinnelse, e) |>
+    pivot_wider(names_from = .model, values_from = e) |> drop_na()
+  e1 <- x[[a]]; e2 <- x[[b]]; n <- length(e1)
+  dd <- if (nested) e1^2 - (e2^2 - (e1-e2)^2) else e1^2 - e2^2
+  L <- hh - 1
+  g <- as.numeric(acf(dd, lag.max = max(L,1), type = "covariance", plot = FALSE)$acf)
+  v <- (g[1] + if (L > 0) 2*sum(g[2:(L+1)]) else 0) / n
+  if (is.na(v) || v <= 0) return(NA_real_)
+  (mean(dd)/sqrt(v)) * sqrt((n + 1 - 2*hh + hh*(hh-1)/n)/n)
+}
+MNAVN <- c(M0="M0 naiv", M1="M1 sesongnaiv", M2="M2 ETS", M3="M3 SARIMA",
+           M4="M4 RegARIMA + k", M5="M5 RegARIMA + X", M6="M6 RegARIMA + X + k",
+           M7="M7 med pålagt bidrag")
+```
+
+## Presisjon over horisonten {#sec-res-presisjon}
+
+```{r}
+#| label: tbl-res-samlet
+#| tbl-cap: "Samlet resultat over alle prognosepunkter. MASE under 1 betyr bedre enn sesongnaiv prognose. Dekning er andelen realisasjoner innenfor intervallet; nominelt nivå er 80 og 95 prosent. Intervallskåren er @eq-winkler — lavere er bedre, og den straffer både for bred og for smal."
+
+R |> summarise(MASE = mean(mase), RMSE = sqrt(mean(e^2)),
+               d80 = 100*mean(dekk80), d95 = 100*mean(dekk95), ws = mean(ws80), .by = .model) |>
+  arrange(MASE) |>
+  transmute(Modell = MNAVN[.model], MASE = nb(MASE, 3), RMSE = nb(RMSE),
+            `Dekning 80` = pst(d80, 0), `Dekning 95` = pst(d95, 0),
+            `Intervallskår` = nb(ws)) |>
+  kab(align = "lrrrrr")
+```
+
+@tbl-res-samlet samler utfallet. **T1 holder mot de naive referansene, men ikke mot alle.** M6 oppnår MASE `r nb(R |> filter(.model=="M6") |> pull(mase) |> mean(), 3)` mot sesongnaivs `r nb(R |> filter(.model=="M1") |> pull(mase) |> mean(), 3)` — struktur slår gjentakelse, som forventet. Men ETS ligger på `r nb(R |> filter(.model=="M2") |> pull(mase) |> mean(), 3)` og slår M6 samlet, og på tolv måneders horisont er forskjellen signifikant i ETS' favør (Diebold–Mariano `r nb(dmtest("M2","M6",FALSE,12), 2)`). Det er M4-konkurransens lærdom i praksis [@makridakis2020]: en enkel, veletablert metode er vanskelig å slå, og en modell som vet mer om regelverket vinner ikke automatisk på alle horisonter. @fig-res-mase viser hvordan forspranget forsvinner med horisonten.
+
+```{r}
+#| label: fig-res-mase
+#| fig-cap: "MASE per horisont. Stiplet linje ved 1 er sesongnaiv prognose i treningsvinduet. Ingen modell dominerer over hele horisonten: de regelinformerte er klart best på korte horisonter, mens forspranget spises opp mot tolv måneder."
+#| fig-width: 6.6
+#| fig-height: 3.2
+
+vis <- c("M1","M2","M3","M6","M7")
+fg  <- c(M1="grey68", M2="grey45", M3="grey25", M6="#00505c", M7="#b3121d")
+R |> filter(.model %in% vis) |> summarise(mase = mean(mase), .by = c(.model, h)) |>
+  ggplot(aes(h, mase, colour = .model)) +
+  geom_hline(yintercept = 1, linetype = "22", colour = "grey60", linewidth = .35) +
+  geom_line(aes(linewidth = .model == "M6")) + geom_point(size = 1) +
+  geom_text(data = ~filter(.x, h == 12), aes(label = MNAVN[.model]), hjust = -0.07, size = 2.4) +
+  scale_colour_manual(values = fg) + scale_linewidth_manual(values = c(`FALSE`=.5, `TRUE`=.9)) +
+  scale_x_continuous(breaks = c(1,3,6,9,12), expand = expansion(c(.02,.46))) +
+  labs(x = "Horisont (måneder)", y = "MASE") +
+  theme_minimal(base_size = 9) +
+  theme(legend.position = "none", panel.grid.minor = element_blank(),
+        panel.grid.major = element_line(linewidth = .25, colour = "grey88"),
+        axis.title = element_text(size = 8, colour = "grey35"))
+```
+
+## Gevinsten av regelverksinformasjon {#sec-res-gevinst}
+
+```{r}
+#| label: tbl-res-cw
+#| tbl-cap: "Sammenlikninger langs modellstigen. Clark–West brukes på nøstede par, Diebold–Mariano med Harvey-korreksjon på ikke-nøstede (@sec-met-evaluering). Positiv verdi favoriserer den første modellen; ensidig kritisk verdi ved 5 prosent er 1,64."
+
+tribble(~par, ~a, ~b, ~nested,
+        "M6 mot M3 — samlet verdi av deterministisk informasjon", "M3","M6", TRUE,
+        "M6 mot M4 — regelverkets bidrag",                        "M4","M6", TRUE,
+        "M6 mot M5 — kalenderens bidrag",                         "M5","M6", TRUE,
+        "M6 mot M2 — mot en veletablert referanse",               "M2","M6", FALSE) |>
+  mutate(map_dfr(seq_along(par), \(i) set_names(
+    map(c(1,3,6,12), \(hh) nb(dmtest(a[i], b[i], nested[i], hh), 2)),
+    c("h = 1","h = 3","h = 6","h = 12")))) |>
+  transmute(Sammenlikning = par, Test = if_else(nested, "Clark–West", "DM–Harvey"),
+            `h = 1`, `h = 3`, `h = 6`, `h = 12`) |>
+  kab(align = "llrrrr")
+```
+
+@tbl-res-cw gjør sammenlikningene langs stigen eksplisitte. **T2 holder i retning, men ikke i styrke.** M6 slår M3 med `r pst(abs(100*(mean(R$mase[R$.model=="M6"])/mean(R$mase[R$.model=="M3"]) - 1)))` på MASE, og på hver enkelt horisont. Clark–West-statistikken er positiv gjennomgående, men når ikke kritisk verdi på noen horisont. Med `r nb(length(opprinnelser))` opprinnelser per horisont er testen rett og slett for svak til å avgjøre en forskjell av denne størrelsen; det er en utvalgsbegrensning, ikke et bevis for fravær av effekt.
+
+**Kalenderregressoren hjelper på korte horisonter og skader på lange.** M6 mot M5 gir `r nb(dmtest("M5","M6",TRUE,1), 2)` ved én måned og `r nb(dmtest("M5","M6",TRUE,12), 2)` ved tolv. Sammenholdt med at M5 har lavere samlet MASE enn M6, er dette kapitlets tydeligste påminnelse om at innenfor-utvalgs-signifikans ikke er ut-av-utvalgs-verdi: kalendereffekten er utvilsomt reell (@sec-res-kalender), men den er en høyfrekvent svingning som betyr lite for nivået tolv måneder fram, og to ekstra parametre koster mer enn de smaker på et treningsvindu av denne lengden.
+
+## Aprilbruddet 2024: hva regelverksinformasjon faktisk er verdt {#sec-res-april}
+
+Gjennomsnittstall over 372 prognosepunkter skjuler den hendelsen studien er bygget for. @tbl-res-april viser alle prognoser mot termin april 2024 — seriens største enkeltbevegelse, et fall på `r pst(abs(apr24_pst))` på én termin.
+
+```{r}
+#| label: tbl-res-april
+#| tbl-cap: "Alle prognoser mot termin april 2024, fra hver opprinnelse som når fram. Fasit er 15 588 husstander; nivået måneden før var 20 849. En modell som ikke kjenner regelendringen, må lande nær 20 000."
+
+R |> filter(dato == as.Date("2024-04-01"), .model %in% c("M1","M3","M5","M6")) |>
+  transmute(.model, h, pred = round(pred)) |>
+  pivot_wider(names_from = .model, values_from = pred) |>
+  arrange(h) |>
+  transmute(`Horisont (mnd)` = h,
+            `M1 sesongnaiv` = nb(M1), `M3 SARIMA` = nb(M3),
+            `M5 RegARIMA + X` = nb(M5), `M6 RegARIMA + X + k` = nb(M6),
+            `Fasit` = nb(15588)) |>
+  kab(align = "rrrrrr")
+```
+
+Referansemodellene lander mellom 19 500 og 20 900 fra samtlige horisonter: de ser ikke bruddet, og kan ikke se det. M6 lander på `r nb(R |> filter(dato==as.Date("2024-04-01"), .model=="M6", h==9) |> pull(pred))` husstander fra ni måneders horisont, mot en fasit på 15 588 — et avvik på `r pst(abs(100*(R |> filter(dato==as.Date("2024-04-01"), .model=="M6", h==9) |> pull(pred))/15588 - 100))`. Å treffe et strukturelt fall på en fjerdedel innenfor tre prosent, ni måneder i forveien, er ikke en modelleringsprestasjon: det er informasjonen i regelverkskalenderen som gjør arbeidet, og det er hele poenget.
+
+Mønsteret er dessuten motsatt av det vanlige — M6 er *bedre* på lang enn på kort horisont for denne hendelsen. Forklaringen ligger i modellen: autoregressivkoeffisienten er nær 0,9, så på korte horisonter trekkes prognosen mot marsnivået, mens intervensjonsregressoren dominerer først når AR-leddet har fått tid til å dø ut.
+
+## Kalendereffekten før og etter skjermingen {#sec-res-kalender}
+
+```{r}
+#| label: tbl-res-t3
+#| tbl-cap: "Kalenderregressorens koeffisienter i hovedspesifikasjonen, estimert på hele utvalget. Ekvivalensgrensen er satt på forhånd til halvparten av førperiodens estimerte effekt (@tbl-tester)."
+
+fullfit <- analyse |> mutate(mnd = yearmonth(dato)) |> as_tsibble(index = mnd) |>
+  model(M6 = ARIMA(log_M ~ win_covid + win_strom + pakke_2024h2 + k_pre + k_post))
+ko <- tidy(fullfit)
+kp <- ko |> filter(term == "k_pre"); kq <- ko |> filter(term == "k_post")
+ki <- kq$estimate + c(-1,1)*qnorm(.975)*kq$std.error
+delta <- abs(kp$estimate)/2
+
+ko |> filter(term %in% c("win_covid","win_strom","pakke_2024h2","k_pre","k_post")) |>
+  transmute(Regressor = term, Koeffisient = nb(estimate, 4), `Std.feil` = nb(std.error, 4),
+            `t` = nb(statistic, 2), `Nivåeffekt` = pst(100*(exp(estimate)-1)),
+            Forventet = c("opp","opp","opp","ned","null")) |>
+  kab(align = "lrrrrl")
+```
+
+@tbl-res-t3 gir koeffisientene. **T3 holder i første ledd og faller i andre — og det er ekvivalensformuleringen som gjør forskjellen synlig.** Kalendereffekten før skjermingen er `r pst(100*(exp(kp$estimate)-1))` per ekstra meldekortutbetaling, med $t = `r nb(kp$statistic,2)`$: sterkt, riktig fortegn, og i samme størrelsesorden som det uavhengige anslaget fra fasekalibreringen (@tbl-kalender). Etter skjermingen er punktestimatet `r pst(100*(exp(kq$estimate)-1))` — så nær null som teorien kunne håpe på.
+
+Men 95 %-konfidensintervallet er $[`r nb(ki[1],4)`,\ `r nb(ki[2],4)`]$, og ekvivalensgrensen $\delta = `r nb(delta,4)`$. Intervallet er bredere enn grensen, og ekvivalens er dermed **ikke** etablert. Presist sagt: dataene utelukker at kalendereffekten overlevde i full styrke — konfidensintervallets ytterpunkt `r nb(max(abs(ki)),4)` ligger under førperiodens `r nb(abs(kp$estimate),4)` — men de kan ikke utelukke at den overlevde i halv styrke. Årsaken er utvalget: bare `r nb(sum(analyse$dato >= as.Date("2025-01-01")))` måneder ligger etter regimeskiftet, og bare et fåtall av dem er tre-utbetalingsmåneder.
+
+En ordinær nullhypotesetest ville her gitt $p = `r nb(kq$p.value, 3)`$ og invitert til konklusjonen «ingen effekt, T3 bekreftet». Det ville vært å forveksle fravær av bevis med bevis for fravær. Ekvivalenstesten sier det riktige: punktestimatet støtter teorien, men datagrunnlaget er ennå ikke sterkt nok til å *etablere* den.
+
+## Intervalldekning: implikasjonen som falt {#sec-res-dekning}
+
+```{r}
+#| label: fig-res-dekning
+#| fig-cap: "Empirisk dekning ved nominelt 80 prosent, før og etter konformal kalibrering. Åpent punkt er modellens eget intervall, fylt punkt etter kalibrering. De regelinformerte modellene har de smaleste intervallene og den dårligste dekningen — og kalibreringen lukker mesteparten av gapet."
+#| fig-width: 6.4
+#| fig-height: 2.6
+
+K |> filter(.model %in% vis) |>
+  summarise(For = 100*mean(dekk80), Etter = 100*mean(kdekk80), .by = .model) |>
+  pivot_longer(c(For, Etter), names_to = "steg", values_to = "dekning") |>
+  mutate(mod = factor(MNAVN[.model], rev(MNAVN[vis])),
+         steg = factor(steg, c("For","Etter"))) |>
+  ggplot(aes(dekning, mod)) +
+  geom_vline(xintercept = 80, linetype = "22", colour = "grey55", linewidth = .4) +
+  geom_line(aes(group = mod), colour = "grey75", linewidth = .9) +
+  geom_point(aes(fill = steg), shape = 21, size = 2.4, colour = "#00505c", stroke = .8) +
+  geom_text(aes(label = nb(dekning, 0)), vjust = -1.2, size = 2.3, colour = "grey30") +
+  scale_fill_manual(values = c(For = "white", Etter = "#00505c")) +
+  scale_x_continuous(labels = \(x) paste0(nb(x), " %"), limits = c(35, 100)) +
+  labs(x = "Empirisk dekning (stiplet linje: nominelt 80 %)", y = NULL) +
+  theme_minimal(base_size = 9) +
+  theme(legend.position = "none", panel.grid.major.y = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.grid.major.x = element_line(linewidth = .25, colour = "grey88"),
+        axis.title = element_text(size = 8, colour = "grey35"))
+```
+
+@fig-res-dekning viser dekningen før og etter kalibrering. **T4 falt, og motsatt vei av det som var forventet.** Implikasjonen sa at nominell dekning *krever* at brudd og kalender modelleres. Det stemmer ikke. M3 uten regressorer dekker `r pst(100*mean(K$dekk80[K$.model=="M3"]), 0)`, mens M6 dekker `r pst(100*mean(K$dekk80[K$.model=="M6"]), 0)`. Å modellere bruddene halverer restvariansen, intervallene krymper tilsvarende — og treffsikkerheten i sentrum følger ikke med.
+
+@tbl-res-skjevhet viser hvorfor, og svaret er ikke det nærliggende.
+
+```{r}
+#| label: tbl-res-skjevhet
+#| tbl-cap: "Dekomponering av dekningssvikten. «Skjevhet» er gjennomsnittlig logfeil — positiv betyr at modellen underpredikerer. «Forhold» er modellens eget standardavvik delt på det empiriske. Er forholdet nær 1, er intervallet riktig dimensjonert, og dekningssvikten skyldes at det står feil sted."
+
+R |> filter(.model %in% c("M3","M5","M6")) |>
+  summarise(n = n(), skjev = mean(le), t = mean(le)/(sd(le)/sqrt(n())),
+            forhold = mean(sd)/sd(le), d80 = 100*mean(dekk80), .by = c(pakke_ute, .model)) |>
+  arrange(pakke_ute, .model) |>
+  transmute(`Pakken` = if_else(pakke_ute, "ikke estimerbar", "estimerbar"),
+            Modell = MNAVN[.model], n,
+            Skjevhet = pst(100*(exp(skjev)-1)), `t` = nb(t, 1),
+            Forhold = nb(forhold, 2), `Dekning 80` = pst(d80, 0)) |>
+  kab(align = "llrrrrr")
+```
+
+Der høstpakken ikke er estimerbar, underpredikerer M6 systematisk med `r pst(100*(exp(mean(R$le[R$.model=="M6" & R$pakke_ute]))-1))`. Full-utvalgskoeffisienten for pakken er `r pst(100*(exp(LAMBDA_ORAKEL)-1))`. Skjevheten er altså praktisk talt den utelatte koeffisienten — et lærebokeksempel på utelatt-variabel-skjevhet, her kvantifisert. Intervallene er ikke først og fremst for smale; de står på feil sted.
+
+Det har en konsekvens for hvordan kalibreringen skal forstås. Konformal etterkalibrering løfter dekningen til `r pst(100*mean(K$kdekk80[K$.model=="M6"]), 0)`, og intervallskåren faller. Men den gjør det ved å *utvide intervallet til å dekke en systematisk feil*, ikke ved å fjerne feilen. Som korreksjon av dekning er det legitimt og virksomt; som svar på hvorfor prognosen bommer, er det symptombehandling. Den egentlige kuren er å skaffe effektstørrelsen utenfra — som er nettopp det M7 gjør.
+
+## Verdien av et anslag, og hvor mye det er verdt {#sec-res-prior}
+
+```{r}
+#| label: tbl-res-m7
+#| tbl-cap: "M7 mot M6 på de prognosepunktene der høstpakken var aktiv i målmåneden, men ikke estimerbar ved opprinnelsen. Det pålagte bidraget er her full-utvalgskoeffisienten — altså perfekt informasjon, ikke et publisert forhåndsanslag."
+
+p7 <- R |> filter(.model %in% c("M6","M7"), pakke_ute, dato >= as.Date("2024-07-01")) |>
+  select(.model, opprinnelse, h, mase, dekk80, ws80) |>
+  pivot_wider(names_from = .model, values_from = c(mase, dekk80, ws80))
+tibble(Mål = c("MASE", "Dekning ved 80 %", "Intervallskår"),
+       `M6` = c(nb(mean(p7$mase_M6), 3), pst(100*mean(p7$dekk80_M6), 0), nb(mean(p7$ws80_M6))),
+       `M7` = c(nb(mean(p7$mase_M7), 3), pst(100*mean(p7$dekk80_M7), 0), nb(mean(p7$ws80_M7))),
+       Endring = c(pst(100*(mean(p7$mase_M7)/mean(p7$mase_M6)-1)),
+                   sprintf("%+.0f p.p.", 100*(mean(p7$dekk80_M7)-mean(p7$dekk80_M6))),
+                   pst(100*(mean(p7$ws80_M7)/mean(p7$ws80_M6)-1)))) |>
+  kab(align = "lrrr")
+```
+
+@tbl-res-m7 gir tallene. På de `r nb(nrow(p7))` rammede punktene faller MASE med `r pst(abs(100*(mean(p7$mase_M7)/mean(p7$mase_M6)-1)))`. Forbeholdet er avgjørende og må stå først: koeffisienten som pålegges er estimert på hele utvalget, altså på data som inkluderer utfallet. Tallet måler derfor **verdien av perfekt informasjon** — en øvre grense — og ikke verdien av et faktisk forhåndsanslag. Det er ikke et resultat om konsekvensutredningers treffsikkerhet, men om hvor mye som står på spill dersom de treffer.
+
+Det er likevel den mest direkte kvantifiseringen studien kan gi av underspørsmål **UB**: et brukbart, datert anslag for en vedtatt men ikke ikrafttrådt regelendring er verdt opptil en tredjedel av prognosefeilen i det vinduet der endringen ellers er usynlig for modellen. For høstpakken 2024 finnes ikke et slikt anslag publisert (@sec-met-prior), og M7 er derfor per i dag en demonstrasjon av mekanismen, ikke et anvendbart verktøy for den hendelsen.
+
+## Estimerbar er ikke det samme som pålitelig {#sec-res-overgang}
+
+Ett funn kom ut av residualanalysen og var ikke forutsett. Inngangsregelen i @sec-met-identifikasjon slipper en regressor inn så snart den er teknisk estimerbar. Men i månedene rett etter er estimatet svært upresist, som @tbl-res-overgang viser.
+
+```{r}
+#| label: tbl-res-overgang
+#| tbl-cap: "Estimert koeffisient for høstpakken ved hver opprinnelse etter at inngangsregelen slipper den inn, mot antall observasjoner regressoren da har vært aktiv. Full-utvalgsestimatet er referansen nederst."
+
+ov <- map_dfr(opprinnelser[opprinnelser >= as.Date("2024-12-01")], \(t0) {
+  tr <- analyse |> mutate(mnd = yearmonth(dato)) |> filter(dato <= t0) |> as_tsibble(index = mnd)
+  co <- tr |> model(m = ARIMA(log_M ~ win_covid + win_strom + pakke_2024h2 + k_pre)) |>
+    tidy() |> filter(term == "pakke_2024h2")
+  tibble(Opprinnelse = mnd(t0), `Aktive obs.` = sum(tr$pakke_2024h2 != 0),
+         Koeffisient = nb(co$estimate, 4), `Std.feil` = nb(co$std.error, 4),
+         `Nivåeffekt` = pst(100*(exp(co$estimate)-1)))
+})
+bind_rows(ov, tibble(Opprinnelse = "fullt utvalg", `Aktive obs.` = sum(analyse$pakke_2024h2 != 0),
+                     Koeffisient = nb(LAMBDA_ORAKEL, 4), `Std.feil` = "—",
+                     `Nivåeffekt` = pst(100*(exp(LAMBDA_ORAKEL)-1)))) |>
+  kab(align = "lrrrr")
+```
+
+Koeffisienten svinger mellom om lag `r pst(100*(exp(min(as.numeric(str_replace(ov$Koeffisient, ",", "."))))-1))` og `r pst(100*(exp(max(as.numeric(str_replace(ov$Koeffisient, ",", "."))))-1))` i overgangsvinduet, mot `r pst(100*(exp(LAMBDA_ORAKEL)-1))` på fullt utvalg. Det forklarer den motsatte skjevheten i @tbl-res-skjevhet: der pakken *er* estimerbar, overpredikerer modellen, fordi koeffisienten i en periode er nesten dobbelt så stor som den skal være.
+
+Konsekvensen er en presisering av protokollen som bør inn i en revidert versjon: det finnes tre regimer, ikke to. En regressor kan være *uidentifiserbar*, *identifisert men upålitelig*, eller *identifisert og stabil*. Inngangsregelen skiller bare det første fra de to siste. Det naturlige svaret er ikke en høyere terskel, men å la M7 gjøre mer arbeid: krympe mot det pålagte anslaget så lenge dataene er tynne, og slippe estimatet til etter hvert. Det er en bayesiansk formulering, og den hører hjemme i BSTS-klassen som @sec-teori-modeller allerede peker på.
+
+## Hva som ikke holdt {#sec-res-oppgjor}
+
+| | Implikasjon | Utfall |
+|:----|:-------------------------|:-------------------------------|
+| **T1** | Struktur slår naive referanser | **Holder delvis.** Slår naiv og sesongnaiv klart; ETS slår M6 samlet og signifikant på tolv måneder |
+| **T2** | Eksplisitte intervensjoner hjelper | **Holder i retning.** MASE ned; Clark–West når ikke kritisk verdi på noen horisont |
+| **T3** | Kalendereffekt stor før 2025, eksakt null etter | **Holder i første ledd.** Ekvivalens ikke etablert ved den forhåndssatte grensen; full styrke utelukket, halv styrke ikke |
+| **T4** | Nominell dekning krever brudd og kalender | **Faller.** Modellering forverrer dekningen; konformal kalibrering reparerer den |
+| **T5** | Daterte anslag bærer informasjon | **Ikke testbar som formulert.** Ingen publiserte husstandstall for hendelsen det gjaldt; demonstrert med perfekt informasjon som øvre grense |
+
+: Utfallet holdt opp mot «faller dersom»-kolonnen i @tbl-tester, som ble skrevet før estimeringen. {#tbl-res-oppgjor}
+
+@tbl-res-oppgjor stiller utfallet opp mot kontrakten. To av implikasjonene overlevde ikke møtet med dataene, og begge feilene er informative. T4 falt fordi den bygde på en feil intuisjon: at bedre modellering av kjente brudd også gir bedre kalibrert usikkerhet. Det motsatte skjer, fordi en modell som forklarer mer av fortiden blir mer selvsikker om framtiden uten å bli mer treffsikker der informasjonen mangler. T5 lot seg ikke teste fordi kildegrunnlaget sviktet — og at det sviktet, er i seg selv et funn om kunnskapsgrunnlaget på feltet.
+
+Det som står igjen som studiens sterkeste enkeltresultat, er ikke et gjennomsnitt: det er at en modell med regelverkskalenderen traff et strukturelt fall på en fjerdedel innenfor tre prosent, ni måneder i forveien (@sec-res-april). Gjennomsnitt over rolige måneder skjuler den evnen. Det er nettopp derfor evalueringen er stratifisert, og nettopp derfor et samlet MASE-tall er utilstrekkelig som beslutningsgrunnlag.
 
 # Referanser {.unnumbered}
 
