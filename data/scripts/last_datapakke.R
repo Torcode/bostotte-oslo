@@ -1,11 +1,11 @@
 # =============================================================================
-# velferdsetaten_data.R
+# last_datapakke.R
 # R-laster for datapakken til bostøtte-prognoseprosjektet (Velferdsetaten-prep)
 # Bygget 4. august 2026. Full kildedokumentasjon: docs/datakilder.md i pakken.
 #
 # BRUK
-#   source("velferdsetaten_data.R")
-#   d <- last_alt("sti/til/velferdsetaten-data")   # utpakket datapakke
+#   source("last_datapakke.R")
+#   d <- last_alt("sti/til/data")   # utpakket datapakke
 #   d$oslo            # Oslo månedlig 2010-2026 (termin- og utbetalingskalender)
 #   d$oslo_bydel      # 15 bydeler x måned
 #   d$brukergruppe    # Oslo x brukergruppe x måned (skjermingens behandlingsgruppe)
@@ -13,7 +13,7 @@
 #   sjekk_data(d)     # kjører de seks QA-kontrollene
 #   plot_oslo(d)      # rask serieplott med intervensjonslinjer (krever ggplot2)
 #
-# Kjørt direkte (Rscript velferdsetaten_data.R) lastes alt og QA-en kjøres.
+# Kjørt direkte (Rscript last_datapakke.R) lastes alt og QA-en kjøres.
 #
 # Avhengigheter: readr, dplyr, lubridate (tidyverse-kjernen). ggplot2 kun for plott.
 # =============================================================================
@@ -27,13 +27,13 @@ suppressPackageStartupMessages({
 # --- Finn datamappen -----------------------------------------------------------
 # Leter etter utpakket datapakke i angitt sti og vanlige kandidater.
 finn_datamappe <- function(sti = NULL) {
-  kandidater <- c(sti, "velferdsetaten-data", ".", "..",
-                  file.path(path.expand("~"), "velferdsetaten-data"))
+  kandidater <- c(sti, "data", ".", "..",
+                  file.path(path.expand("~"), "data"))
   marker <- file.path("data", "raw", "husbanken_bostotte_oslo_manedlig.csv")
   for (k in kandidater) {
     if (!is.null(k) && file.exists(file.path(k, marker))) return(normalizePath(k))
   }
-  stop("Fant ikke datapakken. Pakk ut zip-en og angi stien: last_alt('sti/til/velferdsetaten-data')")
+  stop("Fant ikke datapakken. Pakk ut zip-en og angi stien: last_alt('sti/til/data')")
 }
 
 # --- Husbanken-seriene (Qlik-uttrekk) -----------------------------------------

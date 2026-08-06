@@ -796,3 +796,61 @@ rapporten er ikke kildeferdig før de 30 er gjennomgått.
 
 **Filer endret:** `referanser.bib`, `bostotte_oslo.qmd` (tre avsnitt omskrevet),
 `verifiser.R` (bibliografikontroll), `README.md`.
+
+## M9. Repoet strukturert for en leser (6. august 2026)
+
+Repoet var ordnet etter hvordan det ble til, ikke etter hvordan det leses. Det er
+nå snudd. En fagfelle som åpner `github.com/Torcode/bostotte-oslo` skal på under
+et minutt kunne svare på fire spørsmål: hva er dette, hva ble resultatet, kan
+jeg stole på tallene, og kan jeg bygge det selv.
+
+**Datamappa heter `data/`, ikke `velferdsetaten-data/`.** Prosjektet er et eget
+initiativ; ingen har bedt om det. En mappe oppkalt etter etaten leses lett som at
+arbeidet er gjort på oppdrag, og motsier uavhengighetserklæringen i README-en to
+skjermlengder over. Samtidig er `data/` det en leser forventer. Den nøstede
+`data/data/raw/` er flatet ut til `data/raw/`. R-lasteren heter nå
+`data/scripts/last_datapakke.R`. Trettién henvisninger i fem filer er oppdatert;
+eldre loggposter viser fortsatt til `velferdsetaten-data/`, og det er samme mappe.
+
+**Endringsloggene ligger i `logg/`.** De er prosessdokumentasjon, ikke leveransen,
+og to filer med lange navn i rota konkurrerte med README-en om oppmerksomheten.
+
+**README-en åpner nå med lenka til rapporten.** Under tittelen står ett kall til
+handling — `Les rapporten (PDF, 36 sider)` — og en linje med de fire neste
+klikkene: kilden, datagrunnlaget, kodeboka, loggen. Filoversikten er delt i fire
+grupper etter hva leseren er ute etter, og hver rad er en lenke. Det var før én
+udifferensiert tabell.
+
+**CI hentet fra PR #12, resten ikke.** Grenen `docs/phase-1-contract` inneholdt
+fjorten filer. To er tatt inn: `scripts/validate_phase1.py` og
+`.github/workflows/ci.yml`. Validatoren kjører 47 datakontrakter i ren Python —
+bydelstallene summerer til Oslo, brukergruppene summerer til Oslo, termin- og
+utbetalingskalenderen henger sammen over 198 par, sanntidskanten er identifisert
+— og trenger ikke R. Det betyr at en leser kan se at datagrunnlaget holder uten
+å installere noe, og at et grønt merke i README-en er dekket av noe reelt.
+
+To endringer var nødvendige: den lette etter `unt_1.qmd`, og den krevde seks
+prosessdokumenter fra samme gren. Fillisten peker nå på det en leser faktisk
+trenger for å etterprøve arbeidet — kodebok, datakilder, endringslogger,
+byggekontrollene — framfor på et bestemt prosessrammeverk. Resultat: **47
+bestått, 0 feil, 2 advarsler.** Begge advarslene er ekte og står allerede i
+README-ens begrensningsliste: to intervensjoner er delvis kildeverifisert, og 30
+bibliografioppføringer har uverifiserte metadata.
+
+PR-ens egen `README.md` er ikke tatt inn. Den beskriver prosjektet som at det
+«ennå ikke har publisert validerte prognoseresultater». Det var riktig 5. august
+og er feil nå. `AGENTS.md`, `CLAUDE.md` og de seks `docs/`-filene står ubesluttet:
+de er 1400 linjer prosessdokumentasjon rundt en leveranse på 36 sider, og de
+opplyser enhver leser om at repoet drives av agenter. Om det skal vises fram er
+en redaksjonell avgjørelse, ikke en teknisk.
+
+**Kontrollene ligger nå i to lag med hvert sitt formål**, og det er verdt å skille
+dem: de ni regnskapsidentitetene stopper *renderingen*, slik at rapporten ikke
+kan trykke et tall som ikke stemmer; de 47 datakontraktene stopper *pushen*, slik
+at ingen kan endre datagrunnlaget uten at det oppdages. `verifiser.R` er et tredje
+lag som fanger tegnsettfeller. Ingen av dem erstatter de andre.
+
+**Filer endret:** `velferdsetaten-data/` → `data/` (med flating av `data/data/`),
+`velferdsetaten_data.R` → `last_datapakke.R`, `endringslogg-*.md` → `logg/`,
+`README.md`, `bostotte_oslo.qmd`, `oppsett.R`, `.gitignore`,
+`scripts/validate_phase1.py` (ny), `.github/workflows/ci.yml` (ny).

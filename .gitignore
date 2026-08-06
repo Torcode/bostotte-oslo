@@ -31,12 +31,13 @@
 # ellers ligger den i utakt med kilden.
 
 # --- Store binærfiler som ikke trengs ---
-# Datapakke-zip (redundant med utpakket velferdsetaten-data/)
+# Datapakke-zip (redundant med utpakket data/)
 *.zip
 
-# --- Python-bytekode (regenereres av tolkeren) ---
+# --- Python-bytekode og CI-artefakter (regenereres) ---
 __pycache__/
 *.py[cod]
+/artifacts/
 
 # --- Lokale opprydningsmapper (skal aldri versjoneres) ---
 _to_delete/

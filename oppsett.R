@@ -66,7 +66,7 @@ if (length(lastefeil)) {
 # --- Ligger filene der de skal? --------------------------------------------
 cat(strrep("-", 62), "\n")
 noedvendig <- c("bostotte_oslo.qmd", "referanser.bib", "mal/typst-template.typ",
-                "velferdsetaten-data/scripts/velferdsetaten_data.R")
+                "data/scripts/last_datapakke.R")
 for (f in noedvendig) {
   cat(if (file.exists(f)) "  OK      " else "  MANGLER ", f, "\n", sep = "")
 }
@@ -78,10 +78,10 @@ if (!file.exists("bostotte_oslo.qmd")) {
 
 # --- Laster datapakken? ----------------------------------------------------
 cat(strrep("-", 62), "\n")
-if (file.exists("velferdsetaten-data/scripts/velferdsetaten_data.R")) {
+if (file.exists("data/scripts/last_datapakke.R")) {
   ok <- tryCatch({
-    suppressPackageStartupMessages(source("velferdsetaten-data/scripts/velferdsetaten_data.R"))
-    d <- last_alt("velferdsetaten-data")
+    suppressPackageStartupMessages(source("data/scripts/last_datapakke.R"))
+    d <- last_alt("data")
     cat("Datapakken lastet:", length(d), "objekter,",
         format(nrow(d$oslo)), "månedsrader i Oslo-serien.\n")
     TRUE

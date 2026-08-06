@@ -1,5 +1,13 @@
 # Prognose for statlig bostøtte i Oslo
 
+[![Datakontrakt](https://github.com/Torcode/bostotte-oslo/actions/workflows/ci.yml/badge.svg)](https://github.com/Torcode/bostotte-oslo/actions/workflows/ci.yml)
+
+### → [Les rapporten (PDF, 36 sider)](bostotte_oslo.pdf)
+
+[Kilden bak den](bostotte_oslo.qmd) · [datagrunnlaget](data/) · [kodebok](data/docs/kodebok.md) · [endringslogg](logg/)
+
+---
+
 Hvor presist kan månedlig antall husstander med statlig bostøtte i Oslo prognostiseres
 1–12 måneder fram ved hjelp av **åpne data** — og hvor mye bedre blir prognosen når
 kjente regelendringer modelleres eksplisitt?
@@ -68,20 +76,40 @@ enhver maskin.
 
 ## Hva ligger hvor
 
+**Leveransen**
+
 | Sti | Innhold |
 |---|---|
-| `bostotte_oslo.qmd` | Hele arbeidet: teori, metode, resultater. All beregning kjører ved rendering |
-| `mal/typst-template.typ` | Dokumentmal (A4, booktabs-tabeller, norsk typografi) |
-| `referanser.bib` | Litteraturliste |
-| `oppsett.R` | Installerer det som mangler og sjekker miljøet |
-| `verifiser.R` | Byggekontroll: parser dokumentet i et rent C-tegnsett, og sjekker referanselisten |
-| `.Rprofile` | Sikrer UTF-8 ved oppstart, også i R-prosessen Quarto starter |
-| `velferdsetaten-data/data/raw/` | Rådata og primærkilder, arkivert slik de ble hentet |
-| `velferdsetaten-data/data/clean/` | Bearbeidede serier og kuraterte oppslagstabeller |
-| `velferdsetaten-data/scripts/` | Uttrekksskript (Python) og R-laster for datapakken |
-| `velferdsetaten-data/docs/` | `datakilder.md` (hvor tallene kommer fra) og `kodebok.md` (hva hver kolonne betyr) |
-| `litteratur/` | Bakgrunnsrapporter som siteres i teksten |
-| `endringslogg-*.md` | Hva som er endret underveis, og hvorfor |
+| [`bostotte_oslo.pdf`](bostotte_oslo.pdf) | Rapporten, ferdig bygget. Versjoneres bevisst, slik at den kan leses uten å installere noe |
+| [`bostotte_oslo.qmd`](bostotte_oslo.qmd) | Hele arbeidet: teori, metode, resultater. All beregning kjører ved rendering |
+| [`referanser.bib`](referanser.bib) | Litteraturliste |
+
+**Datagrunnlaget** — [`data/`](data/)
+
+| Sti | Innhold |
+|---|---|
+| [`data/raw/`](data/raw/) | Rådata og primærkilder, arkivert slik de ble hentet |
+| [`data/clean/`](data/clean/) | Bearbeidede serier og kuraterte oppslagstabeller |
+| [`data/docs/kodebok.md`](data/docs/kodebok.md) | Hva hver kolonne betyr |
+| [`data/docs/datakilder.md`](data/docs/datakilder.md) | Hvor hvert tall kommer fra |
+| [`data/scripts/`](data/scripts/) | Uttrekksskript (Python) og R-laster for datapakken |
+
+**Å bygge og etterprøve**
+
+| Sti | Innhold |
+|---|---|
+| [`oppsett.R`](oppsett.R) | Installerer det som mangler og sjekker miljøet |
+| [`verifiser.R`](verifiser.R) | Byggekontroll: parser dokumentet i et rent C-tegnsett og sjekker referanselisten |
+| [`scripts/validate_phase1.py`](scripts/validate_phase1.py) | 47 datakontrakter i Python, uten R. Kjøres av GitHub ved hver push |
+| [`.Rprofile`](.Rprofile) | Sikrer UTF-8 ved oppstart, også i R-prosessen Quarto starter |
+| [`mal/typst-template.typ`](mal/typst-template.typ) | Dokumentmal (A4, booktabs-tabeller, norsk typografi) |
+
+**Bakgrunn og historikk**
+
+| Sti | Innhold |
+|---|---|
+| [`logg/`](logg/) | Hva som er endret underveis, og hvorfor. Hver post har før, etter og begrunnelse |
+| [`litteratur/`](litteratur/) | Bakgrunnsrapporter som siteres i teksten |
 
 ## Datagrunnlaget
 
@@ -104,11 +132,20 @@ statistikkbankens Qlik Engine-API. Ved siden av ligger fem kuraterte tabeller by
 primærkilder: regelverkskalenderen, forskriftsparametrene, strømtiltakenes månedsbeløp,
 publiserte nasjonale årstall og daterte effektanslag.
 
-**Datagrunnlaget er verifisert, ikke antatt.** Ni regnskapsidentiteter kjøres ved hver
-rendering, og en kontroll som feiler stopper byggingen. Uttrekket er dessuten validert
-eksternt mot Husbankens publiserte nasjonale årstall: avvik på 0,00 til −2,10 % over
-fem år, med et ensidig negativt avvik som er signaturen til etterkontroll mot
-skatteoppgjøret. Beløpsserien måler altså omregnet rett, ikke utbetalt kasse.
+**Datagrunnlaget er verifisert, ikke antatt.** Kontrollene ligger i to lag som ikke
+overlapper i formål. Ni regnskapsidentiteter kjøres ved hver rendering, og en kontroll
+som feiler stopper byggingen — de sikrer at *rapporten* ikke kan trykke et tall som
+ikke stemmer. Ved siden av kjører [`scripts/validate_phase1.py`](scripts/validate_phase1.py)
+47 datakontrakter i ren Python ved hver push til GitHub: bydelstallene summerer til
+Oslo, brukergruppene summerer til Oslo, termin- og utbetalingskalenderen henger sammen
+over 198 par, sanntidskanten er identifisert. De trenger ikke R, og gjør at
+**en leser kan se at dataene holder uten å installere noe** — merket øverst er den
+kjøringen.
+
+Uttrekket er dessuten validert eksternt mot Husbankens publiserte nasjonale årstall:
+avvik på 0,00 til −2,10 % over fem år, med et ensidig negativt avvik som er signaturen
+til etterkontroll mot skatteoppgjøret. Beløpsserien måler altså omregnet rett, ikke
+utbetalt kasse.
 
 ## Kjente begrensninger
 

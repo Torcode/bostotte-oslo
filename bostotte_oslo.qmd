@@ -181,16 +181,16 @@ kab <- function(x, ...) {
                            error = function(e) getwd())
 DATASTI <- NULL
 .ulesbar <- character()
-for (.k in unique(c("velferdsetaten-data",
-                    file.path(.dokumentmappe, "velferdsetaten-data"),
-                    file.path(getwd(), "velferdsetaten-data")))) {
-  .f <- file.path(.k, "scripts", "velferdsetaten_data.R")
+for (.k in unique(c("data",
+                    file.path(.dokumentmappe, "data"),
+                    file.path(getwd(), "data")))) {
+  .f <- file.path(.k, "scripts", "last_datapakke.R")
   if (!file.exists(.f)) next
   if (.leselig(.f)) { DATASTI <- .k; break }
   .ulesbar <- c(.ulesbar, .f)
 }
 if (is.null(DATASTI)) {
-  stop("\n\nFant ingen lesbar datapakke «velferdsetaten-data/».",
+  stop("\n\nFant ingen lesbar datapakke «data/».",
        "\n  Arbeidsmappe:       ", getwd(),
        "\n  Dokumentets mappe:  ", .dokumentmappe,
        if (length(.ulesbar))
@@ -204,7 +204,7 @@ if (is.null(DATASTI)) {
                 "eller kjør\n  quarto render bostotte_oslo.qmd\nfra repo-roten.\n"),
        call. = FALSE)
 }
-source(file.path(DATASTI, "scripts", "velferdsetaten_data.R"))
+source(file.path(DATASTI, "scripts", "last_datapakke.R"))
 d <- last_alt(DATASTI)
 
 UTTREKKSDATO <- "4. august 2026"   # vintage; jf. avsnitt om proveniens
@@ -433,7 +433,7 @@ Teorien over gir fire testbare implikasjoner. **T1:** Beholdningsstrukturen (@eq
 
 Metodekapitlet gjør én kontrakt eksplisitt: hver størrelse som inngår i analysen skal kunne regenereres av navngitt kode fra navngitt kilde, og hver modellbeslutning skal kunne spores tilbake til et argument i @sec-teori eller et dokumentert empirisk faktum. Kapitlet åpner med datagrunnlaget — hva vi ideelt sett burde hatt, hva vi faktisk har, hva forskjellen koster, og hva som er gjort med dataene før de brukes (@sec-met-data). Deretter formaliseres estimanden (@sec-met-estimand), og de deterministiske regressorene bygges: intervensjonsmatrisen (@sec-met-x) og kalenderregressoren (@sec-met-kalender). Modellspesifikasjoner, prognoseprotokoll og evaluering følger i kapitlets andre del.
 
-All kode som produserer tallene nedenfor kjører når dokumentet bygges. Selve koden er utelatt fra PDF-en av lesbarhetshensyn; den ligger i kildefilen `unt_1.qmd` og i `velferdsetaten-data/scripts/`, og hver tabell i dette avsnittet oppgir hvilket objekt den er beregnet fra.
+All kode som produserer tallene nedenfor kjører når dokumentet bygges. Selve koden er utelatt fra PDF-en av lesbarhetshensyn; den ligger i kildefilen `unt_1.qmd` og i `data/scripts/`, og hver tabell i dette avsnittet oppgir hvilket objekt den er beregnet fra.
 
 ## Datagrunnlaget {#sec-met-data}
 
@@ -485,7 +485,7 @@ Identiteten er ikke en antakelse: begge kalendrene hentes fra samme kilde med id
 
 ### Kildene og hvordan de er hentet {#sec-met-kilder}
 
-Innhentingen følger stigen i @sec-teori-data, øverst først: API, strukturerte filer, tabelluttrekk fra PDF, høflig skraping, innsyn. Prinsippet gjennom alle trinn er proveniens — hver tallkolonne skal kunne regenereres av et navngitt skript fra en navngitt kilde, uten manuell redigering. @tbl-kildekart er den operasjonaliserte varianten: hver rad er hentet av et navngitt skript i `velferdsetaten-data/scripts/`, og rådata er arkivert i `data/raw/` slik at enhver kolonne kan etterprøves offline.
+Innhentingen følger stigen i @sec-teori-data, øverst først: API, strukturerte filer, tabelluttrekk fra PDF, høflig skraping, innsyn. Prinsippet gjennom alle trinn er proveniens — hver tallkolonne skal kunne regenereres av et navngitt skript fra en navngitt kilde, uten manuell redigering. @tbl-kildekart er den operasjonaliserte varianten: hver rad er hentet av et navngitt skript i `data/scripts/`, og rådata er arkivert i `data/raw/` slik at enhver kolonne kan etterprøves offline.
 
 | Rolle | Kilde og uttrekksmetode | Skript |
 |:-----------------|:--------------------------------------------|:-------------------|
@@ -1381,7 +1381,7 @@ Kontrakten fra kapitlets åpning gjelder også modelldelen: hver størrelse skal
 
 *Miljø.* Pakkeversjonene låses med `renv`, og låsefilen versjoneres. R- og Quarto-versjon, samt datapakkens uttrekksdato (`r UTTREKKSDATO`), stemples i dokumentet. Typst-malen bruker bare fonter Typst har innebygd; det er et typografisk valg, men det hører hjemme her, fordi det er grunnen til at PDF-en blir identisk uansett vertsmaskin.
 
-*Kart over løypa.* Datalasting og verifikasjon i chunkene `oppsett` til `tbl-kontroller`; regressorkonstruksjon i `met-intervensjoner` og `met-kalender-reg`; analysesettet i `met-analysesett`; protokollparametrene i `protokoll`. Uttrekksskriptene som produserer datapakken, ligger i `velferdsetaten-data/scripts/` og er dokumentert i `datakilder.md` og `kodebok.md`.
+*Kart over løypa.* Datalasting og verifikasjon i chunkene `oppsett` til `tbl-kontroller`; regressorkonstruksjon i `met-intervensjoner` og `met-kalender-reg`; analysesettet i `met-analysesett`; protokollparametrene i `protokoll`. Uttrekksskriptene som produserer datapakken, ligger i `data/scripts/` og er dokumentert i `datakilder.md` og `kodebok.md`.
 
 *Feil skal stoppe byggingen, ikke passere stille.* Verifikasjonskontrollene i @sec-met-verifikasjon avbryter renderingen ved avvik. Samme prinsipp gjelder modelldelen: dimensjonskrav på analysesettet, krav om at de deterministiske regressorene er komplette over hele prognosehorisonten, og krav om at antall prognosepunkter per horisont stemmer med protokollen, håndheves med eksplisitte krav i koden framfor å kontrolleres ved øyemål.
 
