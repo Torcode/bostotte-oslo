@@ -25,38 +25,30 @@ trend og utbetalingskalender som sesong, og framskriver begge deler feil.
 > Filene og arbeidetet inneholder ikke-verfisert KI-informasjon.
 > 
 
-## Dette er et læringsprosjekt — les dette først
+## Læringsprosjekt med et mål — les dette først
 
-Formålet er **ikke** å levere en ferdig prognosemodell. Formålet er å lære bostøttefeltet
-og hele analysekjeden ved å bygge den selv, ett ledd om gangen, med KI som verktøy hele
-veien.
+Målet er en prognosemodell som holder: månedlig antall bostøttemottakere i Oslo, 1–12
+måneder fram, med intervaller som dekker det de lover. Veien dit er å bygge den selv, ett
+ledd om gangen, med KI som verktøy hele veien.
 
-Det har en konsekvens som må sies rett ut, ikke gjemmes i en fotnote: **filene og arbeidet
-i dette repoet inneholder ikke-verifisert innhold.** Det er et stadium, ikke en
-forglemmelse. Et læringsprosjekt som later som alt er ferdigkontrollert, lærer ingen noe —
-og det ville vært den ene feilen dette prosjektet handler om å unngå.
+Den er ikke i mål ennå, og **filene og arbeidet i repoet inneholder ikke-verifisert
+innhold.** Fasene er der for å lukke det systematisk: hver fase fester én hjørnestein, og
+neste fase hviler ikke på en som ikke er festet.
 
-Derfor er arbeidet delt i faser, og **rekkefølgen er en læringsrekkefølge**: hver fase har
-som eneste jobb å feste én hjørnestein, og neste fase har ikke lov til å hvile på en
-hjørnestein som ikke er festet.
-
-| Fase | Hjørnesteinen den skal feste | Status |
+| Fase | Hjørnesteinen den skal feste | Hvor det står |
 |---|---|---|
 | **1 — Datagrunnlaget** | Er dataene det de utgir seg for? Kan hver kolonne føres tilbake til en navngitt kilde og et navngitt skript? | Kontrollene kjører; litteraturlista gjenstår |
-| **2 — Modellene, i R** | Holder mekanikken? Rullerende opprinnelse, referansemodeller, intervensjonsanalyse, kalibrerte intervaller | Kjørt. Fire feil funnet og åpne |
-| **3 — Modellene, i Python** | De klassene R-verktøyet ikke dekker: gradientboosting, bayesiansk strukturell tidsserie, hierarkisk avstemming | Spesifisert, ikke estimert |
+| **2 — Modellene i R** | Holder mekanikken? Rullerende opprinnelse, referansemodeller, intervensjonsanalyse, kalibrerte intervaller | Kjørt. Fire feil funnet og åpne |
+| **3 — Modellene i Python** | De klassene R-verktøyet ikke dekker: gradientboosting, bayesiansk strukturell tidsserie, hierarkisk avstemming | Spesifisert, ikke estimert |
 | **4 — Drift** | Hva som skal til for at noe slikt kan kjøre i en etat: kjøreplan, terskler, overvåkning, eierskap | Ikke påbegynt |
 
-**Hvorfor R først, og Python etterpå.** Fase 2 er skrevet i R fordi det er der
-tidsserieverktøyet bor — `fable`, `tsibble` og `feasts` gir ARIMA med eksogene
-regressorer, rullerende opprinnelse og prediksjonsfordelinger i samme rammeverk, og Quarto
-gjør hele dokumentet reproduserbart i én kommando. Det er den korteste veien til å forstå
-*hva som faktisk skjer* i en prognose. Fase 3 flytter til Python fordi modellklassene som
-gjenstår hører hjemme der, og fordi det er den overgangen som er verdt å lære: fra en
-modell man kan gjøre rede for, til en modell som må evalueres mot den første for å
-forsvare seg.
+**Hvorfor R først.** Tidsserieverktøyet bor der: `fable`, `tsibble` og `feasts` gir ARIMA
+med eksogene regressorer, rullerende opprinnelse og prediksjonsfordelinger i samme
+rammeverk, og Quarto gjør dokumentet reproduserbart i én kommando. Fase 3 flytter til
+Python fordi modellklassene som gjenstår — gradientboosting, bayesiansk strukturell
+tidsserie, hierarkisk avstemming — hører hjemme der, og skal måles mot R-baselinen.
 
-**Hva som har hvilken status i dag:**
+**Hva du kan stole på i dag:**
 
 | Hva | Status |
 |---|---|
@@ -65,10 +57,9 @@ forsvare seg.
 | **Litteraturlista** | Delvis verifisert. 30 av 81 oppføringer har ukontrollert utgiver, URL og sidetall |
 | **Enkelte resultatpåstander** | Under retting. Se [åpne issues](https://github.com/Torcode/bostotte-oslo/issues) — blant annet en kodefeil som gjør at modell M7 ikke gjør det teksten beskriver |
 
-Feil som blir funnet, legges ut som issues med hva som er galt, hvordan det ble oppdaget
-og hva rettelsen er — framfor å bli stille rettet. Begrunnelsen for hver endring ligger i
-[`logg/`](logg/). En rapport som skal kunne etterprøves, må vise sine egne feil like
-tydelig som sine funn; det er dét fasene og loggen er til for.
+Feil som blir funnet, legges ut som [issues](https://github.com/Torcode/bostotte-oslo/issues)
+med diagnose og rettelse framfor å bli stille rettet. Begrunnelsen for hver endring ligger
+i [`logg/`](logg/).
 
 ## Hovedfunn
 
