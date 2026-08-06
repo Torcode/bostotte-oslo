@@ -41,15 +41,20 @@ hviler ikke på en som ikke er festet.
 | Fase | Hjørnesteinen den skal feste | Hvor det står |
 |---|---|---|
 | **1 — Datagrunnlaget** | Er dataene det de utgir seg for? Kan hver kolonne føres tilbake til en navngitt kilde og et navngitt skript? | Kontrollene kjører; litteraturlista gjenstår |
-| **2 — Modellene i R** | Holder mekanikken? Rullerende opprinnelse, referansemodeller, intervensjonsanalyse, kalibrerte intervaller | Kjørt. Fire feil funnet og åpne |
-| **3 — Modellene i Python** | De klassene R-verktøyet ikke dekker: gradientboosting, bayesiansk strukturell tidsserie, hierarkisk avstemming | Spesifisert, ikke estimert |
-| **4 — Drift** | Hva som skal til for at noe slikt kan kjøre i en etat: kjøreplan, terskler, overvåkning, eierskap | Ikke påbegynt |
+| *Faseport* | Prognoseobjekt, informasjonssett og evalueringskontrakt fryses **før** første modell estimeres | Passert |
+| **2 — Modellene** | Holder mekanikken? Først referansemodeller og intervensjonsanalyse i R, så ML-klassene i Python — målt mot samme baseline | R-delen kjørt, fire feil åpne. Python-delen ikke påbegynt |
+| **3 — Drift** | Hva som skal til for at noe slikt kan kjøre i en etat: kjøreplan, terskler, overvåkning, eierskap, og hva som *ikke* bør bygges | Ikke påbegynt |
 
-**Hvorfor R først.** Tidsserieverktøyet bor der: `fable`, `tsibble` og `feasts` gir ARIMA
-med eksogene regressorer, rullerende opprinnelse og prediksjonsfordelinger i samme
-rammeverk, og Quarto gjør dokumentet reproduserbart i én kommando. Fase 3 flytter til
-Python fordi modellklassene som gjenstår — gradientboosting, bayesiansk strukturell
-tidsserie, hierarkisk avstemming — hører hjemme der, og skal måles mot R-baselinen.
+Oppgavene i hver fase ligger som
+[issues](https://github.com/Torcode/bostotte-oslo/issues), merket med fasen sin.
+
+**Hvorfor R før Python inne i fase 2.** Tidsserieverktøyet bor i R: `fable`, `tsibble` og
+`feasts` gir ARIMA med eksogene regressorer, rullerende opprinnelse og
+prediksjonsfordelinger i samme rammeverk, og Quarto gjør dokumentet reproduserbart i én
+kommando. Det gir en baseline man kan gjøre rede for. Deretter Python, fordi klassene som
+gjenstår — gradientboosting, bayesiansk strukturell tidsserie, hierarkisk avstemming —
+hører hjemme der og skal måles mot nettopp den baselinen. En ML-modell som ikke slår en
+sesongnaiv referanse, har ikke fortjent plassen sin.
 
 **Hva du kan stole på i dag:**
 
