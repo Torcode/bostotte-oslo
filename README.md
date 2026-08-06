@@ -31,9 +31,12 @@ Målet er en prognosemodell som holder: månedlig antall bostøttemottakere i Os
 måneder fram, med intervaller som dekker det de lover. Veien dit er å bygge den selv, ett
 ledd om gangen, med KI som verktøy hele veien.
 
-Den er ikke i mål ennå, og **filene og arbeidet i repoet inneholder ikke-verifisert
-innhold.** Fasene er der for å lukke det systematisk: hver fase fester én hjørnestein, og
-neste fase hviler ikke på en som ikke er festet.
+Den er ikke i mål ennå.
+
+> **Filene og arbeidet inneholder ikke-verifisert informasjon.**
+
+Fasene er der for å lukke det systematisk: hver fase fester én hjørnestein, og neste fase
+hviler ikke på en som ikke er festet.
 
 | Fase | Hjørnesteinen den skal feste | Hvor det står |
 |---|---|---|
