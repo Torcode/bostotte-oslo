@@ -71,24 +71,75 @@ knitr::opts_chunk$set(
   fig.align = "center", dev = "svg"
 )
 
-# UTF-8 uavhengig av vertsmaskin. Uten dette skriver kable() ikke-ASCII-tegn
-# som <U+00E5> når R kjører i C-locale (typisk i container/CI), og tabellene
-# blir uleselige. Kallet er en nullhandling når locale allerede er UTF-8.
-if (!isTRUE(l10n_info()[["UTF-8"]])) {
-  for (loc in c("nb_NO.UTF-8", "nb_NO.utf8", "C.UTF-8", "C.utf8")) {
-    if (!isTRUE(l10n_info()[["UTF-8"]])) try(Sys.setlocale("LC_ALL", loc), silent = TRUE)
+# --- UTF-8 uavhengig av vertsmaskin ------------------------------------------
+# Uten UTF-8 som native encoding konverterer R hver ikke-ASCII-streng til
+# vertens tegnsett på vei ut, og skriver <U+00E5> der det skulle stått å. Da
+# blir både tabeller og løpende tall uleselige. Locale-navnene er ulike på
+# Unix og Windows, så vi prøver begge familier.
+#
+# Vakten STOPPER dersom UTF-8 ikke lar seg sette. Den forrige versjonen lot
+# dokumentet fortsette, og produserte en PDF der hvert tusenskille sto som
+# <U+00A0>. En vakt som ikke stopper er ingen vakt.
+# Vi tester symptomet, ikke navnet paa locale: taaler en norsk bokstav og et
+# hardt mellomrom en tur gjennom vertens tegnsett uten aa bli escape't? Det er
+# noeyaktig det som avgjoer om PDF-en blir lesbar.
+.tegnsett_ok <- function() {
+  s <- "\u00e5\u00a0"
+  !grepl("<U+", enc2native(s), fixed = TRUE)
+}
+if (!.tegnsett_ok()) {
+  for (loc in c("nb_NO.UTF-8", "nb_NO.utf8",                   # Unix
+                "Norwegian Bokmal_Norway.utf8",                # Windows
+                "Norwegian_Norway.utf8", "Norwegian.utf8",
+                "English_United States.utf8",
+                "C.UTF-8", "C.utf8", "en_US.UTF-8")) {
+    if (.tegnsett_ok()) break
+    suppressWarnings(try(Sys.setlocale("LC_ALL", loc), silent = TRUE))
   }
+}
+if (!.tegnsett_ok()) {
+  stop("\n\nR kjorer ikke med UTF-8 som tegnsett (locale: ",
+       Sys.getlocale("LC_CTYPE"), ").",
+       "\nDokumentet inneholder norske tegn, og uten UTF-8 skriver R dem",
+       "\nsom <U+00E5> i tabeller og som <U+00A0> i hvert tusenskille.",
+       "\nPDF-en ville blitt bygget, men vart uleselig.",
+       "\n\nWindows: Innstillinger > Tid og sprak > Sprak >",
+       "\n  Administrative sprakinnstillinger > Endre systemets",
+       "\n  omradeinnstilling > kryss av for \"Beta: Bruk Unicode UTF-8\",",
+       "\n  og start maskinen pa nytt.",
+       "\nUnix: start R med LANG=nb_NO.UTF-8 eller LANG=C.UTF-8.",
+       "\n\nRepoets .Rprofile forsoker dette automatisk ved oppstart. Slar",
+       "\ndet feil, er det systeminnstillingen over som ma endres.\n",
+       call. = FALSE)
 }
 
 # --- Formatering: norske tallkonvensjoner ------------------------------------
-# Tusenskille er hardt mellomrom (U+00A0) slik at «20 849» ikke brekker over
-# to linjer i tabellene — den feilen preget den forrige versjonen av PDF-en.
-nb  <- function(x, d = 0) formatC(x, format = "f", digits = d,
-                                  big.mark = " ", decimal.mark = ",")
-pst <- function(x, d = 1) paste0(nb(x, d), "\u00a0%")
+# Tusenskille er hardt mellomrom (U+00A0) slik at 20 849 ikke brekker over to
+# linjer. Tegnet skrives som R-escape, ikke som byte i kildefila: en literal
+# U+00A0 i koden gir en streng R kan komme til å escape'e på vei ut, og da
+# står det <U+00A0> i PDF-en i stedet for et mellomrom.
+NBSP <- "\u00a0"
+
+# Ikke-endelige tall stopper byggingen framfor å bli trykt. Bakgrunnen er
+# konkret: en 0/0 i sanntidskanten sto som NaN i løpende tekst i en tidligere
+# PDF. Ni regnskapsidentiteter stoppet byggingen, men ingen av dem så på et
+# enkelt inline-tall. Nå gjør formateringsfunksjonen selv den kontrollen.
+.endelig <- function(x, hvor) {
+  if (!all(is.finite(x)))
+    stop("\n\n", hvor, "(): fikk en verdi som ikke er et tall: ",
+         paste(utils::head(x[!is.finite(x)], 3), collapse = ", "),
+         "\nEt tall i teksten er NA, NaN eller Inf. Rett kilden framfor",
+         "\na trykke det.\n", call. = FALSE)
+  invisible(TRUE)
+}
+nb  <- function(x, d = 0) {
+  .endelig(x, "nb")
+  formatC(x, format = "f", digits = d, big.mark = NBSP, decimal.mark = ",")
+}
+pst <- function(x, d = 1) paste0(nb(x, d), NBSP, "%")
 mnd <- function(x) paste0(lubridate::year(x), "m", lubridate::month(x))
 kab <- function(x, ...) {
-  knitr::kable(x, format.args = list(big.mark = " ", decimal.mark = ","), ...)
+  knitr::kable(x, format.args = list(big.mark = NBSP, decimal.mark = ","), ...)
 }
 
 # --- Datapakken ---------------------------------------------------------------
@@ -155,6 +206,20 @@ oslo_raa <- d$oslo |>
 kant_rader  <- oslo_raa |> filter(dato == max(dato), M == 0)
 oslo_termin <- oslo_raa |> anti_join(kant_rader, by = "dato")
 oslo_est    <- oslo_termin |> filter(dato >= EST_START)
+
+# Landsserien trimmes etter samme regel som Oslo-serien (V1), og av samme grunn:
+# siste rad er strukturell null i begge, og 0/0 gir NaN. Oslos andel av
+# mottakerne nasjonalt brukes til aa skalere nasjonale forhaandsanslag ned til
+# Oslo i M7 (@sec-met-m7), og maa derfor regnes paa terminer med data i begge.
+nasj_raa    <- d$nasjonalt |> transmute(dato, M = ant_husstander_termin)
+nasj_termin <- nasj_raa |>
+  anti_join(nasj_raa |> filter(dato == max(dato), M == 0), by = "dato")
+
+osloandel <- oslo_termin |>
+  inner_join(nasj_termin |> rename(M_nasj = M), by = "dato") |>
+  arrange(dato) |> tail(12) |>
+  summarise(a = 100 * mean(M / M_nasj)) |> pull(a)
+stopifnot(is.finite(osloandel), osloandel > 5, osloandel < 40)
 
 # --- Skalarer som brukes i løpende tekst -------------------------------------
 n_est     <- nrow(oslo_est)
@@ -685,7 +750,7 @@ stopifnot(max(abs(ekstern$avvik_pst)) < 5,
           all(ekstern$maks_mnd <= ekstern$husstander_unike_aaret))
 
 ekstern |>
-  transmute(År = as.character(aar),
+  transmute(`År` = as.character(aar),
             `Publisert (mill. kr)` = nb(utbetalt_bostotte_mill),
             `Uttrekk (mill. kr)`   = nb(uttrekk_mill),
             `Avvik`                = pst(avvik_pst, 2),
@@ -1138,7 +1203,7 @@ $$\ln M^{T}_{t} \;=\; \beta'_{\text{est}} x^{\text{est}}_t \;+\; \underbrace{\te
 
 der $\mathcal{U}_\tau$ er regressorene som ikke passerer inngangsregelen ved opprinnelse $\tau$. Leddet er en *offset*: det inngår i prognosen, men ikke i estimeringen, slik at det ikke forstyrrer de øvrige koeffisientene.
 
-**Hvor $\lambda_j$ kommer fra.** Fra `forhandsanslag.csv`, som kobler hver intervensjon til et datert anslag med kilde og verifiseringsstatus. Det nasjonale anslaget skaleres med Oslos målte andel av mottakerne, `r pst(100 * mean(tail(d$oslo$ant_husstander_termin, 12) / tail(d$nasjonalt$ant_husstander_termin, 12)))`, og omregnes til logskala mot nivået ved opprinnelsen. Anslagene er av tre slag, og forskjellen mellom dem er ikke kosmetisk: *forhåndsanslag* er publisert før hendelsen og er det eneste en prognose i drift faktisk ville hatt; *etterberegnet* er realisert utfall og kan bare brukes til å validere metoden, aldri i en prognose; *mekanisk* er utledet av regelverket selv.
+**Hvor $\lambda_j$ kommer fra.** Fra `forhandsanslag.csv`, som kobler hver intervensjon til et datert anslag med kilde og verifiseringsstatus. Det nasjonale anslaget skaleres med Oslos målte andel av mottakerne, `r pst(osloandel)`, og omregnes til logskala mot nivået ved opprinnelsen. Anslagene er av tre slag, og forskjellen mellom dem er ikke kosmetisk: *forhåndsanslag* er publisert før hendelsen og er det eneste en prognose i drift faktisk ville hatt; *etterberegnet* er realisert utfall og kan bare brukes til å validere metoden, aldri i en prognose; *mekanisk* er utledet av regelverket selv.
 
 **Begrunnelsen er ikke bekvemmelighet, men at det ikke finnes noe nøytralt alternativ.** Å utelate regressoren pålegger $\lambda_j = 0$ — en påstand om at en vedtatt regelendring ikke vil ha effekt. Valget står altså mellom å pålegge null og å pålegge det beste daterte tallet som finnes; ingen av delene er antakelsesfri. M7 gjør valget eksplisitt og kildebelagt i stedet for implisitt.
 
@@ -1575,7 +1640,7 @@ Det har en konsekvens for hvordan kalibreringen skal forstås. Konformal etterka
 p7 <- R |> filter(.model %in% c("M6","M7"), pakke_ute, dato >= as.Date("2024-07-01")) |>
   select(.model, opprinnelse, h, mase, dekk80, ws80) |>
   pivot_wider(names_from = .model, values_from = c(mase, dekk80, ws80))
-tibble(Mål = c("MASE", "Dekning ved 80 %", "Intervallskår"),
+tibble(`Mål` = c("MASE", "Dekning ved 80 %", "Intervallskår"),
        `M6` = c(nb(mean(p7$mase_M6), 3), pst(100*mean(p7$dekk80_M6), 0), nb(mean(p7$ws80_M6))),
        `M7` = c(nb(mean(p7$mase_M7), 3), pst(100*mean(p7$dekk80_M7), 0), nb(mean(p7$ws80_M7))),
        Endring = c(pst(100*(mean(p7$mase_M7)/mean(p7$mase_M6)-1)),
