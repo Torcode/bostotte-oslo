@@ -20,8 +20,10 @@ trend og utbetalingskalender som sesong, og framskriver begge deler feil.
 > **Uavhengig prosjekt.** Dette er et privat fag- og porteføljeprosjekt. Det er ikke
 > utført på oppdrag fra, eller i samarbeid med, Oslo kommune, Velferdsetaten eller
 > Husbanken. Alt datagrunnlag er offentlig tilgjengelig og aggregert; ingen person-
-> eller registerdata inngår. Uttrekket er frosset per **4. august 2026** — kilden
-> revideres bakover, og resultater må derfor alltid knyttes til den datoen.
+> eller registerdata inngår.
+> Educational purpose 
+> Filene og arbeidetet inneholder ikke-verfisert KI-informasjon.
+> 
 
 ## Hovedfunn
 
