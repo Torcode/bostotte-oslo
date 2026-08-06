@@ -124,6 +124,13 @@ NBSP <- "\u00a0"
 # konkret: en 0/0 i sanntidskanten sto som NaN i løpende tekst i en tidligere
 # PDF. Ni regnskapsidentiteter stoppet byggingen, men ingen av dem så på et
 # enkelt inline-tall. Nå gjør formateringsfunksjonen selv den kontrollen.
+#
+# Aksemerker er unntaket, og det er et ekte unntak, ikke en lettvinthet:
+# ggplot2 kaller merkefunksjonen med kandidatbrudd som kan ligge utenfor
+# skalaen, og gir da NA med vilje. Derfor har akser sin egen tolerante
+# formatering, `nb_akse()`, mens alt som havner i brødtekst og tabeller går
+# gjennom den strenge. Skillet er poenget: en NA i en akse er normal, en NA i
+# en setning er en feil.
 .endelig <- function(x, hvor) {
   if (!all(is.finite(x)))
     stop("\n\n", hvor, "(): fikk en verdi som ikke er et tall: ",
@@ -131,6 +138,17 @@ NBSP <- "\u00a0"
          "\nEt tall i teksten er NA, NaN eller Inf. Rett kilden framfor",
          "\na trykke det.\n", call. = FALSE)
   invisible(TRUE)
+}
+nb_akse <- function(x, d = 0) {
+  ut <- rep(NA_character_, length(x))
+  e  <- is.finite(x)
+  ut[e] <- formatC(x[e], format = "f", digits = d,
+                   big.mark = NBSP, decimal.mark = ",")
+  ut
+}
+pst_akse <- function(x, d = 0) {
+  ut <- nb_akse(x, d)
+  ifelse(is.na(ut), NA_character_, paste0(ut, NBSP, "%"))
 }
 nb  <- function(x, d = 0) {
   .endelig(x, "nb")
@@ -908,7 +926,7 @@ ggplot(vol_fig, aes(y = gruppe)) +
   geom_text(aes(x = etter, label = nb(etter, 1), colour = beh),
             hjust = 1.55, size = 2.5) +
   scale_colour_manual(values = c(`FALSE` = "grey58", `TRUE` = "#00505c")) +
-  scale_x_continuous(labels = \(x) paste0(nb(x), " %"),
+  scale_x_continuous(labels = pst_akse,
                      limits = c(0, NA), expand = expansion(c(0.06, 0.12))) +
   labs(x = "Snitt |endring| per måned", y = NULL) +
   theme_minimal(base_size = 9) +
@@ -949,7 +967,7 @@ ggplot(oslo_termin, aes(dato, M)) +
   geom_line(linewidth = 0.5, colour = "#00505c") +
   geom_text(data = nokkel, aes(x = dato, y = hoyde, label = id),
             hjust = -0.18, size = 2.5, colour = "grey30") +
-  scale_y_continuous(labels = \(x) nb(x),
+  scale_y_continuous(labels = nb_akse,
                      expand = expansion(c(0.04, 0.12))) +
   scale_x_date(date_breaks = "2 years", date_labels = "%Y",
                expand = expansion(0.015)) +
@@ -1599,7 +1617,7 @@ K |> filter(.model %in% vis) |>
   geom_point(aes(fill = steg), shape = 21, size = 2.4, colour = "#00505c", stroke = .8) +
   geom_text(aes(label = nb(dekning, 0)), vjust = -1.2, size = 2.3, colour = "grey30") +
   scale_fill_manual(values = c(For = "white", Etter = "#00505c")) +
-  scale_x_continuous(labels = \(x) paste0(nb(x), " %"), limits = c(35, 100)) +
+  scale_x_continuous(labels = pst_akse, limits = c(35, 100)) +
   labs(x = "Empirisk dekning (stiplet linje: nominelt 80 %)", y = NULL) +
   theme_minimal(base_size = 9) +
   theme(legend.position = "none", panel.grid.major.y = element_blank(),
