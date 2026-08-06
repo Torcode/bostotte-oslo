@@ -53,6 +53,7 @@ source("oppsett.R")     # installerer det som mangler og sjekker miljøet
 Deretter, i RStudio med `Velferdsprosjekt.Rproj` åpen — bruk Render-knappen, eller:
 
 ```r
+source("verifiser.R")   # to sekunder: parser dokumentet i verste tegnsett
 quarto render bostotte_oslo.qmd
 ```
 
@@ -72,6 +73,9 @@ enhver maskin.
 | `bostotte_oslo.qmd` | Hele arbeidet: teori, metode, resultater. All beregning kjører ved rendering |
 | `mal/typst-template.typ` | Dokumentmal (A4, booktabs-tabeller, norsk typografi) |
 | `referanser.bib` | Litteraturliste |
+| `oppsett.R` | Installerer det som mangler og sjekker miljøet |
+| `verifiser.R` | Byggekontroll: parser dokumentet i et rent C-tegnsett, og sjekker referanselisten |
+| `.Rprofile` | Sikrer UTF-8 ved oppstart, også i R-prosessen Quarto starter |
 | `velferdsetaten-data/data/raw/` | Rådata og primærkilder, arkivert slik de ble hentet |
 | `velferdsetaten-data/data/clean/` | Bearbeidede serier og kuraterte oppslagstabeller |
 | `velferdsetaten-data/scripts/` | Uttrekksskript (Python) og R-laster for datapakken |
@@ -128,13 +132,14 @@ skapte utviklingen.
   For høstpakken 2024 finnes ingen husstandstall i noen av fire gjennomsøkte
   kildefamilier, og metoden for pålagte effektstørrelser kan derfor bare demonstreres
   med perfekt informasjon som øvre grense.
-- **Bibliografien er ikke kildeferdig.** Seks oppføringer har plassholdertekst som
-  faktisk trykkes i referanselisten — fire mangler forfatter eller tittel
-  (`fjelltoft2024`, `astrup2024`, `menon2020`, `pedersen2023`), to mangler
-  tidsskrift (`nordvik2005`, `nordvik2014`). I tillegg er 37 av 83 oppføringer
-  merket `note = {PLASSHOLDER}`: forfatter, tittel og år er riktige så langt de er
-  kontrollert, men utgiver, URL og sidetall er ikke verifisert mot primærkilde.
-  Rapporten kan derfor ikke leveres som kildeferdig slik den står.
+- **Bibliografien er delvis verifisert.** Ingen oppføring trykker lenger
+  plassholdertekst i referanselisten — `verifiser.R` kontrollerer det ved hver
+  kjøring. Tre oppføringer er verifisert mot primærkilde og rettet, deriblant én
+  med *feil tittel*, og fire som ikke lot seg verifisere er fjernet framfor å
+  bli stående (se endringsloggen). Men 30 av 81 oppføringer er fortsatt merket
+  `note = {PLASSHOLDER}`: forfatter, tittel og år er kontrollert, mens utgiver,
+  URL og sidetall ikke er slått opp mot primærkilde. Rapporten er derfor ikke
+  kildeferdig slik den står.
 
 ## Status
 

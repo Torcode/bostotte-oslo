@@ -685,3 +685,114 @@ med observasjonen. Det står her framfor å bli glattet over, og rettelsen dekke
 begge. Skulle den komme tilbake, sier meldingen selv hvilken det var.
 
 **Filer endret:** `bostotte_oslo.qmd` (chunk `oppsett`).
+
+## M7. Tre defekter som bare fantes på andres maskin (6. august 2026)
+
+Dokumentet rendret feilfritt i utviklingsmiljøet og feilet på brukerens maskin.
+Tre defekter, samme rot: antakelser om vertsmaskinen som mitt miljø tilfeldigvis
+oppfylte. Alle tre lå i `unt_1.qmd` før omdøpingen — den første stoppet
+renderingen på chunk 1, så de to andre ble aldri nådd. Det er verdt å skrive ned
+som det er: *jeg behandlet «den rendrer her» som «den rendrer».*
+
+**D1. Datastien var relativ.** `DATASTI <- "velferdsetaten-data"` forutsetter at
+arbeidsmappa under rendering er den samme som i konsollen. Det avhenger av om
+det bygges fra konsollen, fra Render-knappen, fra `quarto preview` eller fra CI.
+Rettet: tre kandidater prøves — arbeidsmappa, dokumentets egen mappe via
+`knitr::current_input(dir = TRUE)`, og full sti — og kandidaten må la seg *åpne*,
+ikke bare finnes. Den siste forskjellen er ikke pedanteri: prosjektmappa ligger
+i OneDrive, og en fil som bare finnes i skyen gir samme feilmelding som en fil
+som ikke finnes.
+
+**D2. Norske tegn i R-navn.** `transmute(År = ...)` og `tibble(Mål = ...)`.
+Om en ikke-ASCII bokstav er gyldig i et R-navn avgjøres av *locale*. I en
+UTF-8-locale er den det; i en C-locale skriver R bokstaven som escapen
+`<U+00C5>`, og parseren stopper på vinkelparentesen. Feilen er usynlig for den
+som utvikler i UTF-8 og total for den som ikke gjør det. Rettet med
+bakoverfnutter. Merk skillet: norske tegn i *strenger og kommentarer* er
+uproblematiske — det er navnene som ikke tåler det.
+
+**D3. Hardt mellomrom som byte i kildekoden.** `big.mark` var en literal U+00A0.
+En slik literal leses som «unknown» encoding, og R kan escape den på vei ut;
+resultatet var at hvert tusenskille sto som `17<U+00A0>060` i PDF-en — på hver
+side med et tall over tusen. Skrevet som R-escape (`" "`) blir strengen
+korrekt UTF-8-merket. Feilen var synlig i PDF-en hele tiden; jeg hadde ikke sett
+etter den.
+
+**Vakten som ikke stoppet.** Alle tre hadde en locale-vakt over seg som skulle
+hindre nettopp dette. Den prøvde bare Unix-navn (`C.UTF-8`, `nb_NO.UTF-8`), som
+ikke finnes på Windows, og feilet *stille*. Den lot dokumentet fortsette mot den
+feilen den var laget for å stoppe. Vakten prøver nå ni navn i begge familier, og
+tester symptomet framfor navnet: overlever en UTF-8-merket streng turen ut til
+vertens tegnsett? Går det ikke, **stopper** byggingen med beskjed om hva som må
+endres. En vakt som ikke stopper er ingen vakt.
+
+**En NaN i løpende tekst.** Siste rad i uttrekket er strukturell null i både
+Oslo- og landsserien — terminkjøringen er ikke gjort ennå. Analysen fjerner den
+(vaskeinngrep V1), men ett inline-tall regnet Oslos andel direkte på rådataene,
+og 0/0 ble stående som `NaN %` i PDF-en. Landsserien trimmes nå etter samme
+regel som Oslo-serien, og andelen regnes i oppsett-chunken med en `stopifnot`
+på seg.
+
+Det systematiske svaret er viktigere enn den enkelte rettelsen: `nb()` og `pst()`
+stopper nå selv på NA, NaN og Inf. Ni regnskapsidentiteter stoppet byggingen,
+men ingen av dem så på et enkelt inline-tall. Skillet mot aksemerker er bevisst
+— `nb_akse()`/`pst_akse()` tolererer NA, fordi ggplot2 med vilje sender NA for
+kandidatbrudd utenfor skalaen. *En NA i en akse er normal, en NA i en setning er
+en feil.* Den første versjonen av vakten skilte ikke, og stoppet renderingen på
+sin egen falske positive.
+
+**Nytt: `.Rprofile` og `verifiser.R`.** `.Rprofile` setter UTF-8 ved oppstart,
+også i R-prosessen Quarto starter. `verifiser.R` parser hver chunk og hvert
+inline-uttrykk i en egen prosess med `LC_ALL=C` — altså i det verste tegnsettet
+en leser kan ha — og kontrollerer at ingen bibliografioppføring trykker
+klammetekst. Begge kontroller er testet i begge retninger: de faller på den
+gamle koden og passerer på den nye.
+
+**Filer endret:** `bostotte_oslo.qmd`, `.Rprofile` (ny), `verifiser.R` (ny),
+`.gitignore`, `README.md`, `oppsett.R` (ny).
+
+## M8. Bibliografien: tre verifisert, én rettet feil, fire fjernet (6. august 2026)
+
+Kapitlet krever at tall skal kunne føres tilbake til kilde. Referanselisten
+holdt ikke samme standard: seks oppføringer trykte klammetekst av typen
+`[Tittel]` og `[institusjon]` i selve PDF-en.
+
+**Verifisert mot primærkilde og rettet:**
+
+`fjelltoft2024` → Fjelltoft, Frøseth og Nordvik (2024), «Bostøttens rolle i den
+boligsosiale politikken: Er det behov for å bruke store bokstaver?»,
+*Tidsskrift for boligforskning* 7(2), 144–148, doi 10.18261/tfb.7.2.4.
+
+`astrup2024` → Astrup og Pedersen (2024), «Bostøttens egenandelsberegning —
+forankring i underliggende prinsipper», BOVEL-notat 2/24, OsloMet,
+hdl 11250/3114070. Pedersen var medforfatter, ikke oppført.
+
+`ekspertgruppe2022` hadde **feil tittel**. Jeg hadde skrevet «Gjennomgang av
+bostøtteordningen»; rapporten heter «Bostøtten — opprydning og forankring»,
+avgitt 9. mai 2022. Dette er den alvorligste av rettelsene: en oppføring som
+*ser* komplett ut, men peker på noe som ikke finnes, er verre enn en synlig
+plassholder. Den siste ber om å bli sjekket.
+
+**Lagt til, begge verifisert:** `astrup2024b` (svaret på Fjelltoft m.fl., samme
+utgave, 149–151) og `sorvoll2018` (Sørvolls forskningsgjennomgang 2005–2018,
+*Tidsskrift for boligforskning* 1(1), 45–66). Den faglige uenigheten om
+bostøttens rolle er dermed dokumentert som en utveksling, ikke som én påstand.
+
+**Fjernet fordi de ikke lot seg verifisere:** `nordvik2005`, `nordvik2014`,
+`menon2020`, `pedersen2023`. Søk i Crossref, DOAJ, institusjonsarkiv og åpne
+kilder ga ingen treff som svarte til oppføringene. Det finnes en Menon-utredning
+om bostøtten, men verken tittel, nummer eller årstall lot seg fastslå, og en
+oppføring med riktig byrå og gale detaljer er ikke bedre enn ingen. En referanse
+jeg ikke kan verifisere, er en referanse jeg ikke kan bruke. Setningene de sto i
+er omskrevet slik at de nå hviler på de verifiserte kildene — og påstanden om
+forlenget mottaksvarighet, som bare `nordvik2005` bar, er tatt ut framfor å bli
+stående uten belegg.
+
+**Hva som gjenstår:** 30 av 81 oppføringer er fortsatt merket
+`note = {PLASSHOLDER}`. Forfatter, tittel og år er kontrollert; utgiver, URL og
+sidetall er ikke slått opp mot primærkilde. Ingen av dem trykker synlig
+plassholdertekst, og `verifiser.R` kontrollerer det ved hver kjøring — men
+rapporten er ikke kildeferdig før de 30 er gjennomgått.
+
+**Filer endret:** `referanser.bib`, `bostotte_oslo.qmd` (tre avsnitt omskrevet),
+`verifiser.R` (bibliografikontroll), `README.md`.
