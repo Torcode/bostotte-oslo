@@ -9,6 +9,12 @@ søkeatferd, men av hvordan retten til bostøtte til enhver tid er definert, og 
 er endret fem ganger siden 2020. En modell som ikke kjenner endringene, leser vedtak som
 trend og utbetalingskalender som sesong, og framskriver begge deler feil.
 
+> **Uavhengig prosjekt.** Dette er et privat fag- og porteføljeprosjekt. Det er ikke
+> utført på oppdrag fra, eller i samarbeid med, Oslo kommune, Velferdsetaten eller
+> Husbanken. Alt datagrunnlag er offentlig tilgjengelig og aggregert; ingen person-
+> eller registerdata inngår. Uttrekket er frosset per **4. august 2026** — kilden
+> revideres bakover, og resultater må derfor alltid knyttes til den datoen.
+
 ## Hovedfunn
 
 **Ikke-stasjonariteten i serien *er* regelendringene.** Den rå logserien krever
@@ -71,12 +77,20 @@ Alt er åpne data, hentet maskinelt med reproduserbare skript. Det er et designv
 det gjør kunnskapsgrunnlaget etterprøvbart for enhver, og det speiler arbeidsvilkårene
 til en analysefunksjon som skal dele metode og tall uten å måtte etablere en avtale først.
 
-Utfallsserien er Husbankens bostøttestatistikk — en fullstendig administrativ
-registrering, ikke et utvalg — hentet fra statistikkbankens Qlik Engine-API, månedlig
-2010–2026 for Oslo totalt, femten bydeler og fem brukergrupper. Ved siden av ligger
-SSB- og Oslo-statistikkbankserier, og fire kuraterte tabeller bygget fra primærkilder:
-regelverkskalenderen, forskriftsparametrene, strømtiltakenes månedsbeløp og daterte
-effektanslag.
+| Kilde | Rolle | Frekvens × nivå | Dekning |
+|---|---|---|---|
+| [Husbankens statistikkbank](https://statistikk.husbanken.no/bostotte) | Utfallsserien: mottak, utbetaling, beløp, avslag | måned × Oslo/Norge/bydel/brukergruppe | 2010m1–2026m7 |
+| [SSB 09895](https://www.ssb.no/statbank/table/09895/) | Leiemarkedsundersøkelsen | år × prissone × rom | 2012–2025 |
+| [SSB 03013](https://www.ssb.no/statbank/table/03013/) | KPI for betalt husleie | måned | 1979–2025 |
+| [SSB 14710](https://www.ssb.no/statbank/table/14710/) | KPI-bro inn i 2026 | måned | 1920–2026 |
+| [SSB 01222](https://www.ssb.no/statbank/table/01222/) | Befolkning, Oslo | kvartal | 1997K4–2026K1 |
+| [Oslo kommunes statistikkbank](https://statistikkbanken.oslo.kommune.no/) | AAP, uføretrygd, sosialhjelp, befolkning og framskriving per bydel | år × bydel | tabellavhengig |
+| Husbankens årsrapporter og regelverksveileder | Regelverkskalender og beregningsparametre | hendelsesdatert | 2020–2026 |
+
+Utfallsserien er en fullstendig administrativ registrering, ikke et utvalg, hentet fra
+statistikkbankens Qlik Engine-API. Ved siden av ligger fem kuraterte tabeller bygget fra
+primærkilder: regelverkskalenderen, forskriftsparametrene, strømtiltakenes månedsbeløp,
+publiserte nasjonale årstall og daterte effektanslag.
 
 **Datagrunnlaget er verifisert, ikke antatt.** Ni regnskapsidentiteter kjøres ved hver
 rendering, og en kontroll som feiler stopper byggingen. Uttrekket er dessuten validert
@@ -87,6 +101,11 @@ skatteoppgjøret. Beløpsserien måler altså omregnet rett, ikke utbetalt kasse
 ## Kjente begrensninger
 
 Disse står her fordi de begrenser hva som kan konkluderes, ikke fordi de er små.
+
+**Aggregatene identifiserer ikke** underliggende eller udekket boligbehov, hvem som er
+berettiget uten å søke, full take-up, individuelle velferdsutfall, eller kausale
+virkninger av bostøtten. En presis prognose viser heller ikke hvilken mekanisme som
+skapte utviklingen.
 
 - **Aggregerte data.** Take-up og berettigelse lar seg ikke skille fra hverandre.
   Estimerte intervensjonseffekter er nettoeffekter på beholdningen, der mekanisk og
@@ -105,6 +124,11 @@ Disse står her fordi de begrenser hva som kan konkluderes, ikke fordi de er sm�
 
 ## Status
 
-Kapittel 1–4 er skrevet og bygger uten advarsler. Modellklassene bayesiansk strukturell
-tidsserie, gradientboosting og hierarkisk avstemming er spesifisert i teorikapitlet, men
-ikke estimert. Neste steg er beskrevet sist i kapittel 4.
+Kapittel 1–4 er skrevet og bygger uten advarsler. Rullerende opprinnelse er kjørt: 31
+opprinnelser, 8 modeller, horisont 1–12, med Clark–West på nøstede par og konformal
+etterkalibrering. Resultatene i kapittel 4 er dermed backtestede, ikke påstander.
+
+Modellklassene bayesiansk strukturell tidsserie, gradientboosting og hierarkisk
+avstemming er spesifisert i teorikapitlet, men **ikke estimert**. Det finnes ingen
+publisert framtidsprognose og ingen produksjonsmodell. Neste steg er beskrevet sist i
+kapittel 4; åpne oppgaver ligger som [issues](https://github.com/Torcode/bostotte-oslo/issues).

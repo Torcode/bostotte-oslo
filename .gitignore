@@ -10,9 +10,10 @@
 .vscode/
 
 # --- Quarto render-artefakter (regenereres) ---
+# NB: bostotte_oslo.pdf er IKKE ignorert. Den ferdige rapporten versjoneres,
+# slik at en leser ser resultatet uten å installere R og Quarto.
 /.quarto/
 /bostotte_oslo.html
-/bostotte_oslo.pdf
 /bostotte_oslo.typ
 /bostotte_oslo.knit.md
 /bostotte_oslo_files/
