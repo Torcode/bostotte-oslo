@@ -21,7 +21,7 @@ trend og utbetalingskalender som sesong, og framskriver begge deler feil.
 > utført på oppdrag fra, eller i samarbeid med, Oslo kommune, Velferdsetaten eller
 > Husbanken. Alt datagrunnlag er offentlig tilgjengelig og aggregert; ingen person-
 > eller registerdata inngår.
-> Educational purposes.
+> Hovedformålet er å lære mest mulig, kortest mulig.
 > Filene og arbeidetet inneholder ikke-verfisert KI-informasjon.
 > 
 
