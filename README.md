@@ -2,6 +2,9 @@
 
 [![Datakontrakt](https://github.com/Torcode/bostotte-oslo/actions/workflows/ci.yml/badge.svg)](https://github.com/Torcode/bostotte-oslo/actions/workflows/ci.yml)
 
+> **Hovedformålet er å lære mest mulig, kortest mulig. Filene og arbeidet inneholder
+> ikke-verifisert KI-informasjon.**
+
 ### → [Les rapporten (PDF, 36 sider)](bostotte_oslo.pdf)
 
 [Kilden bak den](bostotte_oslo.qmd) · [datagrunnlaget](data/) · [kodebok](data/docs/kodebok.md) · [endringslogg](logg/)
@@ -31,12 +34,9 @@ Målet er en prognosemodell som holder: månedlig antall bostøttemottakere i Os
 måneder fram, med intervaller som dekker det de lover. Veien dit er å bygge den selv, ett
 ledd om gangen, med KI som verktøy hele veien.
 
-Den er ikke i mål ennå.
-
-> **Filene og arbeidet inneholder ikke-verifisert informasjon.**
-
-Fasene er der for å lukke det systematisk: hver fase fester én hjørnestein, og neste fase
-hviler ikke på en som ikke er festet.
+Den er ikke i mål ennå, og som det står øverst: **filene og arbeidet inneholder
+ikke-verifisert KI-informasjon.** Fasene er der for å lukke det systematisk — hver fase
+fester én hjørnestein, og neste fase hviler ikke på en som ikke er festet.
 
 | Fase | Hjørnesteinen den skal feste | Hvor det står |
 |---|---|---|
