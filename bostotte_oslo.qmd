@@ -1427,7 +1427,14 @@ kjor_opprinnelse <- function(t0) {
   m7 <- ut |> filter(.model == "M6") |>
     left_join(nd |> as_tibble() |> select(dato, pakke_2024h2), by = "dato") |>
     mutate(.model = "M7",
-           mu = mu + if ("pakke_2024h2" %in% ute) LAMBDA_ORAKEL * pakke_2024h2 else 0) |>
+           # Testen må være vektorisert og mot innholdet i strengen. Den forrige
+           # versjonen brukte `"pakke_2024h2" %in% ute`, som inne i mutate()
+           # treffer datarammens kolonne — en kommaseparert streng som «k_post»
+           # eller «pakke_2024h2,k_post» — og derfor aldri slo til. Bidraget ble
+           # aldri påført, og M7 var identisk med M6 i alle punkter. Se M10 i
+           # endringsloggen.
+           mu = mu + str_detect(ute, fixed("pakke_2024h2")) *
+                     LAMBDA_ORAKEL * pakke_2024h2) |>
     select(-pakke_2024h2)
   bind_rows(ut, m7)
 }
@@ -1458,6 +1465,16 @@ R <- cv |> left_join(nevner, by = "opprinnelse") |>
          ws80 = (u80-l80) + 10*(l80-M_sant)*(M_sant<l80) + 10*(M_sant-u80)*(M_sant>u80),
          pakke_ute = str_detect(ute, "pakke_2024h2"),
          bruddnaer = map_lgl(dato, \(m) any(abs(as.numeric(m - iv_dato$dato))/30.44 <= 3)))
+
+# En modell som per konstruksjon skal avvike fra sin referanse, og ikke gjør det,
+# er en byggefeil — ikke et resultat. Kontrollen finnes fordi den manglet: M7 var
+# identisk med M6 i alle 372 punkter uten at noe stoppet byggingen (M10).
+stopifnot(
+  "M7 er identisk med M6 — det palagte bidraget pafores ikke" =
+    any(R$mu[R$.model == "M7"] != R$mu[R$.model == "M6"]),
+  "M7 avviker fra M6 ogsa der pakken var estimerbar" =
+    all(R$mu[R$.model == "M7" & !R$pakke_ute] == R$mu[R$.model == "M6" & !R$pakke_ute])
+)
 
 # Konformal kalibrering: kvantil av |logfeil| fra alle TIDLIGERE opprinnelser
 K <- R |> arrange(.model, h, opprinnelse) |> group_by(.model, h) |>
@@ -1669,7 +1686,7 @@ tibble(`Mål` = c("MASE", "Dekning ved 80 %", "Intervallskår"),
 
 @tbl-res-m7 gir tallene. På de `r nb(nrow(p7))` rammede punktene faller MASE med `r pst(abs(100*(mean(p7$mase_M7)/mean(p7$mase_M6)-1)))`. Forbeholdet er avgjørende og må stå først: koeffisienten som pålegges er estimert på hele utvalget, altså på data som inkluderer utfallet. Tallet måler derfor **verdien av perfekt informasjon** — en øvre grense — og ikke verdien av et faktisk forhåndsanslag. Det er ikke et resultat om konsekvensutredningers treffsikkerhet, men om hvor mye som står på spill dersom de treffer.
 
-Det er likevel den mest direkte kvantifiseringen studien kan gi av underspørsmål **UB**: et brukbart, datert anslag for en vedtatt men ikke ikrafttrådt regelendring er verdt opptil en tredjedel av prognosefeilen i det vinduet der endringen ellers er usynlig for modellen. For høstpakken 2024 finnes ikke et slikt anslag publisert (@sec-met-prior), og M7 er derfor per i dag en demonstrasjon av mekanismen, ikke et anvendbart verktøy for den hendelsen.
+Det er likevel den mest direkte kvantifiseringen studien kan gi av underspørsmål **UB**: et brukbart, datert anslag for en vedtatt men ikke ikrafttrådt regelendring senker prognosefeilen fra `r nb(mean(p7$mase_M6), 3)` til `r nb(mean(p7$mase_M7), 3)` i MASE i det vinduet der endringen ellers er usynlig for modellen — altså fra dårligere til bedre enn en sesongnaiv referanse. For høstpakken 2024 finnes ikke et slikt anslag publisert (@sec-met-prior), og M7 er derfor per i dag en demonstrasjon av mekanismen, ikke et anvendbart verktøy for den hendelsen.
 
 ## Estimerbar er ikke det samme som pålitelig {#sec-res-overgang}
 

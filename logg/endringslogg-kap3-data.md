@@ -854,3 +854,55 @@ lag som fanger tegnsettfeller. Ingen av dem erstatter de andre.
 `velferdsetaten_data.R` → `last_datapakke.R`, `endringslogg-*.md` → `logg/`,
 `README.md`, `bostotte_oslo.qmd`, `oppsett.R`, `.gitignore`,
 `scripts/validate_phase1.py` (ny), `.github/workflows/ci.yml` (ny).
+
+## M10. M7 gjorde ingenting — en maskert variabel, og kontrollen som manglet (6. august 2026)
+
+Modell M7 skal legge et pålagt bidrag til M6 der høstpakken ikke var estimerbar ved
+opprinnelsen. Den gjorde det aldri. Koden var:
+
+```r
+mu = mu + if ("pakke_2024h2" %in% ute) LAMBDA_ORAKEL * pakke_2024h2 else 0
+```
+
+Inne i `mutate()` treffer `ute` **datarammens kolonne**, ikke funksjonsvariabelen lenger
+opp. Kolonnen ble laget som `paste(ute, collapse = ",")`, altså én kommaseparert streng.
+`%in%` er eksakt matching, og strengen var alltid `""`, `"k_post"` eller
+`"pakke_2024h2,k_post"` — aldri `"pakke_2024h2"` alene. Testen var usann ved samtlige 31
+opprinnelser, `LAMBDA_ORAKEL` ble beregnet og aldri brukt, og **M7 var identisk med M6 i
+alle 372 punktene.**
+
+Fire linjer lenger ned sto den riktige testen på samme objekt: `str_detect(ute,
+"pakke_2024h2")`. Rettelsen er å bruke den, vektorisert, framfor `if`.
+
+**Hva som ble artefakter, og hva de faktisk er.** Tabell 22 viste 0,0 % på alle tre målene.
+De reelle tallene, på de 138 rammede punktene:
+
+| Mål | M6 | M7 | Endring |
+|---|---|---|---|
+| MASE | 1,106 | 0,758 | −31,5 % |
+| Dekning ved 80 % | 40 % | 56 % | +16 p.p. |
+| Intervallskår | 8 975 | 5 141 | −42,7 % |
+
+Merk hva MASE-tallet betyr: M6 ligger *over* 1 i dette vinduet, altså dårligere enn en
+sesongnaiv referanse, mens M7 ligger under. Et datert anslag flytter altså modellen fra
+tapende til vinnende der regelendringen ellers er usynlig. Det er svaret på underspørsmål
+UB, og det manglet i forrige versjon.
+
+**En påstand som viste seg å ha rett av feil grunn.** Teksten sa at et anslag er verdt
+«opptil en tredjedel av prognosefeilen». Den sto som hardkodet prosa ved siden av en tabell
+som viste 0,0 %, og var derfor riktig å flagge som selvmotsigelse. Etter rettelsen er
+−31,5 % omtrent en tredjedel — påstanden stemte, men hadde ikke belegg i det som faktisk
+ble kjørt. Setningen er nå erstattet med et inline-beregnet uttrykk som oppgir MASE før og
+etter, slik at prosa og tabell ikke kan gli fra hverandre igjen.
+
+**Kontrollen som manglet.** Avsnitt 3.10 lover at feil skal stoppe byggingen framfor å
+passere stille. Ni regnskapsidentiteter kjørte, og ingen av dem så på om en modell faktisk
+oppførte seg som spesifisert. To `stopifnot` er lagt inn: M7 må avvike fra M6 et sted, og
+M7 må være identisk med M6 der pakken var estimerbar. Den andre er like viktig som den
+første — den fanger den motsatte feilen, at bidraget påføres overalt.
+
+Det generelle poenget er verdt å skrive ned: *en modell som per konstruksjon skal avvike
+fra sin referanse, og ikke gjør det, er en byggefeil — ikke et resultat.* Kvalitetsapparatet
+kontrollerte dataene, ikke modellene.
+
+**Filer endret:** `bostotte_oslo.qmd` (M7-konstruksjonen, to nye kontroller, avsnitt 4.6).

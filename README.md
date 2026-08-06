@@ -23,10 +23,8 @@ trend og utbetalingskalender som sesong, og framskriver begge deler feil.
 > **Uavhengig prosjekt.** Dette er et privat fag- og porteføljeprosjekt. Det er ikke
 > utført på oppdrag fra, eller i samarbeid med, Oslo kommune, Velferdsetaten eller
 > Husbanken. Alt datagrunnlag er offentlig tilgjengelig og aggregert; ingen person-
-> eller registerdata inngår.
-> Hovedformålet er å lære mest mulig, kortest mulig.
-> Filene og arbeidetet inneholder ikke-verfisert KI-informasjon.
-> 
+> eller registerdata inngår. Uttrekket er frosset per **4. august 2026** — kilden
+> revideres bakover, og resultater må derfor alltid knyttes til den datoen.
 
 ## Læringsprosjekt med et mål — les dette først
 
@@ -42,7 +40,7 @@ fester én hjørnestein, og neste fase hviler ikke på en som ikke er festet.
 |---|---|---|
 | **1 — Datagrunnlaget** | Er dataene det de utgir seg for? Kan hver kolonne føres tilbake til en navngitt kilde og et navngitt skript? | Kontrollene kjører; litteraturlista gjenstår |
 | *Faseport* | Prognoseobjekt, informasjonssett og evalueringskontrakt fryses **før** første modell estimeres | Passert |
-| **2 — Modellene** | Holder mekanikken? Først referansemodeller og intervensjonsanalyse i R, så ML-klassene i Python — målt mot samme baseline | R-delen kjørt, fire feil åpne. Python-delen ikke påbegynt |
+| **2 — Modellene** | Holder mekanikken? Først referansemodeller og intervensjonsanalyse i R, så ML-klassene i Python — målt mot samme baseline | R-delen kjørt, tre feil åpne. Python-delen ikke påbegynt |
 | **3 — Drift** | Hva som skal til for at noe slikt kan kjøre i en etat: kjøreplan, terskler, overvåkning, eierskap, og hva som *ikke* bør bygges | Ikke påbegynt |
 
 Oppgavene i hver fase ligger som
@@ -63,7 +61,7 @@ sesongnaiv referanse, har ikke fortjent plassen sin.
 | **Datagrunnlaget** | Verifisert. 47 maskinelle datakontrakter ved hver push, ni regnskapsidentiteter ved hver rendering, og ekstern validering mot Husbankens publiserte nasjonale årstall |
 | **Evalueringsmekanikken** | Backtestet. 31 prognoseopprinnelser × 8 modeller × horisont 1–12, med Clark–West på nøstede par |
 | **Litteraturlista** | Delvis verifisert. 30 av 81 oppføringer har ukontrollert utgiver, URL og sidetall |
-| **Enkelte resultatpåstander** | Under retting. Se [åpne issues](https://github.com/Torcode/bostotte-oslo/issues) — blant annet en kodefeil som gjør at modell M7 ikke gjør det teksten beskriver |
+| **Enkelte resultatpåstander** | Under retting. Se [åpne issues](https://github.com/Torcode/bostotte-oslo/issues) — tre gjenstår, den fjerde er rettet og logget |
 
 Feil som blir funnet, legges ut som [issues](https://github.com/Torcode/bostotte-oslo/issues)
 med diagnose og rettelse framfor å bli stille rettet. Begrunnelsen for hver endring ligger
@@ -233,10 +231,6 @@ etterkalibrering. Resultatene for M1–M6 er dermed backtestede, ikke påstander
 **Åpne feil som påvirker hvordan kapittel 4 skal leses.** De står som issues, med
 diagnose og rettelse:
 
-- **M7 påfører aldri det pålagte bidraget.** En variabel maskeres inne i `mutate()`, slik
-  at testen for om regressoren manglet aldri slår til. M7 er identisk med M6 i alle 372
-  punktene. Avsnitt 4.6 og påstanden om verdien av et forhåndsanslag er dermed ikke
-  avgjort, og underspørsmål **UB** står ubesvart til dette er rettet og kjørt på nytt.
 - **Den konformale kalibreringen bruker feil som ikke var realisert ved opprinnelsen.**
   Dekningen etter kalibrering er derfor bedre enn den ville vært i drift, og effekten
   vokser med horisonten.
@@ -244,6 +238,12 @@ diagnose og rettelse:
   regner på ulike utvalg uten at det er notert.
 - **Siteringsapparatet** har en hengende referanse og en topptekst i `referanser.bib` som
   ikke lenger stemmer.
+
+**Rettet 6. august:** modell M7 påførte aldri det pålagte bidraget, fordi en variabel ble
+maskert inne i `mutate()` — den var identisk med M6 i alle 372 punktene. Etter rettelsen
+faller MASE med 31,5 % på de 138 rammede punktene, og dekningen stiger 16 prosentpoeng.
+To kontroller er lagt inn som stopper byggingen hvis det skjer igjen. Diagnose og tall
+står i [`logg/`](logg/), post M10.
 
 Bydelsnivået er dokumentert i datagrunnlaget, men ikke analysert. Det finnes ingen
 publisert framtidsprognose og ingen produksjonsmodell — fase 3 og 4 er ikke påbegynt.
