@@ -1,43 +1,46 @@
+# =============================================================================
+# Hva som IKKE hører hjemme i repoet.
+#
+# Regelen: alt `quarto render` lager på nytt, holdes utenfor — med ett bevisst
+# unntak, se PDF-en nedenfor.
+# =============================================================================
+
 # --- R / RStudio ---
 .Rproj.user/
 .Rhistory
 .RData
 .Ruserdata
-*_cache/
 
 # --- Posit / editor ---
 .posit/
 .vscode/
 
-# --- Quarto render-artefakter (regenereres) ---
-# NB: bostotte_oslo.pdf er IKKE ignorert. Den ferdige rapporten versjoneres,
-# slik at en leser ser resultatet uten å installere R og Quarto.
+# --- Quarto- og knitr-artefakter (regenereres ved hver rendering) ---
 /.quarto/
+/_freeze/
+*_cache/
+*_files/
+*.knit.md
+*.rmarkdown
 /bostotte_oslo.html
 /bostotte_oslo.typ
-/bostotte_oslo.knit.md
-/bostotte_oslo_files/
-/*_files/
-*.knit.md
 
-# --- Store binærfiler som ikke trengs i repoet ---
+# NB: bostotte_oslo.pdf er bevisst IKKE ignorert. Den ferdige rapporten
+# versjoneres, slik at en leser ser resultatet uten å installere R, Quarto og
+# ni pakker først. Prisen er at den må bygges på nytt før hver innlevering,
+# ellers ligger den i utakt med kilden.
+
+# --- Store binærfiler som ikke trengs ---
 # Datapakke-zip (redundant med utpakket velferdsetaten-data/)
 *.zip
-
-# --- OS ---
-.DS_Store
-Thumbs.db
 
 # --- Python-bytekode (regenereres av tolkeren) ---
 __pycache__/
 *.py[cod]
 
-# --- Quarto/Typst-artefakter (regenereres av `quarto render`) ---
-/bostotte_oslo.typ
-
 # --- Lokale opprydningsmapper (skal aldri versjoneres) ---
 _to_delete/
 
-# --- Quarto/knitr-cache (regenereres) ---
-/_freeze/
-/bostotte_oslo_cache/
+# --- OS ---
+.DS_Store
+Thumbs.db
