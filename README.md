@@ -44,6 +44,14 @@ feilene, og begrunnelsen for hver, står i kapittel 4.
 
 ## Kom i gang
 
+Første gang, i R:
+
+```r
+source("oppsett.R")     # installerer det som mangler og sjekker miljøet
+```
+
+Deretter, i RStudio med `Velferdsprosjekt.Rproj` åpen — bruk Render-knappen, eller:
+
 ```r
 quarto render bostotte_oslo.qmd
 ```
