@@ -52,8 +52,8 @@ Bygger hele dokumentet — data lastes, verifikasjonskontrollene kjøres, modell
 estimeres og figurene tegnes. Første kjøring tar rundt ti minutter; den rullerende
 kryssvalideringen er cachet, så senere tekstendringer koster sekunder.
 
-Krever R med `tidyverse`, `knitr`, `fable`, `fabletools`, `feasts`, `tsibble`, `urca`,
-`distributional` og `patchwork`, samt Quarto ≥ 1.7. **Ingen LaTeX** — Typst følger med
+Krever R med `tidyverse`, `knitr`, `fable`, `fabletools`, `feasts`, `tsibble`, `urca`
+og `distributional`, samt Quarto ≥ 1.7. **Ingen LaTeX** — Typst følger med
 Quarto, og malen bruker bare fonter Typst har innebygd, slik at PDF-en blir identisk på
 enhver maskin.
 
@@ -120,7 +120,13 @@ skapte utviklingen.
   For høstpakken 2024 finnes ingen husstandstall i noen av fire gjennomsøkte
   kildefamilier, og metoden for pålagte effektstørrelser kan derfor bare demonstreres
   med perfekt informasjon som øvre grense.
-- **Fire plassholdere i `referanser.bib`** gjenstår å fylle ut.
+- **Bibliografien er ikke kildeferdig.** Seks oppføringer har plassholdertekst som
+  faktisk trykkes i referanselisten — fire mangler forfatter eller tittel
+  (`fjelltoft2024`, `astrup2024`, `menon2020`, `pedersen2023`), to mangler
+  tidsskrift (`nordvik2005`, `nordvik2014`). I tillegg er 37 av 83 oppføringer
+  merket `note = {PLASSHOLDER}`: forfatter, tittel og år er riktige så langt de er
+  kontrollert, men utgiver, URL og sidetall er ikke verifisert mot primærkilde.
+  Rapporten kan derfor ikke leveres som kildeferdig slik den står.
 
 ## Status
 
