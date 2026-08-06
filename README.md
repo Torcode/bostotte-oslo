@@ -25,16 +25,38 @@ trend og utbetalingskalender som sesong, og framskriver begge deler feil.
 > Filene og arbeidetet inneholder ikke-verfisert KI-informasjon.
 > 
 
-## Læringsprosjekt i faser — les dette først
+## Dette er et læringsprosjekt — les dette først
 
-Formålet er å forstå bostøttefeltet og hele analysekjeden ved å bygge den. Arbeidet er
-gjort **med KI som verktøy hele veien**, og **repoet inneholder innhold som ennå ikke er
-verifisert.** Prosjektet er derfor delt i faser, der hver fase har som eneste jobb å feste
-én hjørnestein: først at dataene er det de utgir seg for, så at modellmekanikken holder,
-så at teksten stemmer med tallene, og til slutt at kildene er kontrollert mot original.
-Ingenting regnes som ferdig før det er etterprøvd mot kilde eller mot kjørt kode.
+Formålet er **ikke** å levere en ferdig prognosemodell. Formålet er å lære bostøttefeltet
+og hele analysekjeden ved å bygge den selv, ett ledd om gangen, med KI som verktøy hele
+veien.
 
-Det betyr at ikke alt her har samme status, og forskjellen skal være lett å se:
+Det har en konsekvens som må sies rett ut, ikke gjemmes i en fotnote: **filene og arbeidet
+i dette repoet inneholder ikke-verifisert innhold.** Det er et stadium, ikke en
+forglemmelse. Et læringsprosjekt som later som alt er ferdigkontrollert, lærer ingen noe —
+og det ville vært den ene feilen dette prosjektet handler om å unngå.
+
+Derfor er arbeidet delt i faser, og **rekkefølgen er en læringsrekkefølge**: hver fase har
+som eneste jobb å feste én hjørnestein, og neste fase har ikke lov til å hvile på en
+hjørnestein som ikke er festet.
+
+| Fase | Hjørnesteinen den skal feste | Status |
+|---|---|---|
+| **1 — Datagrunnlaget** | Er dataene det de utgir seg for? Kan hver kolonne føres tilbake til en navngitt kilde og et navngitt skript? | Kontrollene kjører; litteraturlista gjenstår |
+| **2 — Modellene, i R** | Holder mekanikken? Rullerende opprinnelse, referansemodeller, intervensjonsanalyse, kalibrerte intervaller | Kjørt. Fire feil funnet og åpne |
+| **3 — Modellene, i Python** | De klassene R-verktøyet ikke dekker: gradientboosting, bayesiansk strukturell tidsserie, hierarkisk avstemming | Spesifisert, ikke estimert |
+| **4 — Drift** | Hva som skal til for at noe slikt kan kjøre i en etat: kjøreplan, terskler, overvåkning, eierskap | Ikke påbegynt |
+
+**Hvorfor R først, og Python etterpå.** Fase 2 er skrevet i R fordi det er der
+tidsserieverktøyet bor — `fable`, `tsibble` og `feasts` gir ARIMA med eksogene
+regressorer, rullerende opprinnelse og prediksjonsfordelinger i samme rammeverk, og Quarto
+gjør hele dokumentet reproduserbart i én kommando. Det er den korteste veien til å forstå
+*hva som faktisk skjer* i en prognose. Fase 3 flytter til Python fordi modellklassene som
+gjenstår hører hjemme der, og fordi det er den overgangen som er verdt å lære: fra en
+modell man kan gjøre rede for, til en modell som må evalueres mot den første for å
+forsvare seg.
+
+**Hva som har hvilken status i dag:**
 
 | Hva | Status |
 |---|---|
@@ -224,7 +246,5 @@ diagnose og rettelse:
 - **Siteringsapparatet** har en hengende referanse og en topptekst i `referanser.bib` som
   ikke lenger stemmer.
 
-Modellklassene bayesiansk strukturell tidsserie, gradientboosting og hierarkisk
-avstemming er spesifisert i teorikapitlet, men **ikke estimert**. Bydelsnivået er
-dokumentert i datagrunnlaget, men ikke analysert. Det finnes ingen publisert
-framtidsprognose og ingen produksjonsmodell.
+Bydelsnivået er dokumentert i datagrunnlaget, men ikke analysert. Det finnes ingen
+publisert framtidsprognose og ingen produksjonsmodell — fase 3 og 4 er ikke påbegynt.
