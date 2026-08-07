@@ -1116,3 +1116,103 @@ tilgangen går gjennom en funksjon som kjenner kalenderen, ikke at leseren huske
 
 **Filer endret:** `notebooks/bostotte_01_grunnlag.ipynb` (avsnitt 4 skrevet om, avsnitt
 9 utvidet med feilen, kjøremanifestet utvidet med de tre kalenderkontrollene).
+
+---
+
+## M15. Protokollen flyttet til Python, og en lekkasje målt (7. august 2026)
+
+Arbeidsverk 2 skal måle maskinlæringsmodeller mot modellstigen i arbeidsverk 1. Det
+forutsetter at de måles med samme linjal. Notebook 02 bygger evalueringsprotokollen i
+Python og kontrollerer flyttingen der den lar seg kontrollere.
+
+**Hva som er kontrollert, og hvordan.** To av de åtte trinnene i stigen har lukket
+form og krever ingen ordensseleksjon: M0 (naiv) og M1 (sesongnaiv). De er
+implementert fra bunnen i Python, og de ti tallene arbeidsverk 1 oppgir for dem i
+tabell 17 reproduseres alle, med den presisjonen de er oppgitt med.
+
+| | MASE | RMSE | Dekning 80 | Dekning 95 | Intervallskår |
+|---|---|---|---|---|---|
+| M0, arbeidsverk 1 | 1,003 | 1 698 | 91 % | 98 % | 7 082 |
+| M0, notebook 02 | 1,003 | 1 698 | 91 % | 98 % | 7 082 |
+| M1, arbeidsverk 1 | 1,228 | 1 844 | 77 % | 97 % | 6 125 |
+| M1, notebook 02 | 1,228 | 1 844 | 77 % | 97 % | 6 125 |
+
+I tillegg reproduseres fasekalibreringen av kalenderregressoren: samme vinnerfase, og
+samme tre øverste rader som tabell 12 (−16,1 / −10,3; −12,7 / −6,8; −10,0 / −3,8).
+Seksten tall i alt, null avvik, holdt av `assert`.
+
+Det som dermed er kontrollert er hele skåringsapparatet — hvilke opprinnelser som
+inngår, hvilke horisonter, at MASE-nevneren regnes per opprinnelse på nivåskala i
+treningsvinduet, at log tilbaketransformeres ved ren eksponensiering, hvordan
+intervaller bygges, hvordan dekning telles og hvordan intervallskåren straffer.
+
+**En konvensjon som ikke sto skrevet.** Intervallmålene traff først når
+residualvariansen regnes uten frihetsgradskorreksjon, altså som rent gjennomsnitt av
+kvadrerte residualer. Med `n − 1` blir intervallskåren 7 107 for M0 og 6 121 for M1.
+Konvensjonen er dermed ikke antatt, men avlest av hvilken av dem som treffer, og
+alternativet står i notebooken.
+
+**Kontroller som er bygget inn framfor påstått.** Tre av dem er identiteter som må
+holde, og som stopper kjøringen hvis de ikke gjør det:
+
+1. M0 og M1 er **samme prognose ved h = 12**. Den sesongnaive henter fra
+   $t_0 + 12 - 12 = t_0$, som er nøyaktig der den naive henter sin. `assert` på at
+   tallene viser det.
+2. DM-statistikken er derfor **udefinert ved h = 12** — tapsdifferansen er identisk
+   null. `assert` på NaN. En implementasjon som fant signal der, ville funnet signal
+   i null.
+3. V1 slik arbeidsverk 1 definerer det, mot notebook 01s bredere nullfiltrering.
+   `assert` på at de faller sammen for Oslo-totalen.
+
+**En forskjell mellom notebookene, notert.** Arbeidsverk 1s V1 fjerner siste rad
+*bare hvis* den er null — en strukturell null, fordi terminkjøringen skjer måneden
+etter. Notebook 01 filtrerte på `ant_husstander_termin > 0`, som er det bredere
+inngrepet. For Oslo-totalen sammenfaller de, og `assert`-en holder det fast. For
+bydelspanelet gjør de det ikke, og det må rettes før panelet brukes.
+
+**Nytt funn: den konformale kalibreringen bruker feil som ikke fantes.** Arbeidsverk
+1 kalibrerer på $|e_h|$ fra alle opprinnelser med $t_j < t_i$. Men en prognosefeil er
+kjent først når målmåneden er observert, altså i $t_j + h$. Kravet skulle vært
+
+$$t_j + h \le t_i.$$
+
+For $h = 1$ er de to kravene like. For $h = 12$ bruker kalibreringen feil som først
+blir kjent opptil elleve måneder etter at intervallet skulle vært stilt.
+
+Målt på M0, på de 270 punktene begge skjemaene skårer:
+
+| | Dekning ved nominelt 80 % | Kalibreringspunkter |
+|---|---|---|
+| Arbeidsverk 1s skjema | 78,5 % | 30 ved enhver horisont |
+| Bare realiserte feil | 67,4 % | 30 ved h = 1, 19 ved h = 12 |
+
+Retningen er entydig punkt for punkt: 32 punkter dekkes bare av det lekkende
+skjemaet, 2 bare av det tidsgyldige. **Kontrollen på diagnosen** er at de to
+skjemaene er identiske ved h = 1, der kravene sammenfaller — det er en `assert`, ikke
+en observasjon. Hadde de skilt lag der, ville forskjellen skyldtes noe annet.
+
+Lekkasjen lar seg ikke korrigere bort med en faktor. Medianen av forholdet
+$q_A/q_B$ er 1,00, og det tidsgyldige skjemaet gir den største kvantilen i 135 av 270
+punkter; snittet av forholdet er likevel 1,28, med 5,8 som største verdi. Lekkasjen
+virker altså som en kraftig utvidelse av noen få intervaller — de der framtiden som
+lekker inn, inneholder et brudd — ikke som en jevn utvidelse av alle.
+
+Alt dette er regnet på M0. Lekkasjen er en egenskap ved skjemaet, ikke ved modellen,
+så mekanismen gjelder alle åtte trinnene; utslaget per trinn er ikke målt.
+
+**Hva som bevisst ikke er flyttet.** ETS, SARIMA og de tre RegARIMA-variantene er
+ikke reimplementert. `fable` velger $(p,d,q)(P,D,Q)_{12}$ ved stegvis AICc-søk med
+differensiering fra KPSS og et sesongstyrkemål, og gjentar valget ved hver av de 31
+opprinnelsene. Python har ingen implementasjon som er dokumentert å gjøre det samme
+søket med de samme grensene, så en «M3» her ville vært en annen modell med samme
+navn. Referansetabellen i notebooken har derfor en kildekolonne: to rader står som
+«kontrollert her», seks som «arbeidsverk 1».
+
+Det generelle poenget: *en protokoll kan flyttes mellom språk og kontrolleres
+tallmessig; en tilpasningsalgoritme kan det som regel ikke.*
+
+**Konsekvens for arbeidsverk 1.** Rapporten oppgir at konformal kalibrering løfter
+dekningen for hovedspesifikasjonen fra 45 til 73 prosent. Det tallet er beregnet med
+det lekkende skjemaet og skal ikke stå uten forbehold. Rettelsen krever render.
+
+**Filer endret:** `notebooks/bostotte_02_protokoll.ipynb` (ny).
