@@ -1389,3 +1389,93 @@ før kjøringen starter**, slik at git-historikken bærer tidsstempelet. Svakhet
 notert i notebook 04 framfor å bortforklares.
 
 **Filer endret:** `notebooks/bostotte_04_kapasitet.ipynb` (ny).
+
+---
+
+## M18. Intervaller, kalibrert på hele hierarkiet (8. august 2026)
+
+Notebook 05 fyller hullet arbeidsverk 2 har hatt siden notebook 03: alle modellene ga
+punktprognoser, mens modellstigen i arbeidsverk 1 er skåret på dekning og
+intervallskår i tillegg til MASE.
+
+**Forhåndsregistreringen ble committet før kjøringen.** Notebook 04 lovet det, og
+`notebooks/forhandsregistrering_05.md` gikk inn som commit `53fafa4` før noen modell
+her var kjørt. Notebooken henter filen fra `main`, viser sha256 og commit-dato, og
+gjør dermed rekkefølgen etterprøvbar framfor påstått. Det er en reell endring i
+arbeidsformen, ikke en formulering.
+
+**Metoden.** Én global tilpasning per kombinasjon av opprinnelse og horisont gir
+prognoser for alle seksten seriene samtidig — Oslo og de femten bydelene. Det gir
+seksten ganger så mange realiserte prognosefeil å kalibrere på. Alle tre
+punktmodellene reproduserer sine kilder: M0 1,003/1 698, G2 0,815/1 408, L0
+0,767/1 308. Fjerde kontroll av protokollen.
+
+**P1 holdt.** Det tidsgyldige konformale skjemaet underdekker. M0 gir 67,4 %, samme
+tall som notebook 02; L0 gir 67,8 % mot nominelle 80. En bedre punktmodell gir
+**smalere intervaller, ikke riktigere dekning** — median bredde faller fra 3 159 til
+2 840 husstander og intervallskåren fra 8 072 til 5 558. Underdekningen er verst på
+lange horisonter, som registrert.
+
+**P2 holdt.** Panelkalibrering løfter dekningen på åtte av tolv horisonter og er aldri
+dårligere på noen. L0 går fra 67,8 til 73,7 %, intervallskåren fra 5 558 til 5 302.
+Kalibreringspunktene ved h = 12 går fra 19 til 304.
+
+**P3 falt, og premissen falt med den.** Forhåndsregistreringen sa at bydelenes
+prognosefeil på logskala er systematisk større enn Oslos, med notebook 01s
+log(sd) = −0,11 − 0,60·log(n) som grunnlag, og at en størrelseskorreksjon derfor var
+nødvendig. Målt på prognosefeilene er helningen **−0,015 med R² 0,03**, og alle seksten
+standardavvik ligger mellom 0,066 og 0,085 med Oslo på 0,072 — midt i flokken.
+Korreksjonen gjør skade: dekningen faller fra 73,7 til 69,3 %.
+
+De to målingene motsier ikke hverandre, og forskjellen er verdt å skrive ned:
+notebook 01 målte **restvariasjon etter at fellesbevegelsen var trukket ut**, og den
+skalerer med størrelse slik et telletall skal. **Prognosefeilen domineres av
+fellesbevegelsen** — av det ingen av modellene traff — og det leddet er det samme for
+alle seriene uansett hvor mange mottakere de har.
+
+Følgen er heldig og verdt å si tydelig, siden den er forutsetningen for hele avsnitt
+7: bydelenes prognosefeil er tilnærmet **utbyttbare** med Oslos på logskala.
+Utbyttbarhet er nøyaktig det konformal prediksjon krever, og her er den målt framfor
+antatt. Panelkalibreringen er dermed berettiget, ikke bare praktisk.
+
+Lærdommen er generell: et tall fra én notebook ble brukt på en størrelse det ikke
+gjaldt for. Feilen ville ikke blitt oppdaget uten at korreksjonen ble målt mot
+alternativet.
+
+**P4 falt fordi testen var for svak.** Tre modeller som skiller seg klart på
+punktnøyaktighet gir samme rangering på intervallskår. Poenget bak påstanden viser seg
+likevel — mellom **konstruksjoner** framfor mellom modeller. Det parametriske
+intervallet fra arbeidsverk 1 dekker 89,6 % med median bredde 6 070 husstander mot
+3 442, altså nesten dobbelt så vidt, og rangeres sist av tre på intervallskår.
+**Dekning alene er ikke et mål:** et intervall som alltid dekker, får man ved å la det
+gå fra null til uendelig. Arbeidsverk 1 rapporterer begge deler og gjør rett i det.
+
+**En fjerde sort feil, dokumentert.** Gradientboosting kom først ut på MASE 0,823 mot
+0,815 i notebook 03 — samme data, samme frø, samme hyperparametre. Forskjellen var
+**rekkefølgen de seksten seriene ble stablet i**: notebook 03 brukte
+kommunenummerrekkefølge, et utkast her sorterte etter størrelse. `subsample = 0,8`
+trekker rader ved hvert tre, og trekningen følger radenes posisjon.
+
+| Radrekkefølge | G2 | L0 |
+|---|---|---|
+| Kommunenummer | 0,8155 | 0,7671 |
+| Størrelse | 0,8229 | 0,7671 |
+
+Den lineære modellen flytter seg 6·10⁻⁷, altså flyttallsaddisjon, fordi full batch
+summerer over alle rader og en sum er ordensuavhengig. **Radrekkefølgen er en del av
+spesifikasjonen når `subsample` er under 1**, og står nå navngitt i koden framfor å
+følge av hvilken `groupby` som tilfeldigvis ble brukt.
+
+Størrelsesordenen er verdt å måle mot noe: 0,0074 er mindre enn avstanden mellom
+gradientboosting og den lineære modellen (0,048), men mer enn en sjettedel av den. En
+sammenlikning mellom modellklasser på dette materialet tåler ikke å bli lest på tredje
+desimal.
+
+**Hva som står igjen.** Arbeidsverk 2 har nå intervaller, og de er smalere enn
+arbeidsverk 1s til en dekning som er lavere. Ingen av dem når nominelt nivå — det
+beste er 73,7 % mot 80. Et intervall som skal bære en kapasitetsbeslutning, bør heller
+kalibreres på et høyere nominelt nivå og aksepteres som bredt, enn oppgis som 80 og
+treffe 74. Det er notebook 06s oppgave, sammen med hierarkisk avstemming.
+
+**Filer endret:** `notebooks/forhandsregistrering_05.md` (ny, egen commit før
+kjøringen), `notebooks/bostotte_05_intervaller.ipynb` (ny).
