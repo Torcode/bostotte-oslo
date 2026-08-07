@@ -23,7 +23,10 @@ er endret fem ganger siden 2020.
 > utført på oppdrag fra, eller i samarbeid med, Oslo kommune, Velferdsetaten eller
 > Husbanken. Alt datagrunnlag er offentlig tilgjengelig og aggregert; ingen person-
 > eller registerdata inngår.
-> Hver kjøring lagrer et datert og uforanderlig datauttrekk, gjeldende dato på rapport.
+> Uttrekksskriptet kjører mot Husbankens API og lagrer hvert uttrekk i en datert
+> mappe med sjekksum per fil. Analysen kontrollerer summene før den regner, og
+> oppgir hvilken dato den bygger på. Denne rapportversjonen bygger på uttrekket
+> datert **4. august 2026**.
 
 ## Læringsprosjekt med et mål — les dette først
 
@@ -34,7 +37,7 @@ ledd om gangen, med KI som verktøy hele veien.
 Den er ikke i mål ennå, og som det står øverst: **filene og arbeidet inneholder
 ikke-verifisert KI-informasjon.** KI skal hjelpe til med å se over og angi issues og evt løsninger underveis.
 
-| Fase |
+| Fase | Hjørnesteinen den skal feste | Hvor det står |
 |---|---|---|
 | **1 — Datagrunnlaget** | Er dataene det de utgir seg for? Kan hver kolonne føres tilbake til en navngitt kilde og et navngitt skript? | Kontrollene kjører; litteraturlista gjenstår |
 | *Faseport* | Prognoseobjekt, informasjonssett og evalueringskontrakt fryses **før** første modell estimeres | Passert |
@@ -82,7 +85,7 @@ SARIMA lander på 19 500–20 900 fra samtlige horisonter.
 blir mer selvsikker uten å bli mer treffsikker der informasjonen mangler, og
 underdekningen er en *skjevhet*, ikke for smale intervaller: der høstpakken 2024 ikke er
 estimerbar, underpredikerer modellen med 7,2 % — praktisk talt den utelatte koeffisienten.
-Konformal etterkalibrering reparerer dekningen.  
+Konformal etterkalibrering reparerer dekningen.
 
 **En regressor kan ikke estimeres før hendelsen har skjedd.** Ved 24 av 31
 prognoseopprinnelser er høstpakken identisk null i treningsvinduet. Det rammer 56 % av
@@ -124,6 +127,7 @@ enhver maskin.
 |---|---|
 | [`bostotte_oslo.pdf`](bostotte_oslo.pdf) | Rapporten, ferdig bygget. Versjoneres bevisst, slik at den kan leses uten å installere noe |
 | [`bostotte_oslo.qmd`](bostotte_oslo.qmd) | Hele arbeidet: teori, metode, resultater. All beregning kjører ved rendering |
+| [`notebooks/`](notebooks/) | Arbeidsverk 2, Python. Bygger på uttrekket og baselinen fra arbeidsverk 1; committes med utdata slik at de kan leses uten å kjøres |
 | [`referanser.bib`](referanser.bib) | Litteraturliste |
 
 **Datagrunnlaget** — [`data/`](data/)
@@ -163,7 +167,7 @@ til en analysefunksjon som skal dele metode og tall uten å måtte etablere en a
 |---|---|---|---|
 | [Husbankens statistikkbank](https://statistikk.husbanken.no/bostotte) | Utfallsserien: mottak, utbetaling, beløp, avslag | måned × Oslo/Norge/bydel/brukergruppe | 2010m1–2026m7 |
 | [SSB 09895](https://www.ssb.no/statbank/table/09895/) | Leiemarkedsundersøkelsen | år × prissone × rom | 2012–2025 |
-| [SSB 03013](https://www.ssb.no/statbank/table/03013/) | KPI for betalt husleie | måned | 1979–2025 |
+| [SSB 03013](https://www.ssb.no/statbank/table/03013/) | KPI for betalt husleie | måned | 1979–2025 (avsluttet 2025M12; etterfølgeren er [14700](https://www.ssb.no/statbank/table/14700/)) |
 | [SSB 14710](https://www.ssb.no/statbank/table/14710/) | KPI-bro inn i 2026 | måned | 1920–2026 |
 | [SSB 01222](https://www.ssb.no/statbank/table/01222/) | Befolkning, Oslo | kvartal | 1997K4–2026K1 |
 | [Oslo kommunes statistikkbank](https://statistikkbanken.oslo.kommune.no/) | AAP, uføretrygd, sosialhjelp, befolkning og framskriving per bydel | år × bydel | tabellavhengig |
