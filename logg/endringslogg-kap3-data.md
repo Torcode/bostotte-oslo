@@ -906,3 +906,144 @@ fra sin referanse, og ikke gjør det, er en byggefeil — ikke et resultat.* Kva
 kontrollerte dataene, ikke modellene.
 
 **Filer endret:** `bostotte_oslo.qmd` (M7-konstruksjonen, to nye kontroller, avsnitt 4.6).
+
+
+## M11. Formateringen strippet sju merkelapper og escapet en inline-chunk (7. august 2026)
+
+En automatisk formatering — RStudio eller Positrons «Reformat Document», eller en
+formatter som kjører ved lagring — hadde skrevet om tabellene i `bostotte_oslo.qmd`.
+Det meste var kosmetisk: skillelinjene i tabellhodene komprimert fra padding til
+`|---|`, og kulepunkter fra `*   ` til `- `. Begge rendrer likt.
+
+Fire ting var ikke kosmetiske.
+
+**Sju `{#tbl-...}`-merkelapper var fjernet.** `tbl-former`, `tbl-intervensjoner`,
+`tbl-kildekart`, `tbl-modeller`, `tbl-res-oppgjor`, `tbl-tester` og `tbl-vask`.
+Uten merkelappen får tabellen ikke nummer, og hver `@tbl-...` i teksten rendrer som
+en ubesvart referanse. Omfanget var **15 kryssreferanser**, deriblant de fire til
+`@tbl-tester` — forhåndsregistreringen som hele kapittel 4 måles mot.
+
+**En inline R-chunk var escapet.** I avsnittet om ekvivalenstesten var
+
+    $p = `r nb(kq$p.value, 3)`$
+
+blitt til `` `r nb(kq$p.value, 3)\`\$ ``. Backticken og dollartegnet var escapet, så
+chunken ville ikke kjørt. PDF-en hadde trykt kildekoden i stedet for p-verdien, midt i
+argumentet om hvorfor T3 er formulert som ekvivalenstest.
+
+**To uthevinger rundt inline matematikk var brutt.** `*$\theta$ og $E$ er ikke separat
+identifisert.*` mistet kursiven mens punkt 2–4 i samme liste beholdt sin, og
+`**Hvor $\lambda_j$ kommer fra.**` var blitt `**Hvor** $\lambda_j$ kommer fra.`
+Begge er mønsteret til en formatter som ikke håndterer utheving over `$`.
+
+**Rettelse og kontroll.** Merkelappene ble hentet tilbake fra forrige commit ved å
+koble bildetekst til etikett, uthevingene og chunken ble gjenopprettet ordrett, og de
+kosmetiske endringene ble beholdt. PDF-en er bygget på nytt: 38 sider, 24 tabeller
+nummerert 1–24 sammenhengende, null ubesvarte referanser, og T3 trykker `p = 0,933`.
+
+**Det generelle poenget.** `verifiser.R` parser dokumentet i rent C-tegnsett og
+kontrollerer referanselisten, men den kontrollerer ikke at kryssreferansene løser seg.
+Skaden var derfor usynlig helt til PDF-en ble lest. En kontroll på at hver `@tbl-`,
+`@fig-` og `@sec-`-referanse har en merkelapp, og at kilden ikke inneholder escapet
+backtick eller dollartegn, fanger hele klassen på et sekund. Den mangler fortsatt.
+
+Én referanse var brutt fra før og er ikke rørt: `@sec-met-m7` peker på en seksjon som
+heter `{#sec-met-prior}`.
+
+**Filer endret:** `bostotte_oslo.qmd` (sju merkelapper, én inline-chunk, to uthevinger),
+`bostotte_oslo.pdf` (rebygget).
+
+## M12. Arbeidsverk 2 påbegynt: notebook 01 (7. august 2026)
+
+`notebooks/bostotte_01_grunnlag.ipynb` er lagt til. Den estimerer ingen modell — den
+fester datagrunnlaget til commit `9b3da3e` med SHA-256 per fil, går gjennom variablene
+og hva de tåler, viser fordelingen bak aggregatene, og regner ut hvor mye informasjon
+panelet inneholder. Rekkefølgen er tilsiktet: panelets størrelse avgjør hvilke
+modellklasser som er forsvarlige, så det tallet må ligge på bordet før valget tas.
+
+Notebooken er committet med utdata, av samme grunn som PDF-en versjoneres: en leser
+skal se resultatet uten å installere noe. Den er kjørt i to miljøer med ulike
+hovedversjoner av pandas — Colab (3.12.13 / pandas 2.2.2) og en Linux-container
+(3.11.15 / pandas 3.0.2) — med identiske tall.
+
+**Fire funn.**
+
+*Panelet er mindre enn nodetallet.* Effektiv dimensjon i rå logvekst er 1,2 av 15
+bydeler. Oslo-totalen forklarer median 93 % av hver bydels månedsvekst. En global
+modell som får panelet uten videre, tilpasser det samme signalet femten ganger.
+
+*Restleddet er en størrelseseffekt.* Etter at fellesbevegelsen er trukket ut stiger
+effektiv dimensjon til 11,3, men restvariasjonen skalerer med bydelsstørrelse:
+log(sd) = −0,11 − 0,60·log(n), R² 0,87. Tellegulvet √(2/n) er elleve ganger for stort,
+fordi serien er en beholdning der bare strømmen varierer.
+
+*April 2024 er det skarpeste fordelingseksempelet i materialet.* Antall falt 25,2 %,
+mens snittinntekt beveget seg −0,2 %, boutgift +0,7 %, bostøtte +0,2 % og antall over
+tak +1,3 %. Fordelt på brukergruppe: unge uføre −58,2 %, uføre forøvrig −40,7 %,
+midlertidige ytelser −30,3 %, eldre −15,1 %, uten trygdeytelser −7,9 %. Fire snitt står
+stille mens sammensetningen bygges om. Et snitt over en gruppe hvis grense settes av
+regelverket, beskriver grensen mer enn menneskene innenfor.
+
+*Støygulvet endret en påstand.* Målt mot gruppens eget standardavvik i rolige måneder
+er aprilutslaget 1,5 til 10,4 ganger. Husstander uten trygdeytelser ligger på 1,5 og
+lar seg ikke skille fra normal variasjon. Figuren kan altså ikke avgjøre at avviklingen
+traff den gruppen svakt, bare at den ikke kan avgjøre det.
+
+**Krysstabellen finnes.** Husbankens Qlik-app gir bydel × brukergruppe: 75 bunnceller,
+198 måneder, 14 879 observasjoner, full dekning i alle 75, og null avvik mot Oslo,
+bydelsmarginalen og brukergruppemarginalen. API-et prikker ikke — 26 celler har verdien
+1. Den er kontrollert, ikke tatt i bruk: uttrekket er datert 7. august mot datapakkens
+4. august, og to uttrekksdatoer i samme evaluering bryter dateringsdisiplinen.
+
+**README rettet i samme runde.** Fasetabellen hadde overskriftsrad med én celle mot
+skillelinje med tre og rendret som ren tekst på forsiden. «Uforanderlig datauttrekk» er
+byttet mot sjekksum-mekanismen, siden ingenting håndhevet lovnaden. `notebooks/` er lagt
+inn i filoversikten, og SSB 03013 er merket som avsluttet.
+
+**Filer endret:** `notebooks/bostotte_01_grunnlag.ipynb` (ny), `README.md`.
+
+## M13. Tre funn fra arbeidsverk 2 som gjelder del 1 (7. august 2026)
+
+**`osloandel` regnes på hele serien.** Konstruksjonen i oppsett-chunken er
+`tail(12)` av det ferdige utvalget. Ved en prognoseopprinnelse i 2021 ville den brukt
+2025–26-data. Andelen er ingen konstant: den steg fra 14,4 % i 2010 til 19,9 % i 2021 og
+falt til 18,5 % i 2024. M7 skalerer nasjonale forhåndsanslag ned til Oslo med denne.
+Størrelsen brukes i dag bare i løpende tekst og ikke i kryssvalideringen, så tallene i
+kapittel 4 er ikke berørt — men metoden slik den er beskrevet, lekker. Andelen bør måles
+ved hver opprinnelse, av samme grunn som ordensvalget gjentas der.
+
+Nedgangen har en forklaring som selv er et funn. Nasjonalt vokste gruppen med
+midlertidige trygdeytelser 72 % fra mars 2021 til mars 2024, mot 44 % i Oslo. SØF-rapport
+05/2025 oppgir at ukrainske husstander gikk fra 0,1–0,2 % av mottakerne i 2020–21 til
+13,5 % i 2024, og bosettingen skjedde i hovedsak utenfor Oslo. Den største
+sammensetningsendringen i perioden er usynlig i variablene datagrunnlaget har.
+
+**Et publisert tall for avviklingen finnes likevel.** M4 konkluderte med at ingen av fire
+gjennomsøkte kildefamilier oppgir husstandstall for hendelsene. Det gjaldt høstpakken.
+For avviklingen oppgir SØF 05/2025 rundt 25 000 husstander nasjonalt. Tallet er
+*etterberegnet*, ikke et forhåndsanslag, og hører derfor inn i `forhandsanslag.csv` med
+den merkingen — det kan validere metoden i M7, aldri brukes i en prognose.
+
+SØF daterer hendelsen til mai 2024, dette arbeidet til termin april 2024. Begge er
+riktige: termin april utbetales 20. mai. Kalenderidentiteten i avsnitt 3.1 er altså ikke
+en pedantisk kontroll — forvekslingen står i en publisert fagrapport.
+
+**Litteraturhullet er dokumentert.** Gjennomgang av Husbanken, NIBR/OsloMet, SSB,
+Fafo/NOVA, SØF, ekspertgruppen, Oslo Economics, Vista, SØA og Oslo kommune: det finnes
+ingen publisert framskriving av bostøttemottak, verken nasjonalt, for Oslo eller per
+bydel. Ingen bruker maskinlæring på feltet. Ingen har gjort kausal intervensjonsanalyse
+av 2021-vinduet, avviklingen, høstpakken eller skjermingen. Take-up er sist målt på
+2016-data (SSB Rapporter 2019/02: 50–61 %, Oslo høyest blant storbyene), og det finnes
+ingen mikrosimuleringsmodell for regelverket i Norge.
+
+De to rapportene i `litteratur/` er de to halvdelene av samme hull. Husbanken 5/2025 har
+null forekomster av prognose, framskriving, maskinlæring eller prediksjon i 42 sider.
+Velferdsetatens boligbehovskartlegging 2024 teller 3 826 husstander, 1 109 med rus eller
+ROP — og nevner ikke ordet bostøtte.
+
+**En datakilde er avsluttet.** SSB 03013, KPI for betalt husleie, stoppet 2025M12.
+Repoet bruker den i kildekartet, README, `last_datapakke.R` og `fetch_ssb.py`.
+Etterfølgeren er 14700. En pipeline som kjører månedlig, vil stille produsere en
+husleieindeks som ikke oppdateres.
+
+**Filer endret:** ingen. Postene står som funn å håndtere i neste patch.
