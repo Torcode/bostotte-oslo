@@ -303,7 +303,7 @@ Kapitlet bygger tre lag: ordningens mekanikk (hvem som er innenfor, og hvorfor),
 Bostøtte er en statlig, rettighetsbasert og behovsprøvd månedlig ytelse til husstander med lave inntekter og høye boutgifter, hjemlet i bustøttelova og operasjonalisert i forskrift om bustøtte, forvaltet av Husbanken med kommunen som førstelinje [@bustottelova2012; @bostotteforskrift2012]. Dagens ordning stammer fra 2009-reformen. En regjeringsoppnevnt ekspertgruppe konkluderte i 2022 med at ordningen er viktig for mange, men fremstår som vanskelig å forstå, tilfeldig og usammenhengende [@ekspertgruppe2022], og et nytt offentlig utvalg skal levere en helhetlig gjennomgang i desember 2026 [@bostottealliansen2026]. Ordningen er altså både empirisk volatil og politisk i bevegelse — begge deler er prognoseproblemets kjerne.
 
 | Begrep | Innhold |
-|------------------------------------|------------------------------------|
+|----|----|
 | Statlig bostøtte | Månedlig, behovsprøvd rettighetsytelse fra Husbanken [@bustottelova2012]. |
 | Husstand | Alle folkeregistrert på adressen. Inntekten til husstandsmedlemmer fra 18 år inngår i grunnlaget; fra termin oktober 2024 er hjemmeboende 18–19-åringers inntekt unntatt, mens søkers egen inntekt alltid inngår [@husbankenInntekter; @husbanken2024rnb]. |
 | Mottaker (per måned) | Husstand med positivt vedtak og utbetaling for terminen — en *beholdningsstørrelse*, ikke en strøm [@husbankenStatistikk]. |
@@ -488,7 +488,7 @@ Identiteten er ikke en antakelse: begge kalendrene hentes fra samme kilde med id
 Innhentingen følger stigen i @sec-teori-data, øverst først: API, strukturerte filer, tabelluttrekk fra PDF, høflig skraping, innsyn. Prinsippet gjennom alle trinn er proveniens — hver tallkolonne skal kunne regenereres av et navngitt skript fra en navngitt kilde, uten manuell redigering. @tbl-kildekart er den operasjonaliserte varianten: hver rad er hentet av et navngitt skript i `data/scripts/`, og rådata er arkivert i `data/raw/` slik at enhver kolonne kan etterprøves offline.
 
 | Rolle | Kilde og uttrekksmetode | Skript |
-|:-----------------|:--------------------------------------------|:-------------------|
+|:---|:---|:---|
 | Utfallsserier | Husbankens statistikkbank — Qlik-appens Engine-API (WebSocket, anonym offentlig tilgang), måldefinisjoner lest ut av appens datamodell; måned × kommune/bydel × brukergruppe [@husbankenStatistikk] | `extract_bostotte_v2.py` |
 | Regelverkskalender | Husbankens årsrapporter 2021–2025 [@husbanken2021aars; @husbanken2022aars; @husbanken2023aars; @husbanken2024aars; @husbanken2025aars], regelverksveilederen [@husbankenBeregning; @husbankenInntekter; @husbankenBoutgifter] og budsjettdokumenter; hendelsesdatert [@husbanken2024rnb; @kdd2025] | kuratert: `intervensjonstabell.csv` |
 | Regelparametre | Forskriftssatser via regelverksveilederen (Lovdata er maskinstengt; innholdet er identisk); gjeldende satser + endringslogg | `regelparametre_gjeldende.csv` |
@@ -509,7 +509,7 @@ To hull dokumenteres like eksplisitt som kildene, fordi et kjent hull er en anne
 Datagrunnlaget består av tjueto datasett. De er ikke tjue ulike ting å lære seg. En *form* sier ikke hva et datasett handler om, men hvordan det er lagret: hvilken enhet én rad representerer — **kornet** — og dermed hvilken operasjon som er lovlig uten videre bearbeiding. Fire former dekker alle sammen. @tbl-former gir for hver av dem kornet, det kanoniske grepet og den karakteristiske feilen formen inviterer til.
 
 | Form | Kornet: én rad er | Kanonisk grep | Karakteristisk feil |
-|:---------|:------------------|:------------------|:----------------------------|
+|:---|:---|:---|:---|
 | **1 Serie** | én periode; målene ligger side om side i hver sin kolonne | brukes direkte som tidsserie | å lese to kolonner som ligger i ulike kalendre, som samme tidsakse |
 | **2 Panel** | én enhet × én periode | filtrér én enhet → serie; aggregér over enheter → total | å aggregere uten å sjekke at panelet er balansert og at aggregatet treffer totalen |
 | **3 Kube** | én *celle* i en flerdimensjonal tabell, i langformat | lås hver dimensjon unntatt tid med eksplisitt filter → serie | å glemme én dimensjon og dobbelttelle over den |
@@ -791,7 +791,7 @@ Ordet «vask» stammer fra survey-data, der det betegner håndtering av frafall,
 Det som finnes, er *representasjonsvalg* — måter kilden koder tilstander som ikke er tall: at en termin ennå ikke er kjørt, og at en restkategori bærer et misvisende navn. Vasken består derfor av nøyaktig to inngrep, begge i @tbl-vask, og det er ikke en påstand om at dataene var rene, men et fullstendig regnskap over hva som er gjort.
 
 | Id | Inngrep | Omfang | Begrunnelse | Alternativet, og hva det ville kostet |
-|:---|:-------------------|:----------|:----------------------|:-------------------------------------|
+|:---|:---|:---|:---|:---|
 | **V1** | Sanntidskanten fjernes: siste månedsrad med `ant_husstander_termin = 0` | `r nrow(kant_rader)` rad (`r if (nrow(kant_rader)) format(kant_rader$dato, "%Y-%m") else "—"`) | Verdien er en strukturell null — terminkjøringen for måneden skjer først neste måned — ikke en observasjon av null mottakere | Å beholde raden legger et fall på 100 % inn i serien som data. Det ville forgiftet både sesongkomponent og trend, og gjort siste observasjon til det største bruddet i hele materialet |
 | **V2** | Node 0301 gis merkelappen «Ufordelt (0301)» i stedet for kildens «Oslo» | 1 etikett, `r nb(sum(d$oslo_bydel$kommunenr == "0301"))` rader | Kilden gir restkategorien samme navn som totalen. Uendret inviterer det til å lese en node på 0–3 husstander som Oslo-tallet | Å beholde navnet er en ren felle for enhver som joiner på navn. Ingen tallverdi endres av byttet |
 
@@ -995,7 +995,7 @@ Informasjonsmengden $\mathcal{I}_{\tau}$ er definert av produksjonssyklusen. Ter
 Intervensjonsmatrisen oversetter den primærkildebelagte regelverkskalenderen — kuratert i `intervensjonstabell.csv` med kilde og verifiseringsstatus per hendelse — til deterministiske regressorer i terminkalenderen. Hver hendelse tilordnes en funksjonsform fra @eq-transfer etter sin institusjonelle mekanikk, med fortegn og form som *prediksjoner* som kan felles empirisk, jf. asymmetriproposisjonen i @sec-teori-beholdning:
 
 | Regressor | Termindatering | Form | Mekanisme og forventning |
-|:---------------|:-----------------|:-----------------|:----------------------------------|
+|:---|:---|:---|:---|
 | `win_covid` | 2020m4–2020m10 | vindu (trinn inn/ut) | Midlertidige koronaregler; positivt nivåskift [@husbanken2021aars] |
 | `win_strom` | 2021m12–2024m3 | vindu | Redusert progressivt egenandelsledd (0,28 → 0,12 %) løftet den implisitte inntektsgrensen $\tilde y^{*}$; om lag 25 000 husstander nasjonalt inn — og ut igjen ved avvikling. Inn-kanten forventes gradvis (søknadsbasert, $\delta > 0$), ut-kanten skarp (automatisk omregning, $\delta = 0$) [@husbanken2023aars; @husbanken2024aars] |
 | `pakke_2024h2` | 2024m7/m9/m10 | samlet trinn | Boutgiftstak +4 000 kr (juli), oppvarmingstillegg til alle (september) og 18–19-åringers inntekt ut (oktober) ligger to til tre måneder fra hverandre og kan ikke identifiseres enkeltvis i en serie av denne lengden (@sec-met-ideal); de estimeres som én pakke med felles positivt fortegn, alternativt med de tre trinnene som kandidater i spike-and-slab-klassen [@husbanken2024aars; @husbanken2024rnb] |
@@ -1142,7 +1142,6 @@ bg_termin <- bg_est
 
 Modelleringen skjer på logskala, $y_t = \ln M^{T}_t$: nivåserien er strengt positiv, regelendringenes effekter er multiplikative i @eq-takeup sin dekomponering, og logtransformasjonen gjør intervallene asymmetriske på nivåskala der de skal være det. Populasjonsoffset brukes ikke i hovedspesifikasjonen — Oslos befolkning beveger seg under én prosent på tolv måneder; rater reserveres for bydelsanalysen og driftsdiagnostikken. Analysesettet er dermed `r nb(nrow(analyse))` terminer × `r nb(ncol(analyse))` kolonner der alt foran er destillert: utfallet fra form 1, regressorene generert fra form 4, kalendertrioen fra det kalibrerte gridet, kovariatene fra form 3 låst ned til én kolonne hver. Hierarkiet — Oslo, femten bydeler og ufordelt-noden, med brukergruppene som alternativt snitt — står summeringskonsistent klart for MinT-avstemming i del 2 [@wickramasuriya2019].
 
-
 ## Seriediagnostikk: hva serien er, før den modelleres {#sec-met-diagnostikk}
 
 Diagnostikken hører logisk sett tidlig, men den kan ikke kjøres tidligere enn her, og grunnen er verdt en setning. En enhetsrottest på den rå serien svarer på om det finnes en stokastisk trend. Med fem daterte nivåskift i utvalget er det spørsmålet nesten uinformativt: strukturelle brudd gjør at en stasjonær serie ser integrert ut, og enhetsrottester er systematisk skjeve mot ikke å forkaste under slike brudd [@perron1989]. Kjørt på rådata ville testen bare bekreftet at det finnes brudd — noe regelverkskalenderen allerede sa. Den informative testen er den *betingede*: er serien stasjonær gitt de deterministiske leddene? Den forutsetter at intervensjonsmatrisen (@sec-met-x) og kalenderregressoren (@sec-met-kalender) allerede er bygget, og hører derfor hjemme nettopp her.
@@ -1182,7 +1181,7 @@ Funnet er ikke bare et diagnostisk kuriosum: det bekreftes uavhengig av modellva
 Modellvalget følger hierarkiet i @sec-teori-modeller, men med én tilleggsbetingelse som kommer fra forskningsspørsmålet selv. Spørsmålet er ikke bare *hvor presist* serien kan prognostiseres, men *hvor mye det hjelper* å modellere kjente regelendringer eksplisitt. Et slikt spørsmål besvares ikke av én god modell mot én dårlig; det besvares av en **nøstet stige** der modellene skiller seg fra hverandre i nøyaktig én informasjonskilde av gangen. @tbl-modeller er bygget slik.
 
 | Id | Modell | Informasjon utover $y_t$ | Rolle i designet |
-|:-----|:-------------------|:---------------------|:--------------------------|
+|:---|:---|:---|:---|
 | **M0** | Naiv (tilfeldig gang) | ingen | nedre grense; @eq-stockflow gjør denne sterk |
 | **M1** | Sesongnaiv | 12-måneders lag | referanse og nevner i @eq-mase |
 | **M2** | ETS, automatisk klasse | ingen | etablert referanse [@hyndman2002] |
@@ -1341,9 +1340,9 @@ Det andre regimet er ikke en svakhet ved designet; det er innholdet i underspør
 
 **Signifikans, og en fallgruve som må navngis.** Forskjeller i prognosepresisjon testes med Diebold–Mariano [@diebold1995] med småutvalgskorreksjon [@harvey1997]. Testen forutsetter imidlertid ikke-nøstede modeller, og de sammenlikningene vi er mest interessert i — M6 mot M3, M6 mot M4, M6 mot M5 — er nøstede i populasjonen: den enklere modellen er den generelle med koeffisienter satt til null. Under nullhypotesen blir tapsdifferansen degenerert, og DM-testen er da underdimensjonert. Protokollen håndterer dette eksplisitt:
 
-*   nøstede par testes med Clark–Wests justerte statistikk, som korrigerer for nettopp dette;
-*   ikke-nøstede par (for eksempel M6 mot M2) testes med DM–Harvey;
-*   og hovedbeviset for forskningsspørsmålet hviler uansett ikke på en punktprognosetest alene, men på intervalldekningen, der problemet ikke oppstår på samme form.
+- nøstede par testes med Clark–Wests justerte statistikk, som korrigerer for nettopp dette;
+- ikke-nøstede par (for eksempel M6 mot M2) testes med DM–Harvey;
+- og hovedbeviset for forskningsspørsmålet hviler uansett ikke på en punktprognosetest alene, men på intervalldekningen, der problemet ikke oppstår på samme form.
 
 Å velge test etter om paret er nøstet, er ikke pedanteri: en DM-test som feilaktig ikke forkaster, ville fått studien til å konkludere med at regelverksinformasjon *ikke* hjelper, når den i virkeligheten bare hadde brukt feil test.
 
@@ -1357,8 +1356,8 @@ Det andre regimet er ikke en svakhet ved designet; det er innholdet i underspør
 
 **Fra teori til teststatistikk.** De fire implikasjonene i @sec-teori-syntese oversettes i @tbl-tester til fire avgjørbare størrelser:
 
-| | Implikasjon | Operasjonalisering | Faller dersom |
-|:----|:-----------------|:-----------------------|:----------------------|
+|   | Implikasjon | Operasjonalisering | Faller dersom |
+|:---|:---|:---|:---|
 | **T1** | Struktur slår naive referanser | MASE for M6 mot M1 og M0, per horisont 1–12 | MASE $\geq 1$ på flertallet av horisontene |
 | **T2** | Eksplisitte intervensjoner hjelper — mest på intervallene | M6 mot M3, stratifisert på bruddnære og rolige punkter *og* på om regressoren var estimerbar (@sec-met-identifikasjon); Clark–West på punktfeil, dekningsdifferanse på intervaller | ingen dekningsgevinst i de bruddnære vinduene der regressoren var estimerbar |
 | **T3** | Kalendereffekten er stor før 2025 og eksakt null etter | $\hat\beta_{k,\text{pre}}$ negativ og signifikant; for $\hat\beta_{k,\text{post}}$ en ekvivalenstest mot grensen $\delta = \tfrac{1}{2}\lvert\hat\beta_{k,\text{pre}}\rvert$ | $\hat\beta_{k,\text{pre}}$ ikke negativ, eller ekvivalens for $\hat\beta_{k,\text{post}}$ forkastes |
@@ -1716,8 +1715,8 @@ Konsekvensen er en presisering av protokollen som bør inn i en revidert versjon
 
 ## Hva som ikke holdt {#sec-res-oppgjor}
 
-| | Implikasjon | Utfall |
-|:----|:-------------------------|:-------------------------------|
+|   | Implikasjon | Utfall |
+|:---|:---|:---|
 | **T1** | Struktur slår naive referanser | **Holder delvis.** Slår naiv og sesongnaiv klart; ETS slår M6 samlet og signifikant på tolv måneder |
 | **T2** | Eksplisitte intervensjoner hjelper | **Holder i retning.** MASE ned; Clark–West når ikke kritisk verdi på noen horisont |
 | **T3** | Kalendereffekt stor før 2025, eksakt null etter | **Holder i første ledd.** Ekvivalens ikke etablert ved den forhåndssatte grensen; full styrke utelukket, halv styrke ikke |
