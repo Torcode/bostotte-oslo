@@ -17,14 +17,13 @@ kjente regelendringer modelleres eksplisitt?
 
 Serien er regelstyrt. Antall mottakere bestemmes ikke bare av inntekter, husleier og
 søkeatferd, men av hvordan retten til bostøtte til enhver tid er definert, og regelverket
-er endret fem ganger siden 2020. En modell som ikke kjenner endringene, leser vedtak som
-trend og utbetalingskalender som sesong, og framskriver begge deler feil.
+er endret fem ganger siden 2020.
 
 > **Uavhengig prosjekt.** Dette er et privat fag- og porteføljeprosjekt. Det er ikke
 > utført på oppdrag fra, eller i samarbeid med, Oslo kommune, Velferdsetaten eller
 > Husbanken. Alt datagrunnlag er offentlig tilgjengelig og aggregert; ingen person-
-> eller registerdata inngår. Uttrekket er frosset per **4. august 2026** — kilden
-> revideres bakover, og resultater må derfor alltid knyttes til den datoen.
+> eller registerdata inngår.
+> Hver kjøring lagrer et datert og uforanderlig datauttrekk, gjeldende dato på rapport.
 
 ## Læringsprosjekt med et mål — les dette først
 
@@ -33,15 +32,14 @@ måneder fram, med intervaller som dekker det de lover. Veien dit er å bygge de
 ledd om gangen, med KI som verktøy hele veien.
 
 Den er ikke i mål ennå, og som det står øverst: **filene og arbeidet inneholder
-ikke-verifisert KI-informasjon.** Fasene er der for å lukke det systematisk — hver fase
-fester én hjørnestein, og neste fase hviler ikke på en som ikke er festet.
+ikke-verifisert KI-informasjon.** KI skal hjelpe til med å se over og angi issues og evt løsninger underveis.
 
-| Fase | Hjørnesteinen den skal feste | Hvor det står |
+| Fase |
 |---|---|---|
 | **1 — Datagrunnlaget** | Er dataene det de utgir seg for? Kan hver kolonne føres tilbake til en navngitt kilde og et navngitt skript? | Kontrollene kjører; litteraturlista gjenstår |
 | *Faseport* | Prognoseobjekt, informasjonssett og evalueringskontrakt fryses **før** første modell estimeres | Passert |
-| **2 — Modellene** | Holder mekanikken? Først referansemodeller og intervensjonsanalyse i R, så ML-klassene i Python — målt mot samme baseline | R-delen kjørt, tre feil åpne. Python-delen ikke påbegynt |
-| **3 — Drift** | Hva som skal til for at noe slikt kan kjøre i en etat: kjøreplan, terskler, overvåkning, eierskap, og hva som *ikke* bør bygges | Ikke påbegynt |
+| **2 — Modellene** | Holder mekanikken? Først referansemodeller og intervensjonsanalyse i R, så ML-klassene i Python — målt mot samme baseline | R-delen kjørt, tre feil åpne. Python-delen påbegynt |
+| **3 — Drift** | Hva som skal til for at noe slikt kan kjøre i en etat: kjøreplan, terskler, overvåkning, eierskap, og hva som *ikke* bør bygges, vurdere svakheter og forbedre | Ikke påbegynt |
 
 Oppgavene i hver fase ligger som
 [issues](https://github.com/Torcode/bostotte-oslo/issues), merket med fasen sin.
@@ -84,7 +82,7 @@ SARIMA lander på 19 500–20 900 fra samtlige horisonter.
 blir mer selvsikker uten å bli mer treffsikker der informasjonen mangler, og
 underdekningen er en *skjevhet*, ikke for smale intervaller: der høstpakken 2024 ikke er
 estimerbar, underpredikerer modellen med 7,2 % — praktisk talt den utelatte koeffisienten.
-Konformal etterkalibrering reparerer dekningen.
+Konformal etterkalibrering reparerer dekningen.  
 
 **En regressor kan ikke estimeres før hendelsen har skjedd.** Ved 24 av 31
 prognoseopprinnelser er høstpakken identisk null i treningsvinduet. Det rammer 56 % av
