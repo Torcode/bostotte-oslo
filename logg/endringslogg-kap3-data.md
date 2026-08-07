@@ -1216,3 +1216,81 @@ dekningen for hovedspesifikasjonen fra 45 til 73 prosent. Det tallet er beregnet
 det lekkende skjemaet og skal ikke stå uten forbehold. Rettelsen krever render.
 
 **Filer endret:** `notebooks/bostotte_02_protokoll.ipynb` (ny).
+
+---
+
+## M16. Første maskinlæringsmodell: hele fordelen er regelverket (7. august 2026)
+
+Notebook 03 kjører gradientboosting mot protokollen fra notebook 02. Notebooken er
+bygget rundt en forhåndsregistrering: fire påstander skrevet ned med begrunnelse
+**før** noen modell kjøres, og et oppgjør etterpå.
+
+**Protokollen kontrollert på nytt.** Notebook 02 sto igjen med at protokollfunksjonene
+bor i en notebook og kan gli fra hverandre. Løsningen her er ikke å love at kopien er
+lik, men å måle det: de samme ti tallene fra arbeidsverk 1 reproduseres også i
+notebook 03. Kontrollen koster millisekunder og skal gjentas i hver notebook som
+skårer noe.
+
+**Lekkasjetest på trekkene.** Hver trekkverdi regnes to ganger — med data som stopper
+ved kildemåneden, og med hele serien tilgjengelig — og må være bit for bit lik.
+180 verdier, 0 avvik. Pluss en kontroll på at ingen treningsrad har målmåned etter sin
+opprinnelse. Testen fanger den vanligste feilen i denne typen arbeid: et rullende
+standardavvik eller en sesongindeks regnet på hele serien og deretter skåret til
+treningsvinduet.
+
+**Forhåndsregistreringen.**
+
+| | Påstand | Målt | Utfall |
+|---|---|---|---|
+| P1 | Nivåmodellen kan ikke ekstrapolere | 0 av 372 prognoser utenfor treningsområdet | holdt |
+| P2 | Vekstparametrisering fjerner taket | 44 av 372 utenfor | holdt |
+| P3 | Residual-ML slår ikke modellen alene | N1 1,066 mot G1 0,905 | holdt |
+| P4 | Kryssæring over bydelene gir lite | G2 0,815 mot G1 0,905, DM 3,51 ved h = 6 | **falt** |
+
+**P1 er demonstrert, ikke påstått.** Gradientboosting på nivå forlot aldri intervallet
+mellom høyeste og laveste treningsmål — null av 372. På de 56 punktene der utfallet
+ligger over treningens tak, er modellens MASE 1,83 mot 0,74 for den naive: å ikke
+gjøre noe er der to og en halv gang bedre. Innenfor treningsområdet er forholdet
+snudd, 0,90 mot 1,05. Grensen er ikke en svakhet ved algoritmen, men ved
+parametriseringen: samme modell, samme trekk, samme data, bare et annet mål, og taket
+forsvinner.
+
+**Hvorfor P4 falt.** Begrunnelsen var riktig målt og feil brukt. Effektiv dimensjon
+1,2 (notebook 01) sier at bydelene ikke bærer femten uavhengige signaler om Oslos
+framtid. Det stemmer. Men en trebasert modell trent på 60 rader lider av for få
+*eksempler*, ikke av for lite informasjon. Femten bydeler som gjentar den samme
+sammenhengen, gir femten ganger så mange observasjoner av den og reduserer variansen
+i det modellen lærer. Kryssæringen virker som regularisering, ikke som ny informasjon.
+Skillet er testbart: gevinsten skal forsvinne hvis Oslo alene får nok data, og skal
+ikke vokse av flere kollineære serier. Ingen av delene er prøvd.
+
+**Hovedfunnet: ablasjonen.** G2 — gradientboosting på vekst, trent globalt på
+bydelspanelet — har lavest MASE av alt i materialet, 0,815, også lavere enn M7, som
+får pålagt en koeffisient estimert på hele utvalget.
+
+| Variant | MASE med regelverk | MASE uten | Naiv referanse |
+|---|---|---|---|
+| Lokal (G1) | 0,905 | 1,188 | 1,003 |
+| Global (G2) | 0,815 | 1,249 | 1,003 |
+
+Uten de fem regelverksregressorene taper begge mot å ikke gjøre noe. Variabelviktighet
+gir samme svar fra en annen kant: regressorene står for 55 % av samlet gain, med
+`win_strom`, `win_covid` og `k_pre` øverst. **Hele fordelen over referansen er
+domenekunnskap.** Modellklassen avgjør hvor fleksibelt informasjonen brukes, og det er
+en reell forskjell, men den er annenordens.
+
+Kryssæringen snur også fortegn: med regelverket hjelper panelet (0,905 → 0,815), uten
+det skader det (1,188 → 1,249). Det bydelene har til felles er hvordan regelendringer
+slår gjennom; uten regressorene som daterer endringene, er de øvrige seriene mest støy
+fra andre bydelers særtrekk.
+
+**Forbeholdene, som står i notebooken.** Ingen av de trebaserte modellene skiller seg
+fra den naive med en DM-statistikk over 1,64 på noen horisont — forbedringen fra 1,003
+til 0,815 er målt på 372 punkter, men er ikke større enn 31 opprinnelser kan skille
+fra tilfeldighet. Den eneste sammenlikningen som passerer, er G1 mot G2. RMSE rangerer
+dessuten M7 (1 322) og M5 (1 391) foran G2 (1 408): G2 er bedre på den typiske feilen
+og dårligere på halen, og hvilken av dem som betyr noe, avhenger av bruken. Videre:
+ingen hyperparametersøk, ingen intervaller fra modellene, ett frø, og seks av åtte
+trinn i stigen er avskrift fra arbeidsverk 1.
+
+**Filer endret:** `notebooks/bostotte_03_trekk_og_trebasert.ipynb` (ny).
