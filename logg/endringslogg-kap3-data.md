@@ -1047,3 +1047,72 @@ Etterfølgeren er 14700. En pipeline som kjører månedlig, vil stille produsere
 husleieindeks som ikke oppdateres.
 
 **Filer endret:** ingen. Postene står som funn å håndtere i neste patch.
+
+---
+
+## M14. To kalendre i samme rad — en konklusjon som var snudd (7. august 2026)
+
+Avsnitt 4 i notebook 01 sammenliknet termin mars og april 2024 ved å hente alle
+kolonnene fra samme rad. Det ga at snittene knapt beveget seg i bruddmåneden, og derav
+at frafallet var jevnt fordelt over inntektsskalaen. Begge deler var feil, og
+konklusjonen var motsatt av den riktige.
+
+**Hva som er galt med å lese raden.** `ant_husstander_termin` daterer rettighetsmåneden.
+Snitt- og beløpskolonnene daterer utbetalingsmåneden, den 20. i måneden etter. Raden for
+april 2024 inneholder derfor snittene for termin mars. Sammenlikningen mars-mot-april
+sammenliknet i realiteten februar-mot-mars for snittenes del, altså to måneder som begge
+ligger før regelendringen. At de ikke rørte seg var derfor ikke et funn, men en følge av
+at bruddet ikke var med i vinduet.
+
+| Størrelse, termin mars → april 2024 | Feil lesning | Riktig |
+|---|---|---|
+| Antall mottakere | −25,2 % | −25,2 % |
+| Snittinntekt | −0,2 % | **−16,1 %** |
+| Gjennomsnittlig bostøtte | +0,2 % | **+5,8 %** |
+| Antall over boutgiftstak | +1,3 % | **−25,4 %** |
+| Gjennomsnittlig boutgift | +0,7 % | +0,9 % |
+
+**Hvordan den ble funnet.** Ekstern gjennomlesning pekte på uoverensstemmelsen. Den ble
+så prøvd mot tre uavhengige forhold før den ble godtatt: kodebokens ordlyd for
+`utbetalt_belop` og `ant_over_tak`, hvilken måned hver serie faktisk brekker i, og
+identiteten mellom de to antallskolonnene. Alle tre pekte samme vei. Feilen nådde aldri
+en commit.
+
+**Hva som er lagt inn i stedet for en merknad.** Tre kontroller som kjører hver gang:
+
+1. `termin(m) = utbetaling(m+1)` rad for rad. 197 par, 0 avvik. Filranden bekrefter
+   den strukturelt: første rad har utbetalingskolonnene på null, fordi utbetalingen som
+   hører hjemme der gjelder en termin fra før uttrekket.
+2. `utbetalt_belop = ant_husstander_utbetaling × gjsnitt_bostotte`. Maksimalt relativt
+   avvik 1,6 · 10⁻⁶ mot utbetalingskalenderen, 25 % mot terminkalenderen. Det plasserer
+   både beløpet og snittet, uten skjønn.
+3. Bruddtesten: for hver kolonne, hvilken av april og mai bærer det største
+   log-utslaget, og er forspranget minst tre ganger? Avgjør fem av seks, alle i favør av
+   klassifiseringen. `gjsnitt_boutgift_mnd` står som uavgjort — 0,7 mot 0,9 prosent
+   skiller ingenting — framfor å bli talt som bekreftet.
+
+Alle tre er `assert`. Tilgangen går nå gjennom `paa_termin(kolonne, terminmåned)`, som
+velger måned etter kolonnens kalender, slik at samme forveksling ikke kan gjøres på nytt
+uten at kjøringen stopper.
+
+**Hva den riktige lesningen viser.** Frafallet var sterkt selektert på inntekt.
+Gruppene rangert etter tap står samtidig rangert etter inntektsnivå før bruddet, uten
+et eneste bytte: unge uføre 28 352 kr og −58,2 %, husstander uten trygdeytelser 8 176 kr
+og −7,9 %. Med fem grupper kan hele nullfordelingen telles ut — 120 tilordninger, hvorav
+2 gir en rangering uten bytter og 4 gir |r| ≥ 0,88. Sannsynlighetene 2/120 og 4/120 er
+eksakte, ikke tilnærminger.
+
+Det stemmer med regelverket. Intervensjon I05 senket det progressive egenandelsleddet
+fra 0,28 % til 0,12 % i termin desember 2021 og løftet dermed den implisitte
+inntektsgrensen; da leddet ble ført tilbake i termin april 2024, var det husstandene
+nærmest grensen som mistet retten. Forbeholdet er notert i teksten: aggregater
+identifiserer ikke hvem som falt ut, og fem punkter kan ikke skille inntekt fra noe
+annet som følger gruppeinndelingen.
+
+**Det generelle.** Feilen var ikke en regnefeil, men en lesefeil i en tabell der to
+tidsakser deler rad. Den er usynlig i koden, gir tall som ser rimelige ut, og ville
+forplantet seg til enhver senere sammenlikning av nivå mot snitt. Motmiddelet er at
+tilgangen går gjennom en funksjon som kjenner kalenderen, ikke at leseren husker den.
+
+**Filer endret:** `notebooks/bostotte_01_grunnlag.ipynb` (avsnitt 4 skrevet om, avsnitt
+9 utvidet med feilen, kjøremanifestet utvidet med de tre kalenderkontrollene).
