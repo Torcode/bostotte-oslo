@@ -1294,3 +1294,98 @@ ingen hyperparametersøk, ingen intervaller fra modellene, ett frø, og seks av 
 trinn i stigen er avskrift fra arbeidsverk 1.
 
 **Filer endret:** `notebooks/bostotte_03_trekk_og_trebasert.ipynb` (ny).
+
+---
+
+## M17. Kapasitet: den beste modellen i arbeidet er lineær (7. august 2026)
+
+Notebook 04 kjører nevrale nett mot samme protokoll og tester forklaringen notebook 03
+lot stå åpen: at panelgevinsten er varians framfor informasjon.
+
+**En feil som måtte rettes først, og som er den verste hittil.** Første kjøring brukte
+`MLPRegressor` fra scikit-learn med standardiserte trekk og utransformert mål.
+Kapasitetsstigen kom ut bakvendt: de smaleste nettene var klart verst, og bare det
+bredeste var brukbart. Det så ut som et funn.
+
+Det var det ikke. `MLPRegressor` stopper når tapet forbedres med mindre enn `tol`,
+som standard 10⁻⁴. Målet er logvekst med standardavvik rundt 0,09, så tapet starter
+rundt 10⁻³. Kriteriet slo inn etter 24–54 av 1 500 tillatte iterasjoner, og nettene
+ble aldri trent. Med standardisert mål kjørte de samme nettene 68–292 iterasjoner og
+nådde treningstilpasning 0,89–0,98.
+
+Målestokken var altså ikke kapasitet, men hvor fort hvert nett ga opp.
+
+Tiltaket er ikke en merknad. Alt er skrevet om til **PyTorch med fast antall epoker og
+full batch**, slik at det ikke finnes noe stoppkriterium som kan slå inn uten at det
+står i koden, og **treningstilpasningen rapporteres ved siden av prognosefeilen**, slik
+at et utrent nett er synlig.
+
+Dette er en tredje sort feil ved siden av kalenderforvekslingen (M14) og
+konformallekkasjen (M15). Den er verre enn begge: et undertrent nett gir hverken
+feilmelding eller urimelige tall, og ville passert enhver kontroll som bare ser på om
+resultatet er plausibelt.
+
+**Kapasitetsstigen**, alle trent likt på hele panelet:
+
+| Modell | Parametre | R² trening | MASE | RMSE |
+|---|---|---|---|---|
+| L0, ett lineært lag | 19 | 0,650 | **0,767** | **1 308** |
+| N8 | 161 | 0,872 | 0,898 | 1 584 |
+| N32 | 1 697 | 0,963 | 0,964 | 1 647 |
+| N128 | 19 073 | 0,989 | 0,939 | 1 596 |
+
+Jo bedre treningen sitter, jo dårligere treffer prognosen. N128 har flere parametre
+enn treningssettet har rader og forklarer nesten alt den har sett; nettopp derfor
+bærer den støy inn i prognosen. Overtilpasning målt, ikke antatt.
+
+**0,767 er laveste MASE i hele arbeidet** — lavere enn gradientboosting (0,815), enn
+M5 (0,867) og enn M7 (0,838), som får pålagt en koeffisient estimert på hele utvalget.
+Også på RMSE ligger den først, der G2 tapte mot M7. Den beste modellen i prosjektet er
+altså en regresjon med atten forklaringsvariabler, tilpasset på et panel. Det er
+Zeng m.fl. (AAAI 2023) reprodusert på disse dataene.
+
+**Læringskurven, og en forhåndsregistrering som falt.**
+
+| Serier | Rader | MASE L0 | R² L0 | MASE N32 | R² N32 |
+|---|---|---|---|---|---|
+| 1 | 84 | 1,454 | 0,843 | 1,167 | 1,000 |
+| 2 | 168 | 1,023 | 0,718 | 1,368 | 1,000 |
+| 4 | 336 | 0,896 | 0,694 | 1,182 | 0,998 |
+| 8 | 672 | 0,737 | 0,678 | 0,999 | 0,989 |
+| 16 | 1 344 | 0,767 | 0,650 | 0,964 | 0,963 |
+
+Jeg registrerte at gevinsten skulle være størst for modellen med mest kapasitet, siden
+varians var forklaringen. Det motsatte skjedde: den lineære modellen forbedret seg
+0,687 fra én til seksten serier, nettet 0,203.
+
+Treningstilpasningen forklarer hvorfor. **Nettet interpolerer uansett datamengde** —
+R² 1,000 ved 84 rader og fortsatt 0,963 ved 1 344 — så mer panel endrer lite for det.
+Den lineære modellen går motsatt vei: R² faller fra 0,84 til 0,65, den slutter å kunne
+tilpasse seg støyen, og prognosefeilen faller med den. Panelet gjør altså ikke først
+og fremst en fleksibel modell mer stabil. Det gjør en **enkel modell identifiserbar**.
+Nitten koeffisienter lar seg ikke feste med 84 observasjoner, og lar seg feste med 672.
+
+Det er en presisering av notebook 03, ikke en tilbaketrekking: kryssæring virker
+gjennom varians, men sterkest der modellen er enkel nok til at variansreduksjonen
+oversettes til treffsikkerhet.
+
+**Ablasjonen, for tredje gang.** Uten regelverksregressorene faller L0 til 1,498 og
+N32 til 1,546, mot naiv 1,003. Samme bilde som for gradientboosting, nå med en annen
+modellfamilie: **hverken trær eller nett finner noe i denne serien på egen hånd.** Det
+som virker, er daterte regelendringer. Modellklassen avgjør hvor godt den kunnskapen
+forvaltes, og der er en lineær spesifikasjon best.
+
+**Oppgjør:** Q1 holdt, Q2a holdt, Q2b falt, Q3 holdt, Q4 holdt.
+
+**Statistisk oppløsning.** Ingen forskjell i toppen av den samlede rangeringen er
+skillbar fra tilfeldighet med 31 opprinnelser. Det som *er* skilt, er avstanden mellom
+kapasitetsnivåene innad i notebooken — L0 slår N128 med DM over 1,64 på tre av fire
+horisonter — og avstanden ned til modellene uten regelverk.
+
+**En endring i arbeidsformen.** Forhåndsregistreringene i notebook 03 og 04 er skrevet
+før kjøringen, men filene kan ikke bevise rekkefølgen; prosaen er skrevet etter at
+tallene forelå. Fra notebook 05 legges forhåndsregistreringen inn i **en egen commit
+før kjøringen starter**, slik at git-historikken bærer tidsstempelet. Svakheten er
+notert i notebook 04 framfor å bortforklares.
+
+**Filer endret:** `notebooks/bostotte_04_kapasitet.ipynb` (ny).
