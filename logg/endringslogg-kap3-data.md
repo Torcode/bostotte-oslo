@@ -1580,3 +1580,116 @@ faktisk kunne falle.
 
 **Filer endret:** `notebooks/forhandsregistrering_06.md` (ny, egen commit før
 kjøringen), `notebooks/bostotte_06_avstemming.ipynb` (ny).
+
+---
+
+## M20 — Kvalitetskontroll: to påstander trukket, én forutsetning avklart
+
+**Dato:** 2026-08-08. **Notebook:** `bostotte_07_kvalitetskontroll.ipynb` (ny).
+
+**Hvorfor.** De seks første notebookene forhåndsregistrerte nitten påstander med
+avgjørelseskriterium skrevet ned før tallene fantes. Det gjør dem kontrollerbare på en
+måte de fleste analyser ikke er: man kan i ettertid spørre om avgjørelsen ble tatt med
+riktig instrument. Notebook 07 stiller det spørsmålet for de seks konklusjonene som bærer
+mest vekt, og tilpasser alle modellene på nytt framfor å lese inn resultater fra
+kjøringen den kontrollerer.
+
+**K1 — nøstede modeller testet med feil test. Påstand trukket.**
+Alle modellene i stigen har formen `anker + f(x)`, og M0 er nøyaktig samme uttrykk med
+`f ≡ 0`. Sammenlikningen er dermed nøstet, og Diebold–Mariano er skjev mot den større
+modellen fordi den regner estimasjonsvariansen som bevis for den mindre. Notebook 02
+skrev regelen ned og implementerte grenen `noestet=True`. Notebook 03 kalte funksjonen
+uten den, og notebook 04 og endringsloggen arvet konklusjonen.
+
+| | over 1,64 | maks |
+|---|---|---|
+| Diebold–Mariano | 0 av 36 | 1,40 |
+| Clark–West | **13 av 36** | 2,80 |
+
+Påstanden «ingen av de trebaserte modellene skiller seg fra den naive med en
+teststatistikk over 1,64» kan ikke stå. Det som står i stedet: G1 og G2 passerer på
+kortere horisonter, og Clark–West avviser at leddene er null i populasjonen — hvilket
+ikke er det samme som at modellen prognostiserer bedre. MASE-rangeringen er upåvirket.
+
+**K2 — 465 observasjoner som er 31. Påstand trukket.**
+Bydelstesten i notebook 06 stablet femten bydelers tapsdifferanser i én vektor.
+Snittkorrelasjonen mellom to bydelers tapsdifferanse er 0,81 og effektiv dimensjon 1,43
+av 15 — samme egenskap ved bydelene som notebook 01 målte til 1,19 og som notebook 06
+brukte til å *forutsi* Q1, og så oversett da frihetsgradene skulle telles.
+
+| h | stablet (n = 465) | klynget på opprinnelse (n = 31) |
+|---|---|---|
+| 1 | 5,38 | 1,56 |
+| 3 | 5,64 | 1,67 |
+| 6 | 4,27 | 1,21 |
+| 12 | 2,99 | 0,91 |
+
+«Den sterkeste effekten i hele arbeidsverk 2» og «godt over 1,64 på alle fire
+horisonter» faller begge. MASE-forbedringen 0,836 → 0,797 er upåvirket, og Q3s fortegn
+holder.
+
+**K3 — endelig-utvalgskorreksjonen anvendt bakover. Funnet står, tolkningen endres.**
+M19 innførte ⌈(n+1)(1−α)⌉/n framover og anvendte den aldri på notebook 02. Regnet om på
+de samme 270 punktene: lekkasjen går fra 11,1 til 11,9 prosentpoeng — altså **robust**.
+Underdekningen i det tidsgyldige skjemaet går fra 12,6 til 5,6 prosentpoeng. Om lag
+halvparten av det notebook 02 tilskrev datamengden, var en manglende korreksjon, altså
+en svakhet ved skjemaet. Setningen innsnevres til å gjelde en halvpart.
+
+**K4 — utbyttbarhet innsnevret.** Notebook 05 målte at de seksten seriene har
+sammenliknbare *marginale* feilfordelinger, og skrev at utbyttbarheten var målt. Den
+simultane fordelingen ble aldri sett på: snittkorrelasjon 0,90 ved h = 1 og 0,62 ved
+h = 12, effektiv dimensjon 1,2 til 2,0 av 16. De 496 nominelle kalibreringspunktene er
+informasjonsmessig verdt 38 til 72. Det forklarer hvorfor løftet i dekning var mindre
+enn kalibreringsmengden tilsa.
+
+**K5 — en kontroll som ikke kunne feile. Erstattet.**
+Den andre lekkasjekontrollen i notebook 03 beregnet et treningssett den aldri brukte, og
+utledet konklusjonen på nytt fra en betingelse som allerede inneholdt den. En
+mutasjonstest viser at den består selv når treningssettet slippes tolv måneder inn i
+framtiden. Den nye stopper på begge mutasjonene. Resultatene er upåvirket — funksjonen
+var riktig skrevet — men en kontroll som ikke er vist å kunne stryke, hører ikke hjemme
+i et manifest.
+
+**K6 — fire rettinger.** Bydelsfila har 15,2 ganger så mange rader som oslofila, ikke
+seksten (restnoden 0301 har 37 rader, ikke 199). 197 og 198 par kommer fra to ulike
+filtre, og begrunnelsen i notebook 01 forklarer 198 mot 199. `N_SERIER * T` overteller
+marginalpanelet med 162 rader. Og «0,767 er den laveste MASE i hele prosjektet» er
+motsagt fire celler senere i samme notebook, der L8 gir 0,737 — et punkt valgt etter å
+ha sett kurven, og som derfor måler seleksjon framfor treffsikkerhet.
+
+**K7 — det åpne punktet som aldri ble prøvd. Nå avklart.**
+Notebook 03 førte opp som åpent at modellen får vite at regelverket avvikles i april
+2024 før det skjer. Punktet ble aldri målt, og notebook 04–06 arvet forutsetningen uten
+å nevne den. Måling: frys de tre vedtaksavhengige regressorene på verdien de hadde ved
+opprinnelsen, og kjør alt om igjen.
+
+| MASE | alle h | h 1–3 | h 6–12 |
+|---|---|---|---|
+| naiv (M0) | 1,003 | 0,739 | 1,124 |
+| L0, regelverk kjent | **0,767** | **0,584** | **0,848** |
+| L0, regelverk fryst | 1,112 | 0,652 | 1,344 |
+| G2, regelverk kjent | 0,815 | 0,584 | 0,939 |
+| G2, regelverk fryst | 1,127 | 0,626 | 1,411 |
+
+Kortsiktsfortrinnet overlever at framtidige vedtak er ukjente. Langsiktsfortrinnet gjør
+det ikke: det inverteres, fra 25 prosent bedre enn naiv til 20 prosent dårligere.
+**Tolvmånedersprognosen er ikke en prognose, men en beregning betinget av at
+regelverkskalenderen er kjent et år fram.** Frysingen bærer siste kjente verdi framover
+og er dermed konservativ — noen vedtak var kjent før virkningsdato. Den sanne betingede
+treffsikkerheten ligger mellom de to kurvene, og en kunngjøringsdato per regelendring
+ville avgjort hvor.
+
+**En rapporteringsvane.** Notebook 03, 04 og 06 rapporterer alle h ∈ {1, 3, 6, 12}. På de
+fire ser Clark–West ut som en kurve som faller under kritisk verdi etter tre måneder.
+Over alle tolv passerer den i 13 av 36 celler, spredt over hele spennet. Testen mister
+styrke med horisonten fordi langvariansen bruker L = h − 1 lag på 31 opprinnelser
+uansett h. Det er en egenskap ved testoppsettet, ikke ved serien, og konklusjoner skal
+trekkes fra alle tolv.
+
+**Sjette dokumenterte metodefeil.** Kalenderforveksling (M14), konformal lekkasje (M15),
+et nett som aldri ble trent (M17), radrekkefølge under `subsample` (M18), manglende
+endelig-utvalgskorreksjon (M19) — og nå tverrsnittsavhengighet talt som frihetsgrader.
+Fem av de seks er stille feil: koden kjørte, tallet kom ut, ingenting varslet.
+
+**Filer endret:** `notebooks/bostotte_07_kvalitetskontroll.ipynb` (ny),
+`rapport/arbeidsverk2_sammenfatning.pdf` (ny).
