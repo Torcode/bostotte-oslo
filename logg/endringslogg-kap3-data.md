@@ -1479,3 +1479,104 @@ treffe 74. Det er notebook 06s oppgave, sammen med hierarkisk avstemming.
 
 **Filer endret:** `notebooks/forhandsregistrering_05.md` (ny, egen commit før
 kjøringen), `notebooks/bostotte_05_intervaller.ipynb` (ny).
+
+---
+
+## M19. Avstemming flytter treffsikkerhet fra toppen til delene (8. august 2026)
+
+Notebook 06 svarer på de to tingene notebook 05 etterlot: at prognosene for de seksten
+seriene ikke summerer opp, og at ingen kalibrering nådde nominelt nivå.
+Forhåndsregistrering `d5efa93`, committet før kjøringen. Alle fire påstandene holdt.
+
+**Hierarkiet dokumentert først.** Oslo er summen av femten bydeler pluss restnoden
+`0301`, som er null i førti av førtito måneder i evalueringsvinduet og sist
+rapporteres i august 2025. Avviket er høyst én husstand — 0,006 prosent — og står som
+`assert`, slik at et framtidig uttrekk der noden våkner til liv, stopper kjøringen
+framfor å bli avstemt bort.
+
+Forhåndsregistreringen anslo den siste måneden litt feil («fra 2025m12»). Det står i
+notebooken framfor å bli rettet i etterkant: *en forhåndsregistrering som kan justeres
+når den viser seg unøyaktig, binder ingenting.*
+
+**Inkoherensen målt.** Basisprognosene bommer på seg selv med 280 husstander i median
+og opptil 477, altså 1,5 prosent av totalen. Oslo og bydelene kommer fra samme modell,
+men prognostiseres uavhengig, og ingenting i konstruksjonen tvinger dem til å stemme.
+En etat som får utlevert begge deler, ville sett to tall som ikke går opp.
+
+**Avstemming, på nivåskala** — summen av logaritmer er ikke logaritmen av summen:
+
+| Metode | MASE Oslo | MASE bydel, snitt | Inkoherens |
+|---|---|---|---|
+| basis | **0,7671** | 0,8364 | 477 |
+| bottom-up | 0,8250 | 0,8364 | 0 |
+| top-down | 0,7671 | 0,7983 | 0 |
+| MinT, W = I | 0,7698 | **0,7972** | 0 |
+| MinT, krympet W | 0,7961 | 0,8177 | 0 |
+
+**Q1 og Q2 holdt.** Ingen metode slår den direkte Oslo-prognosen; alle DM-verdier mot
+basis er negative. Bottom-up er verst med −1,65 ved h = 3, altså på grensen til å være
+signifikant *i disfavør*. Summen av femten prognoser for serier på under to tusen
+mottakere er en dårligere prognose for sytten tusen enn en modell som prognostiserer
+sytten tusen.
+
+**Q3 holdt, og det er den sterkeste effekten i hele arbeidsverk 2.** MinT med
+$W = I$ senker bydelenes gjennomsnittlige MASE fra 0,836 til 0,797, med DM-statistikk
+5,4 ved h = 1 og 3,0 ved h = 12 — over 1,64 på alle fire horisonter. Ingenting i
+notebook 03, 04 eller 05 var i nærheten av å være så tydelig.
+
+Grunnen er den samme som notebook 01 og 04 pekte på, sett fra en ny kant: den
+velestimerte totalen har mye å gi de støyende bydelene, og bydelene har lite å gi
+totalen. **Avstemming er ikke et verktøy for å forbedre totalen. Det er et verktøy for
+å gjøre delene både koherente og bedre** — og for en etat som fordeler kapasitet på
+bydeler, er det den nyttige retningen.
+
+**MinT med estimert kovarians er dårligere enn MinT med $W = I$**, både på toppen
+(0,796 mot 0,770) og i bunnen (0,818 mot 0,797). Krympingsintensiteten lander på 0,15
+i median, så i hovedsak brukes den rå kovariansen — estimert på så få punkter at den
+bærer mer støy enn informasjon. Seksten noder gir 136 frie parametre, og ved de
+tidligste opprinnelsene finnes tre observasjoner. Det er en praktisk grense teorien
+ikke fanger: MinTs optimalitet forutsetter en $W$ som her ikke lar seg estimere.
+
+To celler i DM-tabellen står tomme, og det er kontroller framfor hull: bottom-up rører
+ikke bydelene og top-down rører ikke toppen, så tapsdifferansen er identisk null.
+Hadde de hatt tall, ville metodene gjort noe de per konstruksjon ikke skal gjøre.
+
+**Q4 holdt — og avdekket en feil i notebook 02 og 05.** De konformale intervallene
+brukte den empiriske kvantilen direkte. Riktig nivå for split-konformal er
+⌈(n+1)(1−α)⌉/n, altså litt høyere enn 1−α.
+
+| Skjema | Dekning | Intervallskår | Median bredde | Nivå |
+|---|---|---|---|---|
+| egen historie, empirisk | 67,8 % | 5 558 | 2 840 | 0,800 |
+| egen historie, endelig utvalg | **75,6 %** | 5 402 | 3 314 | 0,889 |
+| panelet, empirisk | 73,7 % | 5 302 | 3 442 | 0,800 |
+| panelet, endelig utvalg | 73,7 % | **5 292** | 3 491 | 0,806 |
+
+Asymmetrien er nøyaktig som registrert: nesten åtte prosentpoeng der n er liten,
+ingenting der n er stor. Intervallskåren forbedres også for egen historie, til tross
+for bredere intervaller — straffeleddet på ti veier tyngre enn bredden når
+underdekningen var kostbar.
+
+Rettelsen snur rangeringen mellom skjemaene: med korreksjonen gir Oslos egen historie
+høyere dekning enn panelet, mens panelet fortsatt gir lavere intervallskår. De måler
+ikke det samme.
+
+**Et forsøk som ikke lot seg gjennomføre.** Fire og et halvt prosentpoeng står igjen
+opp til nominelt nivå, og den nærliggende hypotesen er at bruddmånedene bryter
+utbyttbarheten over tid. Det lar seg ikke prøve: **92 prosent av evalueringspunktene
+ligger innenfor tre måneder av en datert regelendring.** Intervensjonstabellen har tjue
+oppføringer, og i 2021–2025 kommer de så tett at det knapt finnes rolige måneder å
+sammenlikne med. Stratifiseringen får 22 punkter mot 248, og forskjellen den viser —
+77 mot 73 prosent — hviler på for lite.
+
+Arbeidsverk 1 regner ut den samme `bruddnaer`-variabelen og bruker den aldri. Nå er
+det målt hvorfor.
+
+**Om at alle fire holdt.** Det er første gang, og det er ikke uten videre en god
+nyhet: tre av påstandene fulgte av tall som allerede var målt — effektiv dimensjon fra
+notebook 01, og aritmetikken bak den endelige utvalgskorreksjonen. Forhåndsregistreringen
+var mindre risikabel her enn i notebook 03, 04 og 05, der påstander falt fordi de
+faktisk kunne falle.
+
+**Filer endret:** `notebooks/forhandsregistrering_06.md` (ny, egen commit før
+kjøringen), `notebooks/bostotte_06_avstemming.ipynb` (ny).
