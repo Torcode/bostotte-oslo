@@ -506,7 +506,7 @@ To hull dokumenteres like eksplisitt som kildene, fordi et kjent hull er en anne
 
 ### Fire former — hva formen bestemmer {#sec-met-former}
 
-Datagrunnlaget består av tjueto datasett. De er ikke tjue ulike ting å lære seg. En *form* sier ikke hva et datasett handler om, men hvordan det er lagret: hvilken enhet én rad representerer — **kornet** — og dermed hvilken operasjon som er lovlig uten videre bearbeiding. Fire former dekker alle sammen. @tbl-former gir for hver av dem kornet, det kanoniske grepet og den karakteristiske feilen formen inviterer til.
+Datagrunnlaget består av `r nb(length(d))` datasett. De er ikke like mange ulike ting å lære seg. En *form* sier ikke hva et datasett handler om, men hvordan det er lagret: hvilken enhet én rad representerer — **kornet** — og dermed hvilken operasjon som er lovlig uten videre bearbeiding. Fire former dekker alle sammen. @tbl-former gir for hver av dem kornet, det kanoniske grepet og den karakteristiske feilen formen inviterer til.
 
 | Form | Kornet: én rad er | Kanonisk grep | Karakteristisk feil |
 |:---|:---|:---|:---|
@@ -523,7 +523,7 @@ Datagrunnlaget består av tjueto datasett. De er ikke tjue ulike ting å lære s
 
 *Form 3 — statistikk-kuber i langformat* (SSB- og Oslo-statbanktabellene). Én rad er én celle, med kode-, navn- og verdikolonner. En kube er ikke en serie før alle dimensjoner unntatt tid er låst. Toromsleien i Oslo og Bærum krever for eksempel `Soner2_kode == "01"`, `AntRom_kode == "2"` og `ContentsCode_kode == "Husleie"` — tre filtre for én tallrekke. Uten full nedlåsing summerer man over en glemt dimensjon og får et tall som ser plausibelt ut. Det er kubefellen, og grunnen til at hver kube i denne analysen bare brukes gjennom navngitte filteroppskrifter, dokumentert i kodeboken.
 
-*Form 4 — oppslagstabeller* (`intervensjoner`, `parametre`, `stromstotte`, `grunnbelop`, `arsrapport`, `forhandsanslag`). Én rad er én datert regelendring med mekanisme, forventet fortegn og verifiseringsstatus; en regelparameter; et månedsbeløp; et G-vedtak; et publisert nasjonalt årstall; et datert effektanslag for én intervensjon. Disse brukes aldri som serier. De *genererer* de deterministiske regressorene i @sec-met-x og forsyner regelmotorens konstanter.
+*Form 4 — oppslagstabeller* (`intervensjoner`, `parametre`, `stromstotte`, `grunnbelop`, `arsrapport`, `forhandsanslag`, `regelverk_kunnskap`). Én rad er én datert regelendring med mekanisme, forventet fortegn og verifiseringsstatus; en regelparameter; et månedsbeløp; et G-vedtak; et publisert nasjonalt årstall; et datert effektanslag for én intervensjon; ett vedtaksavhengig regressorsteg med primærkildebelagt kunnskapsdato (`effect_known_from` — grunnlaget for point-in-time-porten i @sec-met-protokoll). Disse brukes aldri som serier. De *genererer* de deterministiske regressorene i @sec-met-x og forsyner regelmotorens konstanter.
 
 @tbl-datasett plasserer alle objektene i denne inndelingen. Rad- og kolonnetall er telt programmatisk fra objektene, og oppslaget mot formtabellen er sikret med en konsistenssjekk: dersom datapakken en dag inneholder et objekt som ikke er klassifisert, stopper renderingen.
 
@@ -554,7 +554,8 @@ korn <- tribble(
   "stromstotte",             "4 oppslag",  "én utbetalingsmåned",
   "grunnbelop",              "4 oppslag",  "ett G-vedtak (1. mai)",
   "arsrapport",              "4 oppslag",  "ett publisert årstall (nasjonalt)",
-  "forhandsanslag",          "4 oppslag",  "ett effektanslag for én intervensjon"
+  "forhandsanslag",          "4 oppslag",  "ett effektanslag for én intervensjon",
+  "regelverk_kunnskap",      "4 oppslag",  "ett vedtaksavhengig regressorsteg med kunnskapsdato"
 )
 
 # Kontrakt: hvert objekt i datapakken skal være klassifisert, og hver
@@ -609,6 +610,11 @@ spenn <- function(x) {
     v <- x$virkningsdato
     return(tibble(frekvens = "år", fra = format(min(v), "%Y"),
                   til = format(max(v), "%Y"), perioder = n_distinct(v), slutt = max(v)))
+  }
+  if ("steg_dato" %in% names(x)) {
+    v <- x$steg_dato
+    return(tibble(frekvens = "hendelse", fra = format(min(v), "%Y-%m"),
+                  til = format(max(v), "%Y-%m"), perioder = nrow(x), slutt = max(v)))
   }
   if ("aar" %in% names(x)) {
     v <- x$aar[!is.na(x$aar)]
@@ -1220,7 +1226,7 @@ $$\ln M^{T}_{t} \;=\; \beta'_{\text{est}} x^{\text{est}}_t \;+\; \underbrace{\te
 
 der $\mathcal{U}_\tau$ er regressorene som ikke passerer inngangsregelen ved opprinnelse $\tau$. Leddet er en *offset*: det inngår i prognosen, men ikke i estimeringen, slik at det ikke forstyrrer de øvrige koeffisientene.
 
-**Hvor $\lambda_j$ kommer fra.** Fra `forhandsanslag.csv`, som kobler hver intervensjon til et datert anslag med kilde og verifiseringsstatus. Det nasjonale anslaget skaleres med Oslos målte andel av mottakerne, `r pst(osloandel)`, og omregnes til logskala mot nivået ved opprinnelsen. Anslagene er av tre slag, og forskjellen mellom dem er ikke kosmetisk: *forhåndsanslag* er publisert før hendelsen og er det eneste en prognose i drift faktisk ville hatt; *etterberegnet* er realisert utfall og kan bare brukes til å validere metoden, aldri i en prognose; *mekanisk* er utledet av regelverket selv.
+**Hvor $\lambda_j$ kommer fra.** Fra `forhandsanslag.csv`, som kobler hver intervensjon til et datert anslag med kilde og verifiseringsstatus. Det nasjonale anslaget skaleres med Oslos målte andel av mottakerne, `r pst(osloandel)` — målt over de siste tolv terminene i utvalget; i drift må andelen måles ved hver opprinnelse, siden den har beveget seg fra rundt 14 til rundt 19 prosent siden 2010 (M13 i endringsloggen) — og omregnes til logskala mot nivået ved opprinnelsen. Anslagene er av tre slag, og forskjellen mellom dem er ikke kosmetisk: *forhåndsanslag* er publisert før hendelsen og er det eneste en prognose i drift faktisk ville hatt; *etterberegnet* er realisert utfall og kan bare brukes til å validere metoden, aldri i en prognose; *mekanisk* er utledet av regelverket selv.
 
 **Begrunnelsen er ikke bekvemmelighet, men at det ikke finnes noe nøytralt alternativ.** Å utelate regressoren pålegger $\lambda_j = 0$ — en påstand om at en vedtatt regelendring ikke vil ha effekt. Valget står altså mellom å pålegge null og å pålegge det beste daterte tallet som finnes; ingen av delene er antakelsesfri. M7 gjør valget eksplisitt og kildebelagt i stedet for implisitt.
 
@@ -1715,7 +1721,7 @@ En ordinær nullhypotesetest ville her gitt $p = `r nb(kq$p.value, 3)`$ og invit
 
 ```{r}
 #| label: fig-res-dekning
-#| fig-cap: "Empirisk dekning ved nominelt 80 prosent, før og etter konformal kalibrering. Åpent punkt er modellens eget intervall, fylt punkt etter kalibrering. De regelinformerte modellene har de smaleste intervallene og den dårligste dekningen — og kalibreringen lukker mesteparten av gapet."
+#| fig-cap: "Empirisk dekning ved nominelt 80 prosent, før og etter tidsgyldig konformal kalibrering. Åpent punkt er modellens eget intervall, fylt punkt etter kalibrering — begge regnet på kalibreringsutvalget (punkter med minst tre realiserte feil ved opprinnelsen; se teksten for skillet mot hovedutvalget i tabell @tbl-res-samlet)."
 #| fig-width: 6.4
 #| fig-height: 2.6
 
@@ -1739,7 +1745,9 @@ K |> filter(.model %in% vis) |>
         axis.title = element_text(size = 8, colour = "grey35"))
 ```
 
-@fig-res-dekning viser dekningen før og etter kalibrering. **T4 falt, og motsatt vei av det som var forventet.** Implikasjonen sa at nominell dekning *krever* at brudd og kalender modelleres. Det stemmer ikke. M3 uten regressorer dekker `r pst(100*mean(K$dekk80[K$.model=="M3"]), 0)`, mens M6 dekker `r pst(100*mean(K$dekk80[K$.model=="M6"]), 0)`. Å modellere bruddene halverer restvariansen, intervallene krymper tilsvarende — og treffsikkerheten i sentrum følger ikke med.
+@fig-res-dekning viser dekningen før og etter kalibrering. To utvalg er i bruk i dette avsnittet, og de holdes fra hverandre med navn: *hovedutvalget* er alle `r nb(sum(R$.model == "M6"))` prognosepunktene, det samme som @tbl-res-samlet regner på; *kalibreringsutvalget* er de `r nb(sum(K$.model == "M6"))` punktene der minst tre realiserte prognosefeil forelå ved opprinnelsen — kalibrert dekning finnes bare der. Figuren regner begge punktene sine på kalibreringsutvalget; tallene i den avviker derfor med noen prosentpoeng fra tabellens, uten at noe er galt noe sted.
+
+**T4 falt, og motsatt vei av det som var forventet.** Implikasjonen sa at nominell dekning *krever* at brudd og kalender modelleres. Det stemmer ikke. På hovedutvalget dekker M3 uten regressorer `r pst(100*mean(R$dekk80[R$.model=="M3"]), 0)`, mens M6 dekker `r pst(100*mean(R$dekk80[R$.model=="M6"]), 0)` — samme tall som i @tbl-res-samlet. Å modellere bruddene halverer restvariansen, intervallene krymper tilsvarende — og treffsikkerheten i sentrum følger ikke med.
 
 @tbl-res-skjevhet viser hvorfor, og svaret er ikke det nærliggende.
 
@@ -1760,7 +1768,7 @@ R |> filter(.model %in% c("M3","M5","M6")) |>
 
 Der høstpakken ikke er estimerbar, underpredikerer M6 systematisk med `r pst(100*(exp(mean(R$le[R$.model=="M6" & R$pakke_ute]))-1))`. Full-utvalgskoeffisienten for pakken er `r pst(100*(exp(LAMBDA_ORAKEL)-1))`. Skjevheten er altså praktisk talt den utelatte koeffisienten — et lærebokeksempel på utelatt-variabel-skjevhet, her kvantifisert. Intervallene er ikke først og fremst for smale; de står på feil sted.
 
-Det har en konsekvens for hvordan kalibreringen skal forstås. Konformal etterkalibrering løfter dekningen til `r pst(100*mean(K$kdekk80[K$.model=="M6"]), 0)`, og intervallskåren faller. Men den gjør det ved å *utvide intervallet til å dekke en systematisk feil*, ikke ved å fjerne feilen. Som korreksjon av dekning er det legitimt og virksomt; som svar på hvorfor prognosen bommer, er det symptombehandling. Den egentlige kuren er å skaffe effektstørrelsen utenfra — som er nettopp det M7 gjør.
+Det har en konsekvens for hvordan kalibreringen skal forstås. Tidsgyldig konformal etterkalibrering løfter M6-dekningen på kalibreringsutvalget fra `r pst(100*mean(K$dekk80[K$.model=="M6"]), 0)` til `r pst(100*mean(K$kdekk80[K$.model=="M6"]), 0)`, og intervallskåren faller. Men den gjør det ved å *utvide intervallet til å dekke en systematisk feil*, ikke ved å fjerne feilen. Som korreksjon av dekning er det legitimt og virksomt; som svar på hvorfor prognosen bommer, er det symptombehandling. Den egentlige kuren er å skaffe effektstørrelsen utenfra — som er nettopp det M7 gjør.
 
 ## Verdien av et anslag, og hvor mye det er verdt {#sec-res-prior}
 
@@ -1817,7 +1825,7 @@ Konsekvensen er en presisering av protokollen som bør inn i en revidert versjon
 | **T1** | Struktur slår naive referanser | **Holder delvis.** Slår naiv og sesongnaiv klart; ETS slår M6 samlet og signifikant på tolv måneder |
 | **T2** | Eksplisitte intervensjoner hjelper | **Holder i retning.** MASE ned; Clark–West når ikke kritisk verdi på noen horisont |
 | **T3** | Kalendereffekt stor før 2025, eksakt null etter | **Holder i første ledd.** Ekvivalens ikke etablert ved den forhåndssatte grensen; full styrke utelukket, halv styrke ikke |
-| **T4** | Nominell dekning krever brudd og kalender | **Faller.** Modellering forverrer dekningen; konformal kalibrering reparerer den |
+| **T4** | Nominell dekning krever brudd og kalender | **Faller.** Modellering forverrer dekningen; tidsgyldig konformal kalibrering reparerer den delvis (@sec-res-dekning) — resten er skjevhet, ikke bredde |
 | **T5** | Daterte anslag bærer informasjon | **Ikke testbar som formulert.** Ingen publiserte husstandstall for hendelsen det gjaldt; demonstrert med perfekt informasjon som øvre grense |
 
 : Utfallet holdt opp mot «faller dersom»-kolonnen i @tbl-tester, som ble skrevet før estimeringen. {#tbl-res-oppgjor}
