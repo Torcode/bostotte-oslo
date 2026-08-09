@@ -47,7 +47,7 @@ editor: source
 # fikser det. Uten dette feiler dokumentet nedstrøms med «could not find
 # function \"ARIMA\"», som ikke forteller noen hva de skal gjøre.
 .pakker <- c("tidyverse", "knitr", "tsibble", "fable", "fabletools",
-             "feasts", "urca", "distributional")
+             "feasts", "urca", "distributional", "jsonlite")
 .mangler <- .pakker[!vapply(.pakker, requireNamespace, logical(1), quietly = TRUE)]
 if (length(.mangler)) {
   stop("\n\nManglende R-pakker: ", paste(.mangler, collapse = ", "),
@@ -310,19 +310,50 @@ fiks_tegnsett <- function() {
 fiks_tegnsett()
 ```
 
+# Sammendrag {.unnumbered}
+
+```{r}
+#| label: sammendrag-kontrakt
+#| include: false
+
+# Sammendraget står før beregningene i dokumentflyten. De få resultattallene
+# det siterer, deklareres derfor her som eksplisitte påstander — og håndheves
+# mot de beregnede verdiene i slutten av res-cv-chunken. Avviker de, stopper
+# byggingen med beskjed om å oppdatere sammendraget. Kontrakten er den samme
+# som ellers i dokumentet: ingen tall i prosa uten en beregning som dømmer det.
+SAMMENDRAG_PAASTAND <- list(
+  n_opprinnelser  = 31,    # rullerende opprinnelser i backtesten
+  april_avvik_pst = 0.2,   # PIT-avvik mot termin april 2024, h = 6, M6
+  dekning_for     = 48,    # M6, 80 %-intervall foer kalibrering (kalibreringsutvalget)
+  dekning_etter   = 79     # M6 etter tidsgyldig konformal kalibrering
+)
+```
+
+Velferdsetaten trenger et anslag på hvor mange husstander i Oslo som vil motta statlig bostøtte de kommende månedene — til dimensjonering av veiledning og saksbehandling i bydelene, og som tidlig varsel når utviklingen avviker fra det ventede. Rapporten bygger og etterprøver en slik prognose på åpne data: `r nb(n_est)` månedsterminer (`r est_fra`–`r est_til`) fra Husbankens statistikkbank, evaluert med rullerende opprinnelse — `r nb(SAMMENDRAG_PAASTAND$n_opprinnelser)` opprinnelser, horisont 1–12 — der hver modell ved hver opprinnelse bare får regelverksinformasjon som beviselig var offentlig da, håndhevet mot et primærkildebelagt kunnskapsregister.
+
+Hovedfunnet er at fortrinnet over naiv framskrivning i det vesentlige kommer fra datert regelverksinformasjon, ikke fra modellkapasitet. Serien er regelstyrt: betinget på fem deterministiske regelverks- og kalenderledd er den stasjonær, og uten dem må enhver modell lese vedtak som trend. Kortsiktsfortrinnet overlever at framtidige vedtak er ukjente; langsiktsfortrinnet gjør det ikke — det er betinget av kjent regelverkskalender.
+
+Det sentrale enkeltresultatet er point-in-time: mot termin april 2024 — et fall på `r pst(abs(apr24_pst), 0)` på én termin — traff hovedspesifikasjonen med `r pst(SAMMENDRAG_PAASTAND$april_avvik_pst, 1)` avvik fra seks måneders horisont, første opprinnelse etter at avviklingen ble offentlig kjent 6. oktober 2023. Referansemodellene bommet med rundt 30 prosent fra samtlige horisonter. Fra ni måneder — før kunngjøringen — treffer bare et eksplisitt merket orakelscenario med dagens fasitkalender.
+
+Usikkerheten rapporteres med to forbehold som begge er målt. Evalueringen er pseudo-sanntid: serien revideres bakover, historiske vintages er ikke offentlig tilgjengelige, og skjevheten rammer alle modellene likt. Og modellenes egne intervaller underdekker grovt — `r pst(SAMMENDRAG_PAASTAND$dekning_for, 0)` ved nominelt 80 prosent for hovedspesifikasjonen; tidsgyldig konformal etterkalibrering løfter dekningen til `r pst(SAMMENDRAG_PAASTAND$dekning_etter, 0)` på kalibreringsutvalget, og restfeilen er skjevhet der informasjon mangler, ikke intervallbredde. Intervallene omtales derfor gjennomgående som kalibrerte estimater, ikke som dekningsgarantier.
+
+Den operative anbefalingen følger av dette: en månedlig basisprognose der vedtatte regelendringer inngår fra sin dokumenterte kunngjøringsdato; ikke-vedtatte forslag utelukkende som navngitte scenarioer; hver målmåned merket etter sitt informasjonssett — prognose under vedtatt kalender, eller basisbane under uttrykkelig videreført regelverk; og driftsvarsling på intervallskår framfor treffsikkerhet alene.
+
+Kapittel 1–6 er den historiske evalueringen og står på egne bein. Den operative framtidsprognosen — tolv måneder fram fra siste observerte termin, med kalenderantakelsen deklarert per målmåned — er skilt ut i @sec-prognose og leses av README og den interaktive prognosesiden fra samme maskinproduserte artefakt.
+
+\newpage
+
 # Introduksjon
 
-Tilgang til en egnet bolig er både et grunnleggende velferdsgode og en forutsetning for deltakelse i arbeids- og samfunnsliv. Artikkel 25 i FNs verdenserklæring om menneskerettigheter regner bolig som en del av retten til en levestandard som er tilstrekkelig for individets og familiens helse og velferd (FN, 1948). Anerkjennelsen av bolig som et grunnleggende gode innebærer imidlertid ikke at markedet automatisk sikrer alle en egnet bolig.
+For Velferdsetaten er antallet husstander med statlig bostøtte en størrelse det må planlegges rundt. Ordningen er statlig finansiert og forvaltet av Husbanken, men kommunen er førstelinje, og mottakstallet inngår i kunnskapsgrunnlaget for tilgrensende kommunale tjenester som økonomisk sosialhjelp og kommunal bostøtte. Størrelsesordenen på det kommunale behovet kartlegges annethvert år: i uke 48 i 2024 registrerte bydelene 3 826 husstander med behov for kommunal hjelp til å skaffe bolig, 480 flere enn i 2022 [@velferdsetaten2025bolig]. Statlig bostøtte virker i grenseflaten mot dette behovet. Hvor mange husstander som mottar den de kommende månedene, har derfor betydning både for dimensjoneringen av veiledning og saksbehandling i bydelene og for tidlig varsling når utviklingen avviker fra det forventede. Dette arbeidet legger derfor prognoseperspektivet til grunn.
 
-Under strenge forutsetninger viser det første velferdsteoremet at en frikonkurranselikevekt er Pareto-effektiv. Pareto-kriteriet er imidlertid en ufullstendig rangering: det skiller ikke mellom fordelinger, og en svært ulik allokering kan være effektiv. Hvilken effektiv likevekt markedet faktisk leverer, bestemmes dessuten av den underliggende fordelingen av inntekt og formue. En boligmarkedslikevekt kan dermed være effektiv i økonomisk forstand samtidig som husholdninger med lave inntekter ikke har råd til en bolig som tilfredsstiller grunnleggende behov. Dette skillet — markedet sørger i beste fall for effektivitet, mens fordelingen krever egne virkemidler — står sentralt i begrunnelsen for offentlig boligpolitikk. Gjennom bostøtte omfordeler staten kjøpekraft til husstander med lave inntekter og høye boutgifter, uten å erstatte boligmarkedets prismekanisme — i praksis en anvendelse av innsikten fra det andre velferdsteoremet, med et forbehold kapittel 2 formaliserer: bostøtten er behovsprøvd, ikke en lump-sum-overføring.
-
-Problemstillingen er særlig aktuell i Oslo. Ifølge Statistisk sentralbyrå har Oslo landets høyeste husleienivå. I 2025 var gjennomsnittlig månedlig leie for en toroms bolig i Oslo og Bærum 15 260 kroner, 29 prosent over landsgjennomsnittet. Kombinasjonen av høye boutgifter og store forskjeller i husholdningenes inntekter innebærer at markedsløsningen alene ikke nødvendigvis gir en sosialt ønskelig fordeling av boligkonsumet. Statlig bostøtte er derfor et sentralt virkemiddel for å redusere boutgiftsbelastningen blant økonomisk vanskeligstilte husstander.
-
-For Velferdsetaten er bostøtten imidlertid ikke bare et virkemiddel som skal begrunnes, men en størrelse det må planlegges rundt. Ordningen er statlig finansiert og forvaltet av Husbanken, men kommunen er førstelinje, og mottakstallet inngår i kunnskapsgrunnlaget for tilgrensende kommunale tjenester som økonomisk sosialhjelp og kommunal bostøtte. Størrelsesordenen på det kommunale behovet kartlegges annethvert år: i uke 48 i 2024 registrerte bydelene 3 826 husstander med behov for kommunal hjelp til å skaffe bolig, 480 flere enn i 2022 [@velferdsetaten2025bolig]. Statlig bostøtte virker i grenseflaten mot dette behovet. Hvor mange husstander som mottar den de kommende månedene, har derfor betydning både for dimensjoneringen av veiledning og saksbehandling i bydelene og for tidlig varsling når utviklingen avviker fra det forventede. Dette arbeidet legger derfor prognoseperspektivet til grunn.
+Problemstillingen er særlig aktuell i Oslo. Ifølge Statistisk sentralbyrå har Oslo landets høyeste husleienivå: i 2025 var gjennomsnittlig månedlig leie for en toroms bolig i Oslo og Bærum 15 260 kroner, 29 prosent over landsgjennomsnittet. Kombinasjonen av høye boutgifter og store inntektsforskjeller gjør statlig bostøtte til et sentralt virkemiddel for å redusere boutgiftsbelastningen blant økonomisk vanskeligstilte husstander.
 
 En prognose for bostøttemottak står overfor en særegen metodisk utfordring: serien er regelstyrt. Antall mottakere bestemmes ikke bare av inntekter, husleier og søkeatferd, men av hvordan retten til bostøtte til enhver tid er definert. Regelverket er endret flere ganger i seriens levetid: midlertidig utvidede satser og ekstraordinær strømstøtte fra termin desember 2021 til og med termin mars 2024, tilbakeføring til ordinært regelverk fra termin april 2024, økte boutgiftstak og forenklet egenandelsberegning fra juli 2024 med ytterligere utvidelser utover høsten, og fra januar 2025 en korreksjon av inntektsgrunnlaget som skal motvirke et administrativt skapt sesongfall for mottakere av arbeidsavklaringspenger og dagpenger. En modell som ikke kjenner disse endringene, vil lese vedtak som trend og utbetalingskalender som naturlig sesong, og framskrive begge deler feil.
 
 Forskningsspørsmålet i dette arbeidet er derfor: hvor presist kan månedlig antall husstander som mottar statlig bostøtte i Oslo prognostiseres 1 til 12 måneder fram ved hjelp av åpne data, og i hvilken grad forbedres prognosenes treffsikkerhet og prediksjonsintervallenes dekning når kjente regelendringer modelleres eksplisitt? To underspørsmål følger. Det første (**UA**) er retrospektivt og deskriptivt: hvordan sammenfaller regelendringene i 2021–2025 med endringer i seriens nivå, sesongmønster og usikkerhet? Det andre (**UB**) gjelder drift: hvordan bør en prognosemodell i løpende bruk håndtere permanente, midlertidige og kalenderrelaterte regelverksendringer, medregnet endringer som er vedtatt, men ennå ikke trådt i kraft?
+
+Normativt hviler ordningen på at bolig er et grunnleggende velferdsgode: FNs verdenserklæring om menneskerettigheter regner bolig som del av retten til en tilstrekkelig levestandard [@fn1948], og velferdsøkonomien gjør skillet presist — et marked kan i beste fall levere effektivitet, ikke en bestemt fordeling, så fordelingshensyn krever egne virkemidler. Bostøtten omfordeler kjøpekraft til husstander med lave inntekter og høye boutgifter uten å erstatte boligmarkedets prismekanisme. @sec-teori formaliserer mekanikken, medregnet forbeholdet om at en behovsprøvd ytelse ikke er en lump-sum-overføring.
 
 \newpage
 
@@ -1227,9 +1258,9 @@ Modellvalget følger hierarkiet i @sec-teori-modeller, men med én tilleggsbetin
 | **M4** | RegARIMA $+\ k$ | kalenderregressoren | isolerer kalenderbidraget |
 | **M5** | RegARIMA $+\ X$ | intervensjonsmatrisen | isolerer regelverksbidraget |
 | **M6** | RegARIMA $+\ X + k$ | begge | **hovedspesifikasjon** |
-| **M7** | M6 $+$ pålagt effekt | daterte forhåndsanslag | svarer **UB**: regelendring vedtatt, men ikke trådt i kraft |
+| **M7 orakel** | M6 $+$ pålagt fasitkoeffisient | full-utvalgsestimatet for høstpakken — perfekt informasjon | øvre grense for **UB**: hva et eksternt effektanslag maksimalt er verdt der estimering er umulig |
 
-: Modellstigen. Hvert trinn legger til nøyaktig én informasjonskilde, slik at differansen mellom to modeller kan tilskrives den kilden og ikke et modellbytte. {#tbl-modeller}
+: Modellstigen. Hvert trinn legger til nøyaktig én informasjonskilde, slik at differansen mellom to modeller kan tilskrives den kilden og ikke et modellbytte. M7 orakel er ikke en gjennomførbar prognosemodell — den kvantifiserer verdien av perfekt informasjon (@sec-met-prior). {#tbl-modeller}
 
 Stigen gjør tre sammenlikninger til kontrollerte eksperimenter. M6 mot M3 er den samlede gevinsten av deterministisk informasjon — hovedspørsmålets kjerne. M6 mot M4 isolerer regelverkets bidrag, M6 mot M5 kalenderens. Uten stigen kunne en gevinst like gjerne skyldtes at RegARIMA tilfeldigvis passer serien bedre enn SARIMA.
 
@@ -1250,23 +1281,23 @@ AICc velger altså orden *innenfor* en modell. Den velger ikke mellom trinnene i
 
 Det finnes en tredje mulighet som ikke forfølges her, men som fortjener å navngis: å la hver opprinnelse velge spesifikasjon etter *historisk ut-av-utvalgs*-ytelse, eller å kombinere modellene. Det er trolig nærmere det en analysefunksjon i drift ville gjort, og det er en utvidelse av designet — ikke en innvending mot stigen.
 
-### M7: effektstørrelse hentet utenfra {#sec-met-prior}
+### M7 orakel: verdien av perfekt informasjon {#sec-met-prior}
 
-M6 kan ikke framskrive en regelendring som ennå ikke har inntruffet: en regressor som er null gjennom hele treningsvinduet, har ingen koeffisient å estimere. Omfanget kvantifiseres i @sec-met-identifikasjon — det gjelder over halvparten av prognosepunktene. M7 lukker det hullet ved å hente effektstørrelsen fra en datert kilde utenfor serien. Modellen er identisk med M6 bortsett fra ett ledd:
+M6 kan ikke framskrive en regelendring som ennå ikke har inntruffet: en regressor som er null gjennom hele treningsvinduet, har ingen koeffisient å estimere. Omfanget kvantifiseres i @sec-met-identifikasjon — det gjelder over halvparten av prognosepunktene. Det prinsipielle svaret er å hente effektstørrelsen fra en datert kilde utenfor serien. M7 er formulert som M6 pluss ett slikt ledd:
 
 $$\ln M^{T}_{t} \;=\; \beta'_{\text{est}} x^{\text{est}}_t \;+\; \underbrace{\textstyle\sum_{j \in \mathcal{U}_\tau} \lambda_j\, x^{j}_t}_{\text{pålagt, ikke estimert}} \;+\; \eta_t$$ {#eq-prior}
 
 der $\mathcal{U}_\tau$ er regressorene som ikke passerer inngangsregelen ved opprinnelse $\tau$. Leddet er en *offset*: det inngår i prognosen, men ikke i estimeringen, slik at det ikke forstyrrer de øvrige koeffisientene.
 
-**Hvor $\lambda_j$ kommer fra.** Fra `forhandsanslag.csv`, som kobler hver intervensjon til et datert anslag med kilde og verifiseringsstatus. Det nasjonale anslaget skaleres med Oslos målte andel av mottakerne, `r pst(osloandel)` — målt over de siste tolv terminene i utvalget; i drift må andelen måles ved hver opprinnelse, siden den har beveget seg fra rundt 14 til rundt 19 prosent siden 2010 (M13 i endringsloggen) — og omregnes til logskala mot nivået ved opprinnelsen. Anslagene er av tre slag, og forskjellen mellom dem er ikke kosmetisk: *forhåndsanslag* er publisert før hendelsen og er det eneste en prognose i drift faktisk ville hatt; *etterberegnet* er realisert utfall og kan bare brukes til å validere metoden, aldri i en prognose; *mekanisk* er utledet av regelverket selv.
+**Hva som faktisk pålegges — og hvorfor modellen heter orakel.** For den ene hendelsen der inngangsregelen faktisk binder — høstpakken 2024 — finnes det ikke noe publisert forhåndsanslag i husstander (avsnittet under dokumenterer søket). $\lambda$ i den kjørte modellen er derfor **full-utvalgskoeffisienten** for `pakke_2024h2`, estimert på data som inkluderer utfallet. Det er perfekt informasjon: modellen kvantifiserer *øvre grense* for hva et eksternt effektanslag kunne vært verdt, og er verken en gjennomførbar historisk prognosemodell eller en kandidat for framtidsprognosen. Alle tabeller og figurer merker den deretter, som *M7 orakel*.
 
-**Begrunnelsen er ikke bekvemmelighet, men at det ikke finnes noe nøytralt alternativ.** Å utelate regressoren pålegger $\lambda_j = 0$ — en påstand om at en vedtatt regelendring ikke vil ha effekt. Valget står altså mellom å pålegge null og å pålegge det beste daterte tallet som finnes; ingen av delene er antakelsesfri. M7 gjør valget eksplisitt og kildebelagt i stedet for implisitt.
+**Begrunnelsen for leddet er ikke bekvemmelighet, men at det ikke finnes noe nøytralt alternativ.** Å utelate regressoren pålegger $\lambda_j = 0$ — en påstand om at en vedtatt regelendring ikke vil ha effekt. Valget står altså mellom å pålegge null og å pålegge det beste tallet som finnes; ingen av delene er antakelsesfri. Orakelvarianten gjør taket for det valget eksplisitt i stedet for implisitt.
 
-**Og prioren skal scores, ikke tros.** Tre hendelser har både et publisert anslag og en koeffisient som *er* estimerbar: koronavinduet, strømvinduets åpning og avviklingen i april 2024. Metoden kan derfor kalibreres — sammenlign $\hat\beta$ mot den prior-impliserte $\lambda$ der begge finnes. Treffer de publiserte tallene, er det belegg for å bruke dem der estimering er umulig; treffer de ikke, er *det* funnet, og det forteller hvor mye vekt en konsekvensutredning tåler. Sporingen rapporteres som egen figur i kapitlets andre del.
+**Betegnelsen `M7_prior` er reservert** for en modell som mottar et *datert, verifisert* forhåndsanslag — en primærkilde med dokumentert `known_from`, skalert til Oslo med andelen målt ved opprinnelsen og omregnet til logskala mot nivået der. Registeret `forhandsanslag.csv` kuraterer det som finnes av slike anslag, med kilde og verifiseringsstatus per intervensjon, og skiller tre slag: *forhåndsanslag* er publisert før hendelsen og er det eneste en prognose i drift faktisk ville hatt; *etterberegnet* er realisert utfall og kan bare validere metoden, aldri inngå i en prognose; *mekanisk* er utledet av regelverket selv. Ingen `M7_prior` er estimert i dette arbeidet: hendelsen som trengte den, mangler kilde, og for avviklingen i april 2024 — der et forhåndsanslag faktisk forelå (I12) — er koeffisienten estimerbar, slik at leddet ikke binder. En framtidig kalibrering av metoden — $\hat\beta$ mot prior-implisert $\lambda$ for hendelsene der begge finnes (I01, I05, I12) — hører til `M7_prior` og er ikke gjennomført her.
 
-**Kalibreringen må være modellbasert, ikke en før-og-etter-differanse.** Det er fristende å måle et anslag ved å sammenlikne nivået før og etter hendelsen. Det holder ikke her, av tre grunner som alle er dokumentert tidligere i kapitlet: positive endringer fases inn gradvis (@sec-teori-beholdning), slik at en kort etterperiode undervurderer effekten; hendelsene overlapper, slik at nedgangen etter april 2024 delvis motvirkes av høstpakken fra juli; og kalendersagtannen på syv til ti prosent (@sec-met-observasjoner) dominerer enhver enkeltmåneds differanse. En rå sammenlikning gir derfor forhold mellom realisert og publisert som spriker fra om lag en halv til fire femdeler, uten at spriket sier noe om anslagene — det sier noe om at metoden er feil. T5 er formulert mot $\hat\beta$ nettopp fordi modellen kontrollerer for alle tre.
+**En slik kalibrering må være modellbasert, ikke en før-og-etter-differanse.** Det er fristende å måle et anslag ved å sammenlikne nivået før og etter hendelsen. Det holder ikke her, av tre grunner som alle er dokumentert tidligere i kapitlet: positive endringer fases inn gradvis (@sec-teori-beholdning), slik at en kort etterperiode undervurderer effekten; hendelsene overlapper, slik at nedgangen etter april 2024 delvis motvirkes av høstpakken fra juli; og kalendersagtannen på syv til ti prosent (@sec-met-observasjoner) dominerer enhver enkeltmåneds differanse. En rå sammenlikning gir derfor forhold mellom realisert og publisert som spriker fra om lag en halv til fire femdeler, uten at spriket sier noe om anslagene — det sier noe om at metoden er feil. T5s andre ledd er formulert mot $\hat\beta$ nettopp fordi modellen kontrollerer for alle tre.
 
-**En kjent begrensning, søkt etter og ikke funnet.** For høstpakken 2024 — regressoren som faktisk er uidentifisert ved flest opprinnelser — finnes ingen publiserte husstandstall. Fire kildefamilier er gjennomsøkt: Husbankens årsrapporter 2024 og 2025, revidert nasjonalbudsjett (Prop. 104 S), Husbankens egen pressemelding om revidert budsjett, og finanskomiteens innstilling. Alle oppgir kroner (85, 22 og 8 millioner), ingen oppgir husstander. For oppvarmingstillegget ville en omregning fra kroner dessuten vært direkte feil, siden tillegget gikk til *eksisterende* mottakere og altså hevet beløp framfor å utvide kretsen. Radene står som `ingen` i `forhandsanslag.csv` med søkedato og kildeliste. M7 degenererer da til M6 for den hendelsen — noe som er riktig oppførsel, men som betyr at metoden ikke kan demonstreres der.
+**En kjent begrensning, søkt etter og ikke funnet.** For høstpakken 2024 — regressoren som faktisk er uidentifisert ved flest opprinnelser — finnes ingen publiserte husstandstall. Fire kildefamilier er gjennomsøkt: Husbankens årsrapporter 2024 og 2025, revidert nasjonalbudsjett (Prop. 104 S), Husbankens egen pressemelding om revidert budsjett, og finanskomiteens innstilling. Alle oppgir kroner (85, 22 og 8 millioner), ingen oppgir husstander. For oppvarmingstillegget ville en omregning fra kroner dessuten vært direkte feil, siden tillegget gikk til *eksisterende* mottakere og altså hevet beløp framfor å utvide kretsen. Radene står som `ingen` i `forhandsanslag.csv` med søkedato og kildeliste. En `M7_prior` ville degenerert til M6 for den hendelsen — riktig oppførsel, men det betyr at metoden med et *reelt* datert anslag ikke kan demonstreres i dette materialet. Det er derfor orakelvarianten finnes: den setter et tak der metoden ellers ikke har noe å vise.
 
 **Asymmetriproposisjonen.** @eq-regarima estimerer statiske regresjonskoeffisienter og uttrykker dermed rene trinn, ikke transferfunksjonens $\delta$ (@eq-transfer). Asymmetriproposisjonen fra @sec-teori-beholdning testes derfor på to måter i stedet for å pålegges. For det første estimeres en variant der `win_strom` suppleres med en tre måneders innfasingsrampe ved inn-kanten; rampekoeffisienten er det direkte estimatet av gradvis innfasing, og variantene sammenliknes med AICc. For det andre inspiseres residualene ved hver kant: en skarp ut-kant skal ikke etterlate mønster, mens en gradvis inn-kant modellert som trinn skal etterlate en serie residualer med samme fortegn. De to testene peker på samme parameter fra hver sin side.
 
@@ -1370,7 +1401,7 @@ Det er også verdt å merke seg hva som *ikke* er et problem. Seriens største b
 
 *Regelendringen er vedtatt, men ikke trådt i kraft.* Koeffisienten finnes ikke i serien. Regelverkskalenderen forteller modellen at noe kommer og nøyaktig når — men ikke hvor mye. En prognose kan da bare bære endringen dersom effektstørrelsen hentes *utenfor* serien.
 
-Det andre regimet er ikke en svakhet ved designet; det er innholdet i underspørsmål **UB**. Studien har kilden som trengs: for avviklingen i april 2024 forelå departementets anslag på 20 000–25 000 mottakere nasjonalt *på forhånd* [@dagsavisen2024; @pensjonistforbundet2024], og Husbankens årsrapport bekreftet om lag 25 000 i etterkant [@husbanken2024aars]. Det er grunnlaget for M7 (@sec-met-prior), som pålegger effektstørrelsen fra en datert kilde der den ikke kan estimeres — og som selv blir målt, ved at prioren sammenliknes med den estimerte koeffisienten på de hendelsene der begge finnes.
+Det andre regimet er ikke en svakhet ved designet; det er innholdet i underspørsmål **UB**. Kildebildet er imidlertid skjevt på en måte som avgjør hva som kan testes: for avviklingen i april 2024 forelå departementets anslag på 20 000–25 000 mottakere nasjonalt *på forhånd* [@dagsavisen2024; @pensjonistforbundet2024], og Husbankens årsrapport bekreftet om lag 25 000 i etterkant [@husbanken2024aars] — men der er koeffisienten estimerbar, så et pålagt anslag trengs ikke. For høstpakken, der estimering faktisk er umulig, finnes intet publisert anslag. Derfor kvantifiserer M7 orakel (@sec-met-prior) øvre grense med perfekt informasjon, mens en operativ `M7_prior` står udemonstrert i påvente av en reell kilde.
 
 ## Evaluering og inferens {#sec-met-evaluering}
 
@@ -1402,9 +1433,9 @@ Det andre regimet er ikke en svakhet ved designet; det er innholdet i underspør
 | **T4** | Nominell dekning krever brudd og kalender; resten fikses konformalt | dekning ved 80/95 for M3 og M6, før og etter konformal kalibrering, med intervallskår | M6 dekker ikke bedre enn M3, eller kalibreringen ikke lukker gapet |
 | **T5** | Daterte forhåndsanslag bærer informasjon der estimering er umulig | M7 mot M6 på punkter der en regressor var uidentifisert (@sec-met-prior); og $\hat\beta$ mot prior-implisert $\lambda$ der begge finnes | M7 er ikke bedre enn M6 på de rammede punktene, eller $\hat\beta$ avviker systematisk fra anslaget |
 
-: Teoriens implikasjoner som avgjørbare teststatistikker. Kolonnen «faller dersom» er skrevet før estimeringen, slik at utfallet ikke kan omtolkes i etterkant. {#tbl-tester}
+: Teoriens implikasjoner som avgjørbare teststatistikker. Kolonnen «faller dersom» er skrevet før estimeringen, slik at utfallet ikke kan omtolkes i etterkant. T5-raden gjengir den forhåndsregistrerte formuleringen; presiseringen under dokumenterer at den ikke lot seg teste slik. {#tbl-tester}
 
-T5 er ny og hører til underspørsmål **UB**. Den er formulert med to ledd fordi de svarer på hvert sitt: det første måler om metoden hjelper, det andre om kilden er til å stole på. En metode som hjelper med en prior som ikke stemmer, er et lykketreff og ikke et funn.
+T5 er ny og hører til underspørsmål **UB**. Den er formulert med to ledd fordi de svarer på hvert sitt: det første måler om metoden hjelper, det andre om kilden er til å stole på. En metode som hjelper med en prior som ikke stemmer, er et lykketreff og ikke et funn. **En presisering, gjort i ettertid og merket som det:** den forhåndsregistrerte formuleringen forutsatte et publisert, datert forhåndsanslag for en uidentifisert regressor. Noe slikt anslag finnes ikke for høstpakken (@sec-met-prior), og for hendelsene med anslag er koeffisienten estimerbar. Ingen av T5s to ledd kan derfor kjøres som registrert. Det som *kan* beregnes — og rapporteres i @sec-res-prior — er øvre grense: M7 orakel mot M6 på de rammede punktene, med full-utvalgskoeffisienten som pålagt ledd. Resultatkapitlet dømmer T5 deretter (@tbl-res-oppgjor), og $\hat\beta$-mot-$\lambda$-sporingen står som udekket, presist definert arbeid under `M7_prior`.
 
 To ting i tabellen fortjener en kommentar. **T3** er formulert som en *ekvivalenstest*, ikke som en vanlig nullhypotesetest. Grunnen er at teorien predikerer at effekten er null, og en ordinær test kan aldri bekrefte en nullhypotese — den kan bare unnlate å forkaste, hvilket like gjerne kan skyldes lite data. Ekvivalensformuleringen snur bevisbyrden riktig vei: den krever at konfidensintervallet for $\hat\beta_{k,\text{post}}$ ligger *innenfor* en grense vi har satt på forhånd, og gir dermed teorien en reell mulighet til å falle. Grensen er satt til halvparten av den estimerte førperiodeeffekten, altså i seriens egne enheter framfor en vilkårlig konstant. **T2** er formulert med intervalldekning som det avgjørende kriteriet, ikke punktfeil. Det er ikke en flukt fra det vanskelige målet, men følger av @clements1998: umodellerte nivåskift skader intervallene mer og lenger enn de skader punktprognosene, og det er der gevinsten skal vise seg om teorien stemmer.
 
@@ -1416,15 +1447,17 @@ Kontrakten fra kapitlets åpning gjelder også modelldelen: hver størrelse skal
 
 *Determinisme.* Løypa inneholder ingen tilfeldighet: ordensvalget er en deterministisk søkeprosedyre, den konformale kalibreringen er empiriske kvantiler, og kalenderfasen kalibreres fra data (@sec-met-kalender). To renderinger av samme kildefil mot samme datapakke gir derfor identisk resultat, og det er kontrollert ved å sammenlikne tekstinnholdet i to bygg framfor å anta det. Seeds settes likevel eksplisitt, slik at stokastiske metoder kan legges til senere uten at determinismen stilltiende forsvinner.
 
-*Miljø.* Miljøet er per i dag ikke låst: `oppsett.R` installerer nyeste tilgjengelige pakkeversjoner, og noen låsefil er ikke versjonert — `renv` er planen, ikke tilstanden (issue #3). Datapakkens uttrekksdato (`r UTTREKKSDATO`) stemples i dokumentet; R- og Quarto-versjon bør stemples sammen med den. Typst-malen bruker bare fonter Typst har innebygd; det er et typografisk valg, men det hører hjemme her, fordi det er grunnen til at PDF-en blir identisk uansett vertsmaskin.
+*Miljø.* Pakkesettet er låst i `renv.lock` (R `r paste(R.version$major, R.version$minor, sep = ".")`, eksplisitt pakkesett med full avhengighetslukning); `oppsett.R` dekker førstegangsinstallasjon, og CI-workflowen «Rapport-render (PDF)» bygger dokumentet fra ren checkout med samme pakkesett og Quarto 1.7. Datapakkens uttrekksdato (`r UTTREKKSDATO`) stemples i dokumentet. Typst-malen bruker bare fonter Typst har innebygd; det er et typografisk valg, men det hører hjemme her, fordi det er grunnen til at PDF-en blir identisk uansett vertsmaskin.
 
-*Kart over løypa.* Datalasting og verifikasjon i chunkene `oppsett` til `tbl-kontroller`; regressorkonstruksjon i `met-intervensjoner` og `met-kalender-reg`; analysesettet i `met-analysesett`; protokollparametrene i `protokoll`. Uttrekksskriptene som produserer datapakken, ligger i `data/scripts/` og er dokumentert i `datakilder.md` og `kodebok.md`.
+*Én kanonisk kommando.* `quarto render bostotte_oslo.qmd` er hele løypa: datakontroller som stopper byggingen, modellering, prognoseartefakten (@sec-prognose) og PDF-en produseres i samme kjøring. `source("verifiser.R")` er porten foran (parse i C-tegnsett, referanseintegritet), og `scripts/validate_phase1.py` og `scripts/validate_prognose.py` er uavhengige etterkontroller i ren Python — de kjører i CI ved hver push og krever ikke R.
+
+*Kart over løypa.* Datalasting og verifikasjon i chunkene `oppsett` til `tbl-kontroller`; regressorkonstruksjon i `met-intervensjoner` og `met-kalender-reg`; analysesettet i `met-analysesett`; protokollparametrene i `protokoll`; framtidsprognosen og artefakten i `prognose-artefakt`. Uttrekksskriptene som produserer datapakken, ligger i `data/scripts/` og er dokumentert i `datakilder.md` og `kodebok.md`.
 
 *Feil skal stoppe byggingen, ikke passere stille.* Verifikasjonskontrollene i @sec-met-verifikasjon avbryter renderingen ved avvik. Samme prinsipp gjelder modelldelen: dimensjonskrav på analysesettet, krav om at de deterministiske regressorene er komplette over hele prognosehorisonten, og krav om at antall prognosepunkter per horisont stemmer med protokollen, håndheves med eksplisitte krav i koden framfor å kontrolleres ved øyemål.
 
 # Resultater {#sec-res}
 
-Kapitlet rapporterer den rullerende kryssvalideringen som @sec-met-protokoll spesifiserer, og holder utfallet opp mot «faller dersom»-kolonnen i @tbl-tester. Tre av de fem implikasjonene holder, én holder i retning men ikke i styrke, og én faller — motsatt vei av det som var forventet.
+Kapitlet rapporterer den rullerende kryssvalideringen som @sec-met-protokoll spesifiserer, og holder utfallet opp mot «faller dersom»-kolonnen i @tbl-tester. Tre av de fem implikasjonene holder helt eller delvis, én faller — motsatt vei av det som var forventet — og én lot seg ikke teste som formulert; de to siste er selv funn.
 
 ```{r}
 #| label: res-cv
@@ -1637,7 +1670,7 @@ fiks_tegnsett()
 
 MNAVN <- c(M0="M0 naiv", M1="M1 sesongnaiv", M2="M2 ETS", M3="M3 SARIMA",
            M4="M4 RegARIMA + k", M5="M5 RegARIMA + X", M6="M6 RegARIMA + X + k",
-           M7="M7 med p\u00e5lagt bidrag")
+           M7="M7 orakel (\u00f8vre grense)")
 
 # En DM/CW-statistikk kan være udefinert: med rektangulært vindu og L = h-1
 # lag er langtidsvariansen ikke garantert positiv, og der to prognoser
@@ -1654,6 +1687,23 @@ mase_M6 <- mean(R$mase[R$.model == "M6"])
 dm_m2m6_h12 <- dmtest("M2", "M6", FALSE, 12)
 dm_m5m6_h1  <- dmtest("M5", "M6", TRUE, 1)
 dm_m5m6_h12 <- dmtest("M5", "M6", TRUE, 12)
+
+# --- Sammendragskontrakten -------------------------------------------------
+# Sammendraget trykkes foer beregningene og siterer fire resultattall fra en
+# deklarert liste (chunk sammendrag-kontrakt). Her doemmes listen mot de
+# beregnede verdiene; avvik stopper byggingen. Dermed kan sammendraget ikke
+# komme i utakt med resultatkapitlet.
+.apr_h6 <- R |> filter(dato == as.Date("2024-04-01"), .model == "M6", h == 6) |> pull(pred)
+stopifnot(
+  "Sammendraget: antall opprinnelser stemmer ikke" =
+    SAMMENDRAG_PAASTAND$n_opprinnelser == n_opprinnelser,
+  "Sammendraget: april-avviket (h=6) stemmer ikke med beregningen" =
+    abs(abs(100 * .apr_h6 / 15588 - 100) - SAMMENDRAG_PAASTAND$april_avvik_pst) < 0.05,
+  "Sammendraget: dekning foer kalibrering stemmer ikke" =
+    round(100 * mean(K$dekk80[K$.model == "M6"])) == SAMMENDRAG_PAASTAND$dekning_for,
+  "Sammendraget: dekning etter kalibrering stemmer ikke" =
+    round(100 * mean(K$kdekk80[K$.model == "M6"])) == SAMMENDRAG_PAASTAND$dekning_etter
+)
 ```
 
 ## Presisjon over horisonten {#sec-res-presisjon}
@@ -1675,7 +1725,7 @@ R |> summarise(MASE = mean(mase), RMSE = sqrt(mean(e^2)),
 
 ```{r}
 #| label: fig-res-mase
-#| fig-cap: "MASE per horisont, point-in-time. Stiplet linje ved 1 er sesongnaiv prognose i treningsvinduet. Ingen modell dominerer over hele horisonten: de regelinformerte er best på korte horisonter, mens bildet mot tolv måneder avgjøres av hva som var kjent om regelverkskalenderen ved opprinnelsen."
+#| fig-cap: "MASE per horisont, point-in-time. Stiplet linje ved 1 er sesongnaiv prognose i treningsvinduet. Ingen modell dominerer over hele horisonten: de regelinformerte er best på korte horisonter, mens bildet mot tolv måneder avgjøres av hva som var kjent om regelverkskalenderen ved opprinnelsen. M7 orakel er en øvre grense med fasitkoeffisient, ikke en operativ modell."
 #| fig-width: 6.6
 #| fig-height: 3.2
 
@@ -1823,11 +1873,11 @@ Der høstpakken ikke er estimerbar, underpredikerer M6 systematisk med `r pst(10
 
 Det har en konsekvens for hvordan kalibreringen skal forstås. Tidsgyldig konformal etterkalibrering løfter M6-dekningen på kalibreringsutvalget fra `r pst(100*mean(K$dekk80[K$.model=="M6"]), 0)` til `r pst(100*mean(K$kdekk80[K$.model=="M6"]), 0)`, og intervallskåren faller. Men den gjør det ved å *utvide intervallet til å dekke en systematisk feil*, ikke ved å fjerne feilen. Som korreksjon av dekning er det legitimt og virksomt; som svar på hvorfor prognosen bommer, er det symptombehandling. Den egentlige kuren er å skaffe effektstørrelsen utenfra — som er nettopp det M7 gjør.
 
-## Verdien av et anslag, og hvor mye det er verdt {#sec-res-prior}
+## M7 orakel: hva perfekt informasjon er verdt {#sec-res-prior}
 
 ```{r}
 #| label: tbl-res-m7
-#| tbl-cap: "M7 mot M6 på de prognosepunktene der høstpakken var aktiv i målmåneden, men ikke estimerbar ved opprinnelsen. Det pålagte bidraget er her full-utvalgskoeffisienten — altså perfekt informasjon, ikke et publisert forhåndsanslag."
+#| tbl-cap: "M7 orakel mot M6 på de prognosepunktene der høstpakken var aktiv i målmåneden, men ikke estimerbar ved opprinnelsen. Det pålagte bidraget er full-utvalgskoeffisienten — perfekt informasjon, ikke et publisert forhåndsanslag; tallene er en øvre grense, ikke ytelsen til en gjennomførbar modell."
 
 p7 <- R |> filter(.model %in% c("M6","M7"), pakke_ute, dato >= as.Date("2024-07-01")) |>
   select(.model, opprinnelse, h, mase, dekk80, ws80) |>
@@ -1841,9 +1891,9 @@ tibble(`Mål` = c("MASE", "Dekning ved 80 %", "Intervallskår"),
   kab(align = "lrrr")
 ```
 
-@tbl-res-m7 gir tallene. På de `r nb(nrow(p7))` rammede punktene faller MASE med `r pst(abs(100*(mean(p7$mase_M7)/mean(p7$mase_M6)-1)))`. Forbeholdet er avgjørende og må stå først: koeffisienten som pålegges er estimert på hele utvalget, altså på data som inkluderer utfallet. Tallet måler derfor **verdien av perfekt informasjon** — en øvre grense — og ikke verdien av et faktisk forhåndsanslag. Det er ikke et resultat om konsekvensutredningers treffsikkerhet, men om hvor mye som står på spill dersom de treffer.
+@tbl-res-m7 gir tallene. På de `r nb(nrow(p7))` rammede punktene faller MASE med `r pst(abs(100*(mean(p7$mase_M7)/mean(p7$mase_M6)-1)))`. Forbeholdet er avgjørende og må stå først: koeffisienten som pålegges er estimert på hele utvalget, altså på data som inkluderer utfallet. Tallet måler derfor **verdien av perfekt informasjon** — en øvre grense — og ikke verdien av et faktisk forhåndsanslag. M7 orakel er dermed verken en gjennomførbar historisk prognosemodell eller en kandidat for framtidsprognosen (@sec-prognose); det er et instrument som kvantifiserer hva som står på spill dersom en konsekvensutredning treffer.
 
-Det er likevel den mest direkte kvantifiseringen studien kan gi av underspørsmål **UB**: et brukbart, datert anslag for en vedtatt men ikke ikrafttrådt regelendring senker prognosefeilen fra `r nb(mean(p7$mase_M6), 3)` til `r nb(mean(p7$mase_M7), 3)` i MASE i det vinduet der endringen ellers er usynlig for modellen — altså fra dårligere til bedre enn en sesongnaiv referanse. For høstpakken 2024 finnes ikke et slikt anslag publisert (@sec-met-prior), og M7 er derfor per i dag en demonstrasjon av mekanismen, ikke et anvendbart verktøy for den hendelsen.
+Lest slik er det likevel den mest direkte kvantifiseringen studien kan gi av underspørsmål **UB**: et *perfekt* anslag for en vedtatt men ikke ikrafttrådt regelendring ville senket prognosefeilen fra `r nb(mean(p7$mase_M6), 3)` til `r nb(mean(p7$mase_M7), 3)` i MASE i det vinduet der endringen ellers er usynlig for modellen — fra dårligere til bedre enn en sesongnaiv referanse. Et faktisk, datert anslag ville levert en ukjent andel av dette taket. For høstpakken 2024 finnes intet slikt anslag publisert (@sec-met-prior), så `M7_prior` står uimplementert, og T5 er dermed ikke testet — bare taket dens er målt.
 
 ## Estimerbar er ikke det samme som pålitelig {#sec-res-overgang}
 
@@ -1869,7 +1919,7 @@ bind_rows(ov, tibble(Opprinnelse = "fullt utvalg", `Aktive obs.` = sum(analyse$p
 
 Koeffisienten svinger mellom om lag `r pst(100*(exp(min(as.numeric(str_replace(ov$Koeffisient, ",", "."))))-1))` og `r pst(100*(exp(max(as.numeric(str_replace(ov$Koeffisient, ",", "."))))-1))` i overgangsvinduet, mot `r pst(100*(exp(LAMBDA_ORAKEL)-1))` på fullt utvalg. Det forklarer den motsatte skjevheten i @tbl-res-skjevhet: der pakken *er* estimerbar, overpredikerer modellen, fordi koeffisienten i en periode er nesten dobbelt så stor som den skal være.
 
-Konsekvensen er en presisering av protokollen som bør inn i en revidert versjon: det finnes tre regimer, ikke to. En regressor kan være *uidentifiserbar*, *identifisert men upålitelig*, eller *identifisert og stabil*. Inngangsregelen skiller bare det første fra de to siste. Det naturlige svaret er ikke en høyere terskel, men å la M7 gjøre mer arbeid: krympe mot det pålagte anslaget så lenge dataene er tynne, og slippe estimatet til etter hvert. Det er en bayesiansk formulering, og den hører hjemme i BSTS-klassen som @sec-teori-modeller allerede peker på.
+Konsekvensen er en presisering av protokollen som bør inn i en revidert versjon: det finnes tre regimer, ikke to. En regressor kan være *uidentifiserbar*, *identifisert men upålitelig*, eller *identifisert og stabil*. Inngangsregelen skiller bare det første fra de to siste. Det naturlige svaret er ikke en høyere terskel, men å la en framtidig `M7_prior` gjøre mer arbeid: krympe mot et datert, verifisert anslag så lenge dataene er tynne, og slippe estimatet til etter hvert. Det er en bayesiansk formulering, og den hører hjemme i BSTS-klassen som @sec-teori-modeller allerede peker på — og den forutsetter kilden som per i dag mangler.
 
 ## Hva som ikke holdt {#sec-res-oppgjor}
 
@@ -1879,7 +1929,7 @@ Konsekvensen er en presisering av protokollen som bør inn i en revidert versjon
 | **T2** | Eksplisitte intervensjoner hjelper | **Holder i retning.** MASE ned; Clark–West når ikke kritisk verdi på noen horisont |
 | **T3** | Kalendereffekt stor før 2025, eksakt null etter | **Holder i første ledd.** Ekvivalens ikke etablert ved den forhåndssatte grensen; full styrke utelukket, halv styrke ikke |
 | **T4** | Nominell dekning krever brudd og kalender | **Faller.** Modellering forverrer dekningen; tidsgyldig konformal kalibrering reparerer den delvis (@sec-res-dekning) — resten er skjevhet, ikke bredde |
-| **T5** | Daterte anslag bærer informasjon | **Ikke testbar som formulert.** Ingen publiserte husstandstall for hendelsen det gjaldt; demonstrert med perfekt informasjon som øvre grense |
+| **T5** | Daterte anslag bærer informasjon | **Ikke testbar som formulert.** Ingen publiserte husstandstall for hendelsen det gjaldt; bare øvre grense målt, med M7 orakel (perfekt informasjon). `M7_prior` uimplementert i påvente av reell kilde |
 
 : Utfallet holdt opp mot «faller dersom»-kolonnen i @tbl-tester, som ble skrevet før estimeringen. {#tbl-res-oppgjor}
 
@@ -1893,15 +1943,244 @@ Fire kapitler tall lar seg samle i én setning: *informasjonen gjør arbeidet, m
 
 Det gjør point-in-time-disiplinen til leveransens kontrakt, ikke en teknisk detalj. Regelen fra @sec-met-protokoll — hvert vedtaksavhengig steg brukes i horisonten bare fra sin dokumenterte kunnskapsdato — hviler på et primærkildebelagt register (`data/clean/regelverk_kunnskap.csv`; Norsk Lovtidend, stortingsinnstillinger, regjeringens fremleggelser), og registeret lærte oss noe forskriftshistorikken alene ikke sier: sluttdatoer er upålitelige prediktorer. Det midlertidige egenandelsregelverket fikk fem lovfestede sluttdatoer før det faktisk utløp; i juli 2023 var kunngjort sluttdato 31. desember 2023, ikke termin april 2024. En prognoseprosess har dermed tre legitime informasjonsbaner — regressorer fryst ved opprinnelsen som konservativ nedre grense, kunngjort kalender som hovedløp (denne rapportens valg), og dagens fasitkalender som eksplisitt merket scenario — og det er avstanden mellom dem, ikke noen av banene alene, som forteller en beslutningstaker hva regelverkskunnskap er verdt.
 
-Usikkerheten står nå på ærlig grunn, og den er ubehageligere enn den så ut. De regelinformerte modellene underdekker grovt (M6 `r pst(100*mean(R$dekk80[R$.model=="M6"]), 0)` ved nominelt 80 på hovedutvalget), tidsgyldig konformal etterkalibrering — kalibrert bare på feil som var realisert ved opprinnelsen, med endelig-utvalgsnivå — løfter dekningen til `r pst(100*mean(K$kdekk80[K$.model=="M6"]), 0)` på kalibreringsutvalget, og resten er ikke bredde, men skjevhet: der høstpakken ikke er estimerbar, ligger systematikken (@tbl-res-skjevhet) praktisk talt på den utelatte koeffisienten. Kalibrering er symptombehandling for et informasjonsproblem; kuren er daterte effektanslag utenfra, og M7 viser mekanismen uten å kunne demonstrere den for hendelsen som trengte den mest. At enkelte teststatistikker er udefinerte (@tbl-res-cw), er samme ærlighet i en annen form — med 31 opprinnelser og rektangulært vindu finnes ikke testen ved alle horisonter, og en tabell som sier det, er å foretrekke framfor en som fyller hullet.
+Usikkerheten står nå på ærlig grunn, og den er ubehageligere enn den så ut. De regelinformerte modellene underdekker grovt (M6 `r pst(100*mean(R$dekk80[R$.model=="M6"]), 0)` ved nominelt 80 på hovedutvalget), tidsgyldig konformal etterkalibrering — kalibrert bare på feil som var realisert ved opprinnelsen, med endelig-utvalgsnivå — løfter dekningen til `r pst(100*mean(K$kdekk80[K$.model=="M6"]), 0)` på kalibreringsutvalget, og resten er ikke bredde, men skjevhet: der høstpakken ikke er estimerbar, ligger systematikken (@tbl-res-skjevhet) praktisk talt på den utelatte koeffisienten. Kalibrering er symptombehandling for et informasjonsproblem; kuren er daterte effektanslag utenfra, og M7 orakel setter taket for hva kuren kan være verdt — uten at noen reell kilde per i dag finnes for hendelsen som trengte den mest. At enkelte teststatistikker er udefinerte (@tbl-res-cw), er samme ærlighet i en annen form — med 31 opprinnelser og rektangulært vindu finnes ikke testen ved alle horisonter, og en tabell som sier det, er å foretrekke framfor en som fyller hullet.
 
-For en etat følger arbeidsformen mer eller mindre direkte: en månedlig basisprognose der vedtatte regelendringer inngår fra sin kunngjøringsdato; ikke-vedtatte forslag utelukkende i navngitte scenarioer; horisont én til tre måneder kommunisert som prognose, seks til tolv som beregning betinget av en oppgitt regelverkskalender — med kalenderen trykt ved siden av tallet; og en overvåkning av kunngjøringskildene (Norsk Lovtidend, innstillinger, fremleggelser) der en oppdaget hendelse går inn i prognosegrunnlaget først etter menneskelig godkjenning. Ingenting av dette krever mer modell enn det som alt står i dette dokumentet.
+For en etat følger arbeidsformen mer eller mindre direkte: en månedlig basisprognose der vedtatte regelendringer inngår fra sin kunngjøringsdato; ikke-vedtatte forslag utelukkende i navngitte scenarioer; og hver målmåned merket etter sitt *informasjonssett*, ikke mekanisk etter horisonten — prognose under vedtatt kalender når alle relevante steg er vedtatt og kjent, basisbane under uttrykkelig videreført regelverk når målmåneden ligger etter siste politisk avklarte periode, og orakelkjøringer bare i historiske metodeillustrasjoner — med betingelsen trykt ved siden av tallet. Rundt dette en overvåkning av kunngjøringskildene (Norsk Lovtidend, innstillinger, fremleggelser) der en oppdaget hendelse går inn i prognosegrunnlaget først etter menneskelig godkjenning. Ingenting av dette krever mer modell enn det som alt står i dette dokumentet.
 
 # Konklusjon {#sec-konklusjon}
 
 Hvor presist kan månedlig antall bostøttemottakere i Oslo prognostiseres ett til tolv måneder fram med åpne data? Presist nok til å være nyttig på kort horisont, og presist nok til å være ærlig om resten: beste spesifikasjon ligger `r pst(abs(100*(mase_M5/mase_M0 - 1)))` under naiv framskrivning på samlet MASE, gevinsten er konsentrert der regelverkskalenderen var kjent, og seriens største bevegelse — et fall på en fjerdedel — ble truffet på `r pst(abs(100*(R |> filter(dato==as.Date("2024-04-01"), .model=="M6", h==6) |> pull(pred))/15588 - 100))` seks måneder i forveien *fordi* avviklingen var kunngjort seks måneder i forveien. Hvor mye bedre blir prognosen når kjente regelendringer modelleres eksplisitt? Svaret er betinget: vesentlig bedre fra den dagen endringen er offentlig, ikke målbart bedre før. Det er ikke en svakhet ved metoden; det er hva spørsmålet faktisk svarer når informasjonssettet dateres redelig.
 
 Det varige bidraget er derfor ikke én modell, men en prosess som kan etterprøves: et versjonert datagrunnlag med maskinelle kontrakter, et primærkildebelagt kunnskapsregister med håndhevet point-in-time-port, en evalueringsprotokoll som er reprodusert i to språk, tidsgyldig kalibrert usikkerhet, og tekst som dømmer sine egne påstander fra beregnede verdier. Veien videre er tilsvarende konkret: arbeidsverk 2 har allerede prøvd trebaserte og nevrale klasser mot samme protokoll og målt at gevinsten deres bor i de samme regressorene; det som gjenstår før drift er registervedlikeholdet som rutine, varsling på intervallskår framfor MASE, og en månedlig kjøring med logget vintage — fase 3 i planen, med denne rapportens informasjonskontrakt som styringsdokument.
+
+\newpage
+
+# Prognose: de neste tolv månedene {#sec-prognose}
+
+Kapitlene foran er den historiske evalueringen; dette kapitlet er den operative leveransen, og de to må ikke forveksles. Alt her er produsert i én maskinell kjøring ved rendering — chunken `prognose-artefakt` skriver prognosen til `prognose/prognose_gjeldende.csv` og `.json`, og tabellen, figuren, README-utdraget og den interaktive prognosesiden leser samme artefakt. Ingen av flatene regner egne tall.
+
+**Operativ modell.** Framtidsprognosen bruker M6 — hovedspesifikasjonen, med point-in-time-porten aktiv. Valget er begrunnet, ikke antatt: M6 er lekkasjefri per konstruksjon (regelverkssteg inngår bare fra dokumentert kunnskapsdato, og inngangsregelen er håndhevet); den er den evaluerte hovedspesifikasjonen gjennom hele backtesten, med det tydeligste kortsiktsfortrinnet (@tbl-res-cw); og på prognoseperioden skiller den seg lite fra den sparsommere M5, siden kalenderleddet etter skjermingen er $k_{\text{post}}$ med punktestimat nær null (@tbl-res-t3) — uenigheten mellom de to lekkasjefrie kandidatene er altså liten nettopp der prognosen lages. M7 orakel er per definisjon utelukket: den bruker en fasitkoeffisient som ingen kan ha i sanntid, og finnes bare som historisk metodeillustrasjon (@sec-res-prior).
+
+```{r}
+#| label: prognose-artefakt
+#| include: false
+
+# =============================================================================
+# Kanonisk framtidsprognose. Én kjøring produserer artefakten alle flater
+# leser: dette kapitlets tabell og figur, README-utdraget og prognosesiden.
+# Kontraktene haandheves her (og av scripts/validate_prognose.py i CI).
+# =============================================================================
+
+T0 <- max(analyse$dato)          # siste observerte termin = prognoseopprinnelsen
+stopifnot(T0 == max(oslo_est$dato))
+
+# Vedtatt kalender: statsbudsjettet 2026 (I20) er siste politisk avklarte
+# periode — ingen regelendringer i bostoetten er vedtatt for 2026, og ingenting
+# er vedtatt for 2027. Maalmaaneder etter denne datoen er basisbane under
+# uttrykkelig VIDEREFOERT regelverk, ikke under vedtak.
+VEDTATT_TIL <- as.Date("2026-12-01")
+
+# Ny-data: regressorbanen for de tolv maalmaanedene, fra samme X som resten
+# av dokumentet. PIT-porten anvendes med T0 som opprinnelse.
+nd_raa <- X |>
+  filter(dato > T0, dato <= T0 %m+% months(H_MAKS)) |>
+  mutate(mnd = yearmonth(dato)) |>
+  as_tsibble(index = mnd)
+nd_prog <- pit_gate(nd_raa, T0)
+
+# Kontrakt: ved denne opprinnelsen er alle steg i horisonten vedtatt og kjent,
+# saa point-in-time- og fasitkalenderen skal falle sammen. Gjoer de ikke det,
+# har registeret faatt en hendelse prognosen ikke haandterer, og byggingen
+# skal stoppe framfor aa publisere en bane med udeklarert antakelse.
+stopifnot("PIT- og fasitkalender skal sammenfalle ved prognoseopprinnelsen" =
+  all(vapply(REG, \(r) all(nd_prog[[r]] == nd_raa[[r]]), logical(1))))
+
+# Inngangsregelen fra @sec-met-identifikasjon, haandhevet ogsaa her.
+stopifnot("Alle regressorer skal vaere estimerbare ved prognoseopprinnelsen" =
+  all(vapply(REG, \(r) sum(analyse[[r]] != 0) >= MIN_NZ, logical(1))))
+
+# Modellen: M6 re-estimert paa hele estimeringsutvalget, med automatisk
+# ordensvalg paa treningsvinduet alene — samme prosedyre som ved hver
+# opprinnelse i backtesten.
+prog_fit <- analyse |> mutate(mnd = yearmonth(dato)) |> as_tsibble(index = mnd) |>
+  model(M6 = ARIMA(log_M ~ win_covid + win_strom + pakke_2024h2 + k_pre + k_post))
+
+prog_fc <- forecast(prog_fit, new_data = nd_prog, times = 0) |> as_tibble() |>
+  transmute(dato = as.Date(mnd), mu = .mean) |>
+  arrange(dato) |>
+  mutate(h = row_number())
+
+# Tidsgyldige konformale kvantiler ved prognoseopprinnelsen: for hver horisont
+# er kalibreringsgrunnlaget de backtest-feilene som er REALISERT per T0
+# (opprinnelse + h <= T0) — samme K-apparat og endelig-utvalgsnivaa som i
+# @sec-res-dekning. Ved denne opprinnelsen er alle 31 feil realisert per h.
+prog_kal <- R |> filter(.model == "M6") |>
+  filter(opprinnelse %m+% months(h) <= T0) |>
+  summarise(n_feil = n(),
+            q80 = kvant_endelig(abs(le), .80),
+            q95 = kvant_endelig(abs(le), .95), .by = h)
+stopifnot(nrow(prog_kal) == H_MAKS, all(prog_kal$n_feil == n_opprinnelser))
+
+prognose <- prog_fc |>
+  left_join(prog_kal, by = "h") |>
+  mutate(punkt = round(exp(mu)),
+         lo80 = round(exp(mu - q80)), hi80 = round(exp(mu + q80)),
+         lo95 = round(exp(mu - q95)), hi95 = round(exp(mu + q95)),
+         status = if_else(dato <= VEDTATT_TIL, "vedtatt_kalender", "viderefort_regelverk"))
+
+# Aarsstoerrelsen: forventet GJENNOMSNITTLIG maanedlig antall mottakende
+# husstander over de tolv maalmaanedene. En sum ville vaert mottakermaaneder —
+# samme husstand kan inngaa flere maaneder — aldri antall unike husstander.
+# Intet intervall publiseres for aarsgjennomsnittet: de tolv prognosefeilene
+# er sterkt avhengige over horisonten, og aa aggregere marginale maanedsgrenser
+# ville gitt et intervall uten definert dekningsniva.
+aarsnitt <- mean(prognose$punkt)
+
+# Artefaktkontraktene (speiles av validate_prognose.py):
+stopifnot(
+  prognose$h == 1:12,
+  prognose$dato == T0 %m+% months(1:12),
+  !anyNA(prognose[c("punkt", "lo80", "hi80", "lo95", "hi95")]),
+  prognose$lo95 <= prognose$lo80, prognose$lo80 <= prognose$punkt,
+  prognose$punkt <= prognose$hi80, prognose$hi80 <= prognose$hi95,
+  prognose$lo95 >= 0
+)
+
+# Sporbarhet: commit ved generering og hash av kildefilene.
+.git_sha <- tryCatch(system2("git", c("rev-parse", "HEAD"), stdout = TRUE, stderr = FALSE)[1],
+                     error = function(e) NA_character_, warning = function(w) NA_character_)
+if (is.na(.git_sha) || !grepl("^[0-9a-f]{40}$", .git_sha)) {
+  message("MERK: fant ikke git — commit-feltet i artefakten blir 'ukjent', ",
+          "og validate_prognose.py vil stryke paa sporbarhetskravet.")
+  .git_sha <- "ukjent"
+}
+.hash_kilder <- c("data/raw/husbanken_bostotte_oslo_manedlig.csv",
+                  "data/clean/regelverk_kunnskap.csv")
+.hasher <- unname(tools::md5sum(file.path(dirname(DATASTI), .hash_kilder)))
+
+DEKNING80_BACKTEST <- 100 * mean(K$kdekk80[K$.model == "M6"])
+INTERVALLMETODE <- paste("tidsgyldig split-konformal kvantil av absolutte logfeil,",
+                         "endelig-utvalgsnivå ceiling((n+1)*nivå)/n, per horisont;",
+                         "kalibrert bare på feil som var realisert ved opprinnelsen.")
+
+meta <- list(
+  prognoseopprinnelse = format(T0, "%Y-%m"),
+  datavintage = "2026-08-04",
+  commit = .git_sha,
+  generert = format(Sys.time(), "%Y-%m-%dT%H:%M:%SZ", tz = "UTC"),
+  modell = "M6 RegARIMA + X + k (point-in-time)",
+  modell_id = "M6",
+  intervallmetode = INTERVALLMETODE,
+  nominelle_nivaaer = c(80, 95),
+  empirisk_dekning_80_backtest = round(DEKNING80_BACKTEST),
+  empirisk_dekning_utvalg = paste0("kalibreringsutvalget i backtesten, ",
+                                   sum(K$.model == "M6"), " punkter, 2022m12-2025m6"),
+  kalibrering_n_per_h = n_opprinnelser,
+  regelverkskalender_kunnskap_per = "2026-08-09",
+  siste_effect_known_from = format(max(d$regelverk_kunnskap$effect_known_from), "%Y-%m-%d"),
+  vedtatt_kalender_til = format(VEDTATT_TIL, "%Y-%m"),
+  scenario = "basis",
+  siste_observasjon = list(maaned = format(T0, "%Y-%m"), verdi = tail(oslo_est$M, 1)),
+  aarsgjennomsnitt = round(aarsnitt),
+  aarsgjennomsnitt_definisjon = paste("forventet gjennomsnittlig månedlig antall",
+                                      "mottakende husstander over de tolv målmånedene"),
+  aarsintervall_merknad = paste("Intet intervall for årsgjennomsnittet: de tolv",
+                                "prognosefeilene er avhengige over horisonten, og",
+                                "marginale månedsgrenser kan ikke aggregeres til et",
+                                "intervall med definert dekningsnivå."),
+  datahash_kilder = as.list(.hash_kilder),
+  datahash_md5 = as.list(.hasher)
+)
+
+art_rader <- prognose |>
+  transmute(maalmaned = format(dato, "%Y-%m"), horisont = h,
+            punkt, lo80, hi80, lo95, hi95,
+            n_kalibreringsfeil = n_feil, informasjonsstatus = status)
+
+dir.create("prognose", showWarnings = FALSE)
+jsonlite::write_json(list(meta = meta, prognoser = art_rader), "prognose/prognose_gjeldende.json",
+                     auto_unbox = TRUE, pretty = TRUE, digits = NA)
+art_rader |>
+  mutate(opprinnelse = meta$prognoseopprinnelse, datavintage = meta$datavintage,
+         commit = meta$commit, generert = meta$generert, modell = meta$modell,
+         intervallmetode = meta$intervallmetode,
+         kalender_kunnskap_per = meta$regelverkskalender_kunnskap_per,
+         scenario = meta$scenario, .before = 1) |>
+  write.csv("prognose/prognose_gjeldende.csv", row.names = FALSE, fileEncoding = "UTF-8")
+
+# README-utdraget: genereres her og limes ordrett inn i README.md; at de to er
+# identiske, haandheves av validate_prognose.py (P13).
+.utdrag <- c(
+  "| Målmåned | h | Punktprognose | 80 %-intervall | Betingelse |",
+  "|---|---|---|---|---|",
+  vapply(c(1L, 2L, 3L, 6L, 12L), function(i) {
+    r <- prognose[prognose$h == i, ]
+    sprintf("| %s | %d | %s | %s–%s | %s |", mnd(r$dato), i, nb(r$punkt),
+            nb(r$lo80), nb(r$hi80),
+            if (r$status == "vedtatt_kalender") "vedtatt kalender" else "videreført regelverk")
+  }, character(1)),
+  "",
+  sprintf(paste0("Forventet gjennomsnittlig månedlig antall mottakende husstander %s–%s: ",
+                 "**%s** (punktestimat; intet aggregert intervall, se merknad i artefakten)."),
+          mnd(T0 %m+% months(1)), mnd(T0 %m+% months(12)), nb(aarsnitt)),
+  "",
+  sprintf(paste0("Basisbane per opprinnelse %s, uttrekk %s: 80 %%-intervallene er tidsgyldig ",
+                 "konformale og traff %s %% i backtesten — kalibrerte estimater, ikke garantier. ",
+                 "Målmåneder etter %s forutsetter videreført regelverk (ingen vedtatt kalender)."),
+          mnd(T0), meta$datavintage, nb(meta$empirisk_dekning_80_backtest),
+          mnd(VEDTATT_TIL))
+)
+writeLines(.utdrag, "prognose/README_utdrag.md", useBytes = FALSE)
+```
+
+**Basisbanen og dens betingelse, per målmåned.** Prognoseopprinnelsen er `r mnd(T0)` — siste observerte termin i uttrekket datert `r UTTREKKSDATO`. Ved denne opprinnelsen er alle regelverkssteg i horisonten vedtatt og kjent (kontrollert maskinelt over), så point-in-time- og fasitkalenderen sammenfaller. Betingelsen er likevel ikke den samme gjennom horisonten, og den avgjøres av informasjonssettet for den konkrete målmåneden — ikke mekanisk av horisonten: til og med `r mnd(VEDTATT_TIL)` gjelder vedtatt kalender (statsbudsjettet 2026 innebar ingen regelendringer i bostøtten, I20 i intervensjonstabellen); fra `r mnd(VEDTATT_TIL %m+% months(1))` finnes ingen vedtatt kalender, og videreføring av gjeldende regler er en *uttrykkelig antakelse*. Et statsbudsjett for 2027 legges normalt fram i oktober 2026 og kan endre grunnlaget; en vedtatt endring ville gått inn i basisbanen fra sin kunngjøringsdato, et ikke-vedtatt forslag bare som navngitt scenario. De årvisse justeringene (grunnbeløpet 1. mai, prisjustering av satsene 1. juni) ligger i sesongkomponenten som før (@sec-met-x).
+
+```{r}
+#| label: tbl-prognose
+#| tbl-cap: "Prognose for månedlig antall husstander med statlig bostøtte i Oslo, fra siste observerte termin. Intervallene er tidsgyldig konformale (80 og 95 prosent nominelt); backtestens empiriske dekning står i teksten under. «Betingelse» skiller målmåneder under vedtatt regelverkskalender fra måneder der videreført regelverk er en uttrykkelig antakelse."
+
+prognose |>
+  transmute(`Målmåned` = mnd(dato), h,
+            Punkt = nb(punkt),
+            `80 %` = paste0(nb(lo80), "–", nb(hi80)),
+            `95 %` = paste0(nb(lo95), "–", nb(hi95)),
+            Betingelse = if_else(status == "vedtatt_kalender",
+                                 "vedtatt kalender", "videreført regelverk")) |>
+  kab(align = "lrrrrl")
+```
+
+```{r}
+#| label: fig-prognose
+#| fig-cap: "Prognosebanen med 80- og 95-prosentintervaller. Åpent punkt er siste observerte termin; den loddrette stiplede linjen markerer slutten på vedtatt kalender — månedene til høyre forutsetter videreført regelverk."
+#| fig-width: 6.6
+#| fig-height: 3.0
+
+hist_vindu <- oslo_est |> slice_tail(n = 24)
+ggplot() +
+  geom_ribbon(data = prognose, aes(dato, ymin = lo95, ymax = hi95), fill = "#00505c", alpha = .14) +
+  geom_ribbon(data = prognose, aes(dato, ymin = lo80, ymax = hi80), fill = "#00505c", alpha = .30) +
+  geom_line(data = hist_vindu, aes(dato, M), colour = "grey40", linewidth = .5) +
+  geom_line(data = bind_rows(tibble(dato = T0, punkt = tail(oslo_est$M, 1)),
+                             prognose |> select(dato, punkt)),
+            aes(dato, punkt), colour = "#00505c", linewidth = .8) +
+  geom_point(data = tibble(dato = T0, M = tail(oslo_est$M, 1)), aes(dato, M),
+             shape = 21, fill = "white", colour = "#00505c", size = 2, stroke = .9) +
+  geom_vline(xintercept = as.numeric(VEDTATT_TIL) + 15, linetype = "22",
+             colour = "grey55", linewidth = .4) +
+  scale_y_continuous(labels = nb_akse) +
+  scale_x_date(date_breaks = "6 months", date_labels = "%Ym%m") +
+  labs(x = NULL, y = "Husstander") +
+  theme_minimal(base_size = 9) +
+  theme(panel.grid.minor = element_blank(),
+        panel.grid.major = element_line(linewidth = .25, colour = "grey88"),
+        axis.title = element_text(size = 8, colour = "grey35"))
+```
+
+**Årsstørrelsen.** Hovedmålet for de kommende tolv månedene er *forventet gjennomsnittlig månedlig antall mottakende husstander*: `r nb(aarsnitt)`. Utfallsvariabelen er månedlig beholdning, og samme husstand kan inngå flere måneder; en sum over månedene ville derfor vært *mottakermåneder* (`r nb(12 * aarsnitt)` her), aldri «antall mottakere neste år» eller antall unike husstander. Det publiseres ikke noe intervall for årsgjennomsnittet: de tolv prognosefeilene er sterkt avhengige over horisonten, og verken en sum eller et gjennomsnitt av de marginale månedsgrensene gir et intervall med definert dekningsnivå. Punktestimatet står derfor alene, med denne merknaden.
+
+**Hva intervallene er, og hva de ikke er.** Intervallene er tidsgyldig konformale: for hver horisont er grunnlaget de `r nb(n_opprinnelser)` backtest-feilene som var realisert ved opprinnelsen, med endelig-utvalgsnivå (@sec-met-evaluering). I backtesten traff det nominelle 80-prosentnivået `r pst(DEKNING80_BACKTEST, 0)` på kalibreringsutvalget — og før kalibrering dekket modellens egne intervaller `r pst(100 * mean(K$dekk80[K$.model == "M6"]), 0)`. Intervallene her er altså kalibrerte estimater med målt, ufullkommen historisk dekning — ikke produksjonsklare dekningsgarantier. Underdekningen har en kjent hovedkilde: skjevhet der informasjon mangler, ikke intervallbredde (@sec-res-dekning). I horisonten framover er ingen kjent regelendring uestimerbar, men en *uventet* endring ville treffe utenfor intervallene på samme måte som høstpakken gjorde i backtesten.
+
+**Leseveiledning.** Samme artefakt vises interaktivt — med skyvebar over horisontene 1–12 — på prognosesiden (lenket fra README), og radene over kan hentes maskinelt fra `prognose/prognose_gjeldende.csv`/`.json`, som også bærer opprinnelse, datavintage, commit, genereringstidspunkt, intervallmetode og kalibreringsgrunnlag per rad. Artefaktens kontrakter valideres av `scripts/validate_prognose.py`.
 
 # Referanser {.unnumbered}
 
