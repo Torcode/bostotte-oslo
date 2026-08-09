@@ -41,11 +41,27 @@ jobs:
           r-version: "4.3.3"
           use-public-rspm: true
 
+      # NB: repoets egen .Rprofile (UTF-8-vakten) leses i stedet for runnerens
+      # ~/.Rprofile, saa pakkespeilet fra setup-r naar aldri fram. Speilet
+      # settes derfor eksplisitt her (Posit-binaerer for runnerens Ubuntu),
+      # og steget FEILER hvis en pakke mangler etterpaa — install.packages()
+      # alene feiler stille. Laerdom fra foerste kjoering (exit 1 etter 39 s).
       - name: Installer pakkene fra oppsett.R-settet
-        run: >-
-          Rscript -e 'install.packages(c("tidyverse","knitr","rmarkdown",
-          "tsibble","fable","fabletools","feasts","urca","distributional",
-          "jsonlite"))'
+        run: |
+          Rscript -e '
+            cn <- tryCatch(system("lsb_release -cs", intern = TRUE)[1],
+                           error = function(e) NA)
+            repo <- if (!is.na(cn) && nzchar(cn))
+              sprintf("https://packagemanager.posit.co/cran/__linux__/%s/latest", cn)
+            else "https://cloud.r-project.org"
+            options(repos = c(P = repo), Ncpus = 2)
+            pk <- c("tidyverse","knitr","rmarkdown","tsibble","fable",
+                    "fabletools","feasts","urca","distributional","jsonlite")
+            install.packages(pk)
+            miss <- setdiff(pk, rownames(installed.packages()))
+            if (length(miss)) stop("Pakker mangler etter installasjon: ",
+                                   paste(miss, collapse = ", "))
+          '
 
       - uses: quarto-dev/quarto-actions/setup@v2
         with:
