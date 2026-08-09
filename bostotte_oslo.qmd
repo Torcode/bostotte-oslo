@@ -1261,7 +1261,7 @@ Designet er rullerende opprinnelse med ekspanderende vindu [@tashman2000], som e
 Fire regler gjelder ved hver opprinnelse.
 
 1.  **Alt re-estimeres.** Ordensvalg, regresjonskoeffisienter og feilleddets parametre bestemmes på nytt fra treningsvinduet. Ingenting bæres over fra en tidligere opprinnelse.
-2.  **Ingen informasjon utover opprinnelsen.** Treningsvinduet slutter ved opprinnelsen, og enhver modellbeslutning tas på det vinduet alene. De deterministiske regressorene er unntaket som beviser regelen: de er *per konstruksjon* kjent for alle framtidige måneder — regelverkskalenderen fordi vedtakene er fattet, meldekortgridet fordi det er en kalender (@sec-met-kalender). Nettopp derfor kan de brukes på hele horisonten uten å bryte disiplinen, og nettopp derfor er de verdifulle.
+2.  **Ingen informasjon utover opprinnelsen.** Treningsvinduet slutter ved opprinnelsen, og enhver modellbeslutning tas på det vinduet alene. De deterministiske regressorene er *ikke* et blankofritak: meldekortgridet er en kalender og kjent vilkårlig langt fram (@sec-met-kalender), men regelverksstegene er kjent framover bare fra den datoen vedtaket var offentlig. Det håndheves per opprinnelse med en point-in-time-port: hvert vedtaksavhengige steg brukes i horisonten bare dersom dets dokumenterte kunnskapsdato (`data/clean/regelverk_kunnskap.csv`, primærkildebelagt) ligger ved eller før opprinnelsen; ukjente steg bærer siste kjente verdi videre. «Fordi vedtakene er fattet» er dermed en *testet* egenskap ved hver enkelt opprinnelse, ikke en antakelse på dokumentnivå — og prognoser med dagens fulle kalender rapporteres bare som eksplisitt merkede orakel-/scenariokolonner.
 3.  **Vedtatt, men ikke ikrafttrådt, regelverk regnes som kjent.** Det er den operative situasjonen en prognose i drift står i, og det er innholdet i underspørsmål **UB**.
 4.  **Pseudo-sanntid, ikke sanntid.** Serien revideres bakover ved etterkontroll mot skatteoppgjøret, og historiske vintages er ikke offentlig tilgjengelige (@sec-met-dv). Evalueringen bruker derfor gjeldende vintage gjennomgående. Det er en kjent optimistisk skjevhet, den gjelder alle modellene likt, og den er den eneste avviket fra ekte sanntidsdisiplin i protokollen.
 
@@ -1322,7 +1322,7 @@ Av de `r nb(n_prognosepkt)` prognosepunktene er `r pst(andel_rammet, 0)` slik at
 
 For `k_post` er null *nøyaktig* det teorien predikerer: når to tredeler av ytelsen medregnes i tre-utbetalingsmåneder, blir telt inntekt $3 \times \tfrac{2}{3} = 2$ — identisk med en normalmåned (@sec-met-kalender). Utelatelse og korrekt prior sammenfaller dermed, og de `r nb(sum(rammet$mangler[rammet$regressor == "k_post"]))` rammede punktene for `k_post` er rammet på en ufarlig måte. For `pakke_2024h2` er situasjonen motsatt: både regelverket og kronebeløpene i årsrapporten sier at effekten er positiv, og å utelate regressoren pålegger en påstand kildene motsier.
 
-Det er også verdt å merke seg hva som *ikke* er et problem. Seriens største brudd — avviklingen i termin april 2024 — bæres av `win_strom`, som er identifisert ved alle opprinnelser fra `r mnd(min(opprinnelser))`, fordi vinduets åpning ligger i treningsvinduet. Modellen kan derfor framskrive lukkingen selv om lukkingen selv ligger i horisonten. Identifikasjonsproblemet rammer altså ikke den hendelsen studien er mest opptatt av.
+Det er også verdt å merke seg hva som *ikke* er et problem. Seriens største brudd — avviklingen i termin april 2024 — bæres av `win_strom`, som er identifisert ved alle opprinnelser fra `r mnd(min(opprinnelser))`, fordi vinduets åpning ligger i treningsvinduet. Modellen kan derfor framskrive lukkingen selv om lukkingen selv ligger i horisonten — fra og med opprinnelsene der lukkingen var offentlig kunngjort (6. oktober 2023); ved tidligere opprinnelser holder point-in-time-porten den ute, og framskrivingen bærer vinduet videre. Identifikasjonsproblemet rammer altså ikke den hendelsen studien er mest opptatt av.
 
 **Protokollens svar: en eksplisitt inngangsregel.** En regressor inngår i spesifikasjonen ved opprinnelse $\tau$ hvis og bare hvis den har minst `r nb(MIN_NZ)` ikke-null observasjoner i treningsvinduet; ellers utelates den for den opprinnelsen. Regelen er deterministisk og logges, slik at spesifikasjonen ved hver opprinnelse er kjent. Alternativet — å la modelltilpasningen selv droppe kollineære kolonner — ville gitt samme resultat i stillhet, og «M6» ville da vært syv ulike modeller uten at noen sto oppført.
 
@@ -1398,10 +1398,45 @@ Kapitlet rapporterer den rullerende kryssvalideringen som @sec-met-protokoll spe
 # --- ved hver av opprinnelsene, med ordensvalg og re-estimering per opprinnelse.
 LAMBDA_ORAKEL <- NULL   # settes under; full-utvalgsestimatet for pakke_2024h2
 
-kjor_opprinnelse <- function(t0) {
+# --- Point-in-time-port (issue #6) -------------------------------------------
+# Ved opprinnelse t0 faar de vedtaksavhengige regressorene bare de framtids-
+# stegene som var offentlig kjent senest ved utgangen av maaned t0.
+# Kunnskapsdatoene er primaerkildebelagt i data/clean/regelverk_kunnskap.csv
+# (Norsk Lovtidend, stortingsinnstillinger, regjeringen.no; jf. revisjon/).
+# Treningsdata roeres ikke: historikk er observert virkelighet. Kalender-
+# frekvensen u er astronomisk og kjent vilkaarlig langt fram; det vedtaks-
+# avhengige ved k-regressorene er SKILLET k_pre/k_post (I17, offentlig
+# 2024-12-17) - foer den datoen fortsetter k_pre-banen og k_post er null,
+# ogsaa i maaneder etter 2024m12.
+KUNNSKAP_STEG   <- d$regelverk_kunnskap |> filter(regressor != "k_split") |>
+  arrange(regressor, steg_dato)
+KUNNSKAP_KSPLIT <- d$regelverk_kunnskap |> filter(regressor == "k_split") |>
+  pull(effect_known_from)
+stopifnot(length(KUNNSKAP_KSPLIT) == 1,
+          all(unique(KUNNSKAP_STEG$regressor) %in% c("win_covid", "win_strom", "pakke_2024h2")))
+
+pit_gate <- function(nd_tbl, t0) {
+  cutoff <- (t0 %m+% months(1)) - 1          # informasjon t.o.m. utgangen av t0-maaneden
+  ut <- nd_tbl
+  for (r in unique(KUNNSKAP_STEG$regressor)) {
+    s <- KUNNSKAP_STEG |> filter(regressor == r, effect_known_from <= cutoff)
+    ut[[r]] <- map_dbl(ut$dato, \(m) {
+      v <- s |> filter(steg_dato <= m)
+      if (nrow(v)) tail(v$ny_verdi, 1) else 0
+    })
+  }
+  if (KUNNSKAP_KSPLIT > cutoff) {
+    ut$k_pre  <- ut$u - 26 / 12
+    ut$k_post <- 0
+  }
+  ut
+}
+
+kjor_opprinnelse <- function(t0, kalender = "pit") {
   tr <- analyse |> mutate(mnd = yearmonth(dato)) |> filter(dato <= t0) |> as_tsibble(index = mnd)
   nd <- analyse |> mutate(mnd = yearmonth(dato)) |>
     filter(dato > t0, dato <= t0 %m+% months(H_MAKS)) |> as_tsibble(index = mnd)
+  if (kalender == "pit") nd <- pit_gate(nd, t0)
 
   # Inngangsregelen fra @sec-met-identifikasjon
   slipper <- function(v) v[map_lgl(v, \(r) sum(tr[[r]] != 0) >= MIN_NZ)]
@@ -1442,7 +1477,36 @@ LAMBDA_ORAKEL <- analyse |> mutate(mnd = yearmonth(dato)) |> as_tsibble(index = 
   model(m = ARIMA(log_M ~ win_covid + win_strom + pakke_2024h2 + k_pre + k_post)) |>
   tidy() |> filter(term == "pakke_2024h2") |> pull(estimate)
 
-cv <- map_dfr(opprinnelser, kjor_opprinnelse)
+# Automatiske kontroller paa porten (issue #6). Tre haandvalgte invarianser som
+# stopper byggingen - de to foerste er issue-tekstens manuelle kontroll av
+# origin juli 2023 -> april 2024, og den foerste opprinnelsen etter
+# kunngjoeringen 6. oktober 2023:
+#   (i)  juli 2023 VISSTE IKKE at vinduet lukkes: framtidig win_strom er 1
+#        gjennom hele horisonten;
+#   (ii) oktober 2023 VET det: win_strom er 0 fra og med termin april 2024;
+#   (iii) foer I17 var kjent (2024-12-17) fortsetter k_pre-banen og k_post er
+#        null, ogsaa i 2025-maaneder.
+nd_pit <- function(t0) analyse |> mutate(mnd = yearmonth(dato)) |>
+  filter(dato > t0, dato <= t0 %m+% months(H_MAKS)) |> as_tsibble(index = mnd) |>
+  pit_gate(t0)
+w_jul <- nd_pit(as.Date("2023-07-01")); w_okt <- nd_pit(as.Date("2023-10-01"))
+w_nov24 <- nd_pit(as.Date("2024-11-01"))
+stopifnot(
+  "PIT-port: juli 2023 skal ikke se avviklingen" =
+    all(w_jul$win_strom == 1),
+  "PIT-port: oktober 2023 skal se avviklingen fra termin april 2024" =
+    all(w_okt$win_strom == as.numeric(w_okt$dato <= as.Date("2024-03-01"))),
+  "PIT-port: k-skillet skal ikke vaere synlig foer 2024-12-17" =
+    all(w_nov24$k_post == 0) && all(abs(w_nov24$k_pre - (w_nov24$u - 26/12)) < 1e-12)
+)
+
+# Hovedloepet er point-in-time. Fasitkalenderen (dagens komplette regelverks-
+# kalender ved alle opprinnelser) beholdes som eksplisitt merket orakel-/
+# scenariokjoering: den svarer paa "hva ville prognosen vaert med kalenderen
+# vi HAR i dag", ikke "hva kunne noen ha visst da".
+cv       <- map_dfr(opprinnelser, kjor_opprinnelse)
+cv_fasit <- map_dfr(opprinnelser, kjor_opprinnelse, kalender = "fasit")
+stopifnot(nrow(cv_fasit) == length(opprinnelser) * H_MAKS * 8)
 stopifnot(nrow(cv) == length(opprinnelser) * H_MAKS * 8,
           !anyNA(cv$mu), !anyNA(cv$sd), all(cv$sd > 0),
           all(cv$dato == cv$opprinnelse %m+% months(cv$h)))
@@ -1456,7 +1520,10 @@ nevner <- map_dfr(opprinnelser, \(t0) {
 iv_dato <- bind_rows(d$intervensjoner |> filter(!is.na(termin_fra)) |> transmute(dato = termin_fra),
                      d$intervensjoner |> filter(!is.na(termin_til)) |> transmute(dato = termin_til))
 
-R <- cv |> left_join(nevner, by = "opprinnelse") |>
+# Samme skaaring for begge informasjonssett; R (point-in-time) er hovedobjektet
+# alle tabeller og inline-tall bygger paa, R_fasit brukes bare der teksten
+# eksplisitt sammenlikner med orakel-/scenariokalenderen.
+skaar_cv <- function(cvdf) cvdf |> left_join(nevner, by = "opprinnelse") |>
   mutate(pred = exp(mu), e = M_sant - pred, mase = abs(e) / q, le = log_M_sant - mu,
          l80 = exp(mu - z80*sd), u80 = exp(mu + z80*sd),
          l95 = exp(mu - z95*sd), u95 = exp(mu + z95*sd),
@@ -1464,6 +1531,16 @@ R <- cv |> left_join(nevner, by = "opprinnelse") |>
          ws80 = (u80-l80) + 10*(l80-M_sant)*(M_sant<l80) + 10*(M_sant-u80)*(M_sant>u80),
          pakke_ute = str_detect(ute, "pakke_2024h2"),
          bruddnaer = map_lgl(dato, \(m) any(abs(as.numeric(m - iv_dato$dato))/30.44 <= 3)))
+R       <- skaar_cv(cv)
+R_fasit <- skaar_cv(cv_fasit)
+
+# Der kalenderen var kjent ved opprinnelsen, skal de to informasjonssettene gi
+# identiske prognoser - det er kontrollen paa at porten bare virker der den
+# skal. Fra oktober 2023 var avviklingen kjent, og fra desember 2024 ogsaa
+# k-skillet; for opprinnelser fra desember 2024 er alt i horisonten kjent.
+like_fra <- as.Date("2024-12-01")
+stopifnot("PIT- og fasitkalenderen skal falle sammen der alt var kjent" =
+  all(abs(R$mu[R$opprinnelse >= like_fra] - R_fasit$mu[R_fasit$opprinnelse >= like_fra]) < 1e-9))
 
 # En modell som per konstruksjon skal avvike fra sin referanse, og ikke gjør det,
 # er en byggefeil — ikke et resultat. Kontrollen finnes fordi den manglet: M7 var
@@ -1588,20 +1665,23 @@ Gjennomsnittstall over 372 prognosepunkter skjuler den hendelsen studien er bygg
 
 ```{r}
 #| label: tbl-res-april
-#| tbl-cap: "Alle prognoser mot termin april 2024, fra hver opprinnelse som når fram. Fasit er 15 588 husstander; nivået måneden før var 20 849. En modell som ikke kjenner regelendringen, må lande nær 20 000."
+#| tbl-cap: "Alle prognoser mot termin april 2024, fra hver opprinnelse som når fram. Fasit er 15 588 husstander; nivået måneden før var 20 849. Point-in-time-kolonnene bruker bare regelverksinformasjon som var offentlig ved opprinnelsen; avviklingen ble kjent 6. oktober 2023, så skillet mellom M6 og M6 med fasitkalender viser nøyaktig hva den kunnskapen er verdt ved h > 6. En modell som ikke kjenner regelendringen, må lande nær 20 000."
 
 R |> filter(dato == as.Date("2024-04-01"), .model %in% c("M1","M3","M5","M6")) |>
   transmute(.model, h, pred = round(pred)) |>
   pivot_wider(names_from = .model, values_from = pred) |>
   arrange(h) |>
+  left_join(R_fasit |> filter(dato == as.Date("2024-04-01"), .model == "M6") |>
+              transmute(h, M6_fasit = round(pred)), by = "h") |>
   transmute(`Horisont (mnd)` = h,
             `M1 sesongnaiv` = nb(M1), `M3 SARIMA` = nb(M3),
             `M5 RegARIMA + X` = nb(M5), `M6 RegARIMA + X + k` = nb(M6),
+            `M6, fasitkalender (orakel)` = nb(M6_fasit),
             `Fasit` = nb(15588)) |>
-  kab(align = "rrrrrr")
+  kab(align = "rrrrrrr")
 ```
 
-Referansemodellene lander mellom 19 500 og 20 900 fra samtlige horisonter: de ser ikke bruddet, og kan ikke se det. M6 lander på `r nb(R |> filter(dato==as.Date("2024-04-01"), .model=="M6", h==9) |> pull(pred))` husstander fra ni måneders horisont, mot en fasit på 15 588 — et avvik på `r pst(abs(100*(R |> filter(dato==as.Date("2024-04-01"), .model=="M6", h==9) |> pull(pred))/15588 - 100))`. Å treffe et strukturelt fall på en fjerdedel innenfor 3,2 prosent, ni måneder i forveien, er ikke en modelleringsprestasjon: det er informasjonen i regelverkskalenderen som gjør arbeidet, og det er hele poenget. Forbeholdet hører til her: avviklingen ble offentlig kjent 6. oktober 2023 (Prop. 1 S (2023–2024); forskriftsfestet 4. januar 2024), så opprinnelsen juli 2023 hadde ikke denne kalenderen — ni-månederstallet er en betinget beregning med fasitkalender. Fra første opprinnelse etter kunngjøringen, oktober 2023, er tallet et ekte pseudo-sanntidsresultat: 15 552 mot 15 588 på seks måneders horisont, et avvik på 0,2 prosent.
+Referansemodellene lander mellom 19 500 og 20 900 fra samtlige horisonter: de ser ikke bruddet, og kan ikke se det. Point-in-time-modellen deler den skjebnen på de lengste horisontene, og skal gjøre det: fra ni måneder er opprinnelsen juli 2023, avviklingen ble først offentlig 6. oktober 2023 (Prop. 1 S (2023–2024); forskriftsfestet 4. januar 2024), og M6 lander på `r nb(R |> filter(dato==as.Date("2024-04-01"), .model=="M6", h==9) |> pull(pred))`. Med fasitkalenderen som merket orakelscenario lander samme spesifikasjon på `r nb(R_fasit |> filter(dato==as.Date("2024-04-01"), .model=="M6", h==9) |> pull(pred))` — `r pst(abs(100*(R_fasit |> filter(dato==as.Date("2024-04-01"), .model=="M6", h==9) |> pull(pred))/15588 - 100))` fra fasit; det tallet måler verdien av regelverkskunnskap som ennå ikke fantes. Det ekte pseudo-sanntidsresultatet står ved seks måneders horisont: fra første opprinnelse etter kunngjøringen lander M6 på `r nb(R |> filter(dato==as.Date("2024-04-01"), .model=="M6", h==6) |> pull(pred))` mot 15 588 — `r pst(abs(100*(R |> filter(dato==as.Date("2024-04-01"), .model=="M6", h==6) |> pull(pred))/15588 - 100))`. Å treffe et strukturelt fall på en fjerdedel så tett, seks måneder i forveien og med dokumentert kjent kalender, er ikke en modelleringsprestasjon: det er informasjonen i regelverkskalenderen som gjør arbeidet, og det er hele poenget.
 
 Mønsteret er dessuten motsatt av det vanlige — M6 er *bedre* på lang enn på kort horisont for denne hendelsen. Forklaringen ligger i modellen: autoregressivkoeffisienten er nær 0,9, så på korte horisonter trekkes prognosen mot marsnivået, mens intervensjonsregressoren dominerer først når AR-leddet har fått tid til å dø ut.
 
