@@ -286,16 +286,20 @@ vol_andre <- vol_bg |> filter(brukergruppe != BEH)
 # tilstanden faktisk brukes. Denne reparerer flippet, og stopper hvis den
 # ikke klarer det. Foerste kandidat er navnet med aa, som er det Windows
 # faktisk rapporterer; ASCII-varianten i den oevre listen traff aldri.
-if (!.tegnsett_ok()) {
-  for (loc in c("Norwegian Bokm\u00e5l_Norway.utf8",
-                "Norwegian Bokmal_Norway.utf8", "nb-NO.UTF-8",
-                "nb_NO.UTF-8", "nb_NO.utf8", "Norwegian_Norway.utf8",
-                "English_United States.utf8", "C.UTF-8", "en_US.UTF-8")) {
-    if (.tegnsett_ok()) break
-    suppressWarnings(try(Sys.setlocale("LC_ALL", loc), silent = TRUE))
+fiks_tegnsett <- function() {
+  if (!.tegnsett_ok()) {
+    for (loc in c("Norwegian Bokm\u00e5l_Norway.utf8",
+                  "Norwegian Bokmal_Norway.utf8", "nb-NO.UTF-8",
+                  "nb_NO.UTF-8", "nb_NO.utf8", "Norwegian_Norway.utf8",
+                  "English_United States.utf8", "C.UTF-8", "en_US.UTF-8")) {
+      if (.tegnsett_ok()) break
+      suppressWarnings(try(Sys.setlocale("LC_ALL", loc), silent = TRUE))
+    }
   }
+  stopifnot("Tegnsettet lot seg ikke reparere til UTF-8; se vaktblokken i oppsettet" = .tegnsett_ok())
+  invisible(TRUE)
 }
-stopifnot("Tegnsettet er ikke UTF-8 ved slutten av oppsettet; se forklaringen i vaktblokken oeverst" = .tegnsett_ok())
+fiks_tegnsett()
 ```
 
 # Introduksjon
@@ -1618,9 +1622,14 @@ dmtest <- function(a, b, nested, hh) {
   if (is.na(v) || v <= 0) return(NA_real_)
   (mean(dd)/sqrt(v)) * sqrt((n + 1 - 2*hh + hh*(hh-1)/n)/n)
 }
+# Modelltilpasningen over kan flippe localen paa nytt (samme mekanisme som i
+# oppsettet - maalt: 294 -> 1 escapes, og den ene satt i MNAVN-strengen under).
+# Reparer foer noe skrives ut.
+fiks_tegnsett()
+
 MNAVN <- c(M0="M0 naiv", M1="M1 sesongnaiv", M2="M2 ETS", M3="M3 SARIMA",
            M4="M4 RegARIMA + k", M5="M5 RegARIMA + X", M6="M6 RegARIMA + X + k",
-           M7="M7 med pålagt bidrag")
+           M7="M7 med p\u00e5lagt bidrag")
 
 # En DM/CW-statistikk kan vaere udefinert: med rektangulaert vindu og L = h-1
 # lag er langtidsvariansen ikke garantert positiv, og der to prognoser
