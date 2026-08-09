@@ -34,6 +34,9 @@ jobs:
           python scripts/validate_phase1.py
           --manifest artifacts/phase1-validation.json
 
+      - name: Valider prognoseartefakten
+        run: python scripts/validate_prognose.py
+
       - name: Kompiler Python-kildene
         run: >-
           python -m compileall -q

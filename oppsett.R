@@ -19,7 +19,8 @@ PAKKER <- c(
   "fabletools",     # modell-, prognose- og evalueringsrammeverk
   "feasts",         # seriediagnostikk (STL, enhetsrot, ACF)
   "urca",           # enhetsrottester (KPSS)
-  "distributional"  # prediktive fordelinger
+  "distributional", # prediktive fordelinger
+  "jsonlite"        # prognoseartefakten (prognose/prognose_gjeldende.json)
 )
 
 cat("Sjekker miljøet for bostotte_oslo.qmd\n")
