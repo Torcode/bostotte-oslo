@@ -77,16 +77,24 @@ intervensjonsvinduer og to kalenderregressorer — er den stasjonær (KPSS 0,16)
 modellvalget bekrefter det uavhengig: referansen uten regressorer velger *d* = 1,
 spesifikasjonene med intervensjonsmatrisen velger *d* = 0.
 
-**Regelverkskalenderen gjør det tunge arbeidet.** Mot termin april 2024 — seriens
-største bevegelse, et fall på 25 % på én termin — landet hovedspesifikasjonen på
-15 093 husstander fra ni måneders horisont, mot en fasit på 15 588. Sesongnaiv og
-SARIMA lander på 19 500–20 900 fra samtlige horisonter.
+**Regelverkskalenderen gjør det tunge arbeidet — fra den dagen den er kjent.**
+Mot termin april 2024 — seriens største bevegelse, et fall på 25 % på én termin —
+landet hovedspesifikasjonen på 15 552 husstander mot fasit 15 588 (0,2 %) fra seks
+måneders horisont, den første opprinnelsen etter at avviklingen ble offentlig
+6. oktober 2023. Sesongnaiv og SARIMA lander på 19 500–20 900 fra samtlige
+horisonter. Fra ni måneder — før kunngjøringen — treffer bare det eksplisitt
+merkede orakelscenarioet med fasitkalender (15 093); point-in-time-modellen deler
+referansenes skjebne der, og skal det. Kryssvalideringen håndhever skillet med en
+port per opprinnelse mot et primærkildebelagt kunnskapsregister
+(`data/clean/regelverk_kunnskap.csv`).
 
 **Å modellere bruddene forverrer intervalldekningen.** Det var ikke forventet. Modellen
 blir mer selvsikker uten å bli mer treffsikker der informasjonen mangler, og
 underdekningen er en *skjevhet*, ikke for smale intervaller: der høstpakken 2024 ikke er
-estimerbar, underpredikerer modellen med 7,2 % — praktisk talt den utelatte koeffisienten.
-Konformal etterkalibrering reparerer dekningen.
+estimerbar, underpredikerer modellen med om lag 6 % — praktisk talt den utelatte
+koeffisienten. Tidsgyldig konformal etterkalibrering — kalibrert bare på feil som var
+realisert ved opprinnelsen, med endelig-utvalgsnivå — reparerer dekningen delvis
+(48 → 79 % for hovedspesifikasjonen på kalibreringsutvalget).
 
 **En regressor kan ikke estimeres før hendelsen har skjedd.** Ved 24 av 31
 prognoseopprinnelser er høstpakken identisk null i treningsvinduet. Det rammer 56 % av
