@@ -276,6 +276,26 @@ vol_bg <- bg_est |>
 BEH <- "Husstander med midlertidige trygdeytelser"
 vol_beh   <- vol_bg |> filter(brukergruppe == BEH)
 vol_andre <- vol_bg |> filter(brukergruppe != BEH)
+
+# --- Vakten en gang til, PAA SLUTTEN av oppsettet ----------------------------
+# Probe 3 (9. august 2026) maalte prosessen frisk (UTF-8, cp 65001) FOER dette
+# oppsettet og i C-locale ETTER: et av leddene over - pakkelasting eller
+# datapakkelasting - flipper localen paa Windows. Vakten oeverst passerte
+# derfor aerlig, og voktet ingenting: dokumentet rendret i C og skrev
+# <U+00E5> og <U+00A0> i hver maskingenerert tabell. En vakt maa staa der
+# tilstanden faktisk brukes. Denne reparerer flippet, og stopper hvis den
+# ikke klarer det. Foerste kandidat er navnet med aa, som er det Windows
+# faktisk rapporterer; ASCII-varianten i den oevre listen traff aldri.
+if (!.tegnsett_ok()) {
+  for (loc in c("Norwegian Bokm\u00e5l_Norway.utf8",
+                "Norwegian Bokmal_Norway.utf8", "nb-NO.UTF-8",
+                "nb_NO.UTF-8", "nb_NO.utf8", "Norwegian_Norway.utf8",
+                "English_United States.utf8", "C.UTF-8", "en_US.UTF-8")) {
+    if (.tegnsett_ok()) break
+    suppressWarnings(try(Sys.setlocale("LC_ALL", loc), silent = TRUE))
+  }
+}
+stopifnot("Tegnsettet er ikke UTF-8 ved slutten av oppsettet; se forklaringen i vaktblokken oeverst" = .tegnsett_ok())
 ```
 
 # Introduksjon
