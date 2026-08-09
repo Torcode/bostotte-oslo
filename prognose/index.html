@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bostøtte i Oslo — prognose 1–12 måneder fram</title>
+<meta name="description" content="Månedlig antall husstander med statlig bostøtte i Oslo: operativ prognose 1–12 måneder fram, med tidsgyldig kalibrerte intervaller og deklarert regelverkskalender.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='3' fill='%2300505c'/%3E%3Cpath d='M3 11 6 8l2 2 5-5' stroke='%23fff' stroke-width='1.6' fill='none'/%3E%3C/svg%3E">
+<style>
+  :root {
+    --penn: #1a1a1a; --dempet: #5a5a5a; --svak: #8a8a8a;
+    --petrol: #00505c; --petrol-lys: #dceef1; --petrol-mellom: #b3d7dd;
+    --flate: #ffffff; --ramme: #e3e3e3; --bakgrunn: #fafafa;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 1.25rem; background: var(--bakgrunn); color: var(--penn);
+    font: 16px/1.55 Georgia, "Times New Roman", serif;
+  }
+  main { max-width: 46rem; margin: 0 auto; }
+  h1 { font-size: 1.35rem; line-height: 1.3; margin: 0 0 .25rem; }
+  .ingress { color: var(--dempet); margin: 0 0 1rem; font-size: .95rem; }
+  .kort {
+    background: var(--flate); border: 1px solid var(--ramme); border-radius: 8px;
+    padding: 1rem 1.1rem; margin: 0 0 1rem;
+  }
+  .skyv { display: flex; align-items: baseline; gap: .75rem; flex-wrap: wrap; }
+  .skyv label { font-weight: bold; }
+  input[type="range"] {
+    flex: 1 1 14rem; accent-color: var(--petrol); height: 2rem; margin: 0;
+  }
+  output.h-vis { font-variant-numeric: tabular-nums; min-width: 8.5rem; }
+  .stor { font-size: 2.1rem; line-height: 1.1; font-variant-numeric: tabular-nums; }
+  .enhet { font-size: .95rem; color: var(--dempet); }
+  dl.detaljer { display: grid; grid-template-columns: max-content 1fr; gap: .15rem .9rem; margin: .75rem 0 0; font-size: .92rem; }
+  dl.detaljer dt { color: var(--dempet); }
+  dl.detaljer dd { margin: 0; font-variant-numeric: tabular-nums; }
+  .status { display: inline-block; padding: .1rem .55rem; border-radius: 99px; font-size: .85rem; }
+  .status.vedtatt { background: var(--petrol-lys); border: 1px solid var(--petrol-mellom); color: var(--petrol); }
+  .status.basisbane { background: #fdf3e0; border: 1px solid #eddcb8; color: #6e5312; }
+  .merknad { font-size: .88rem; color: var(--dempet); margin-top: .6rem; }
+  figure { margin: 0; }
+  figcaption { font-size: .85rem; color: var(--dempet); margin-top: .35rem; }
+  svg text { font: 11px Georgia, serif; fill: var(--dempet); }
+  table { border-collapse: collapse; width: 100%; font-size: .9rem; font-variant-numeric: tabular-nums; }
+  caption { text-align: left; font-size: .88rem; color: var(--dempet); padding-bottom: .4rem; }
+  th, td { text-align: right; padding: .3rem .55rem; border-bottom: 1px solid var(--ramme); }
+  th:first-child, td:first-child { text-align: left; }
+  thead th { border-bottom: 2px solid var(--penn); font-weight: bold; }
+  tr[aria-selected="true"] { background: var(--petrol-lys); }
+  .liten { font-size: .85rem; color: var(--dempet); }
+  a { color: var(--petrol); }
+  footer { margin: 1.25rem 0 0; font-size: .85rem; color: var(--dempet); }
+  #feilmelding { display: none; border-left: 3px solid #b3121d; padding: .5rem .8rem; background: #fff; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Statlig bostøtte i Oslo: prognose 1–12 måneder fram</h1>
+  <p class="ingress">Månedlig antall husstander som mottar statlig bostøtte.
+  Tallene leses fra den versjonerte prognoseartefakten i repoet
+  (<a href="prognose_gjeldende.json">JSON</a> · <a href="prognose_gjeldende.csv">CSV</a>);
+  siden regner ingenting selv.</p>
+
+  <noscript><p><strong>Denne siden trenger JavaScript for å vise tallene.</strong>
+  Alle tolv radene ligger i <a href="prognose_gjeldende.csv">prognose_gjeldende.csv</a>
+  og <a href="prognose_gjeldende.json">prognose_gjeldende.json</a>.</p></noscript>
+
+  <p id="feilmelding">Fikk ikke lest <code>prognose_gjeldende.json</code>.
+  Åpnes siden fra fil, må den serveres lokalt: kjør
+  <code>python -m http.server</code> i <code>prognose/</code>-mappa og åpne
+  <code>http://localhost:8000/</code>.</p>
+
+  <section class="kort" aria-labelledby="velg-h">
+    <div class="skyv">
+      <label id="velg-h" for="horisont">Horisont</label>
+      <input type="range" id="horisont" min="1" max="12" step="1" value="1"
+             aria-describedby="verdi-panel">
+      <output class="h-vis" for="horisont" id="h-ut"></output>
+    </div>
+
+    <div id="verdi-panel" aria-live="polite">
+      <p style="margin:.8rem 0 .1rem">
+        <span class="stor" id="punkt"></span>
+        <span class="enhet">husstander (punktprognose, <span id="maalmaned"></span>)</span>
+      </p>
+      <p style="margin:.2rem 0 .4rem">
+        80 %-intervall <strong id="i80"></strong> · 95 %-intervall <strong id="i95"></strong>
+      </p>
+      <p style="margin:.2rem 0 0"><span class="status" id="status"></span></p>
+      <dl class="detaljer">
+        <dt>Modell</dt><dd id="modell"></dd>
+        <dt>Prognoseopprinnelse</dt><dd id="opprinnelse"></dd>
+        <dt>Datavintage</dt><dd id="vintage"></dd>
+        <dt>Regelverkskalender</dt><dd id="kalender"></dd>
+        <dt>Kalibreringsgrunnlag</dt><dd id="kalibrering"></dd>
+      </dl>
+      <p class="merknad" id="intervallnote"></p>
+    </div>
+  </section>
+
+  <section class="kort">
+    <figure>
+      <svg id="fanchart" viewBox="0 0 640 300" role="img"
+           aria-label="Prognosebane med 80- og 95-prosentintervaller over tolv måneder"></svg>
+      <figcaption>Punktprognose (linje) med 80&nbsp;%- (mørkt bånd) og
+      95&nbsp;%-intervall (lyst bånd). Fylt punkt er valgt horisont; åpent punkt
+      er siste observerte termin.</figcaption>
+    </figure>
+  </section>
+
+  <section class="kort">
+    <p style="margin:0 0 .2rem"><strong>Kommende tolv måneder samlet:</strong>
+      <span id="aarsnitt"></span> husstander i forventet gjennomsnitt per måned.</p>
+    <p class="merknad" id="aarsnote"></p>
+  </section>
+
+  <section class="kort">
+    <table id="tabell">
+      <caption id="tabelltekst">Alle tolv prognosene. Radene er de samme tallene
+      som skyvebryteren viser.</caption>
+      <thead>
+        <tr><th scope="col">Målmåned</th><th scope="col">h</th>
+            <th scope="col">Punkt</th><th scope="col">Nedre 80</th><th scope="col">Øvre 80</th>
+            <th scope="col">Nedre 95</th><th scope="col">Øvre 95</th>
+            <th scope="col">Regelverksstatus</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </section>
+
+  <footer>
+    <p id="kolofon"></p>
+    <p><a href="https://github.com/Torcode/bostotte-oslo">Kode, data og rapport: github.com/Torcode/bostotte-oslo</a></p>
+  </footer>
+</main>
+
+<script>
+"use strict";
+/* Siden LESER artefakten og tegner den. Ingen prognoseberegning skjer her:
+   alle tall, intervaller og statuser kommer ferdig beregnet fra
+   prognose_gjeldende.json, som produseres av chunken `prognose-artefakt`
+   i bostotte_oslo.qmd ved rendering. */
+
+const NBSP = " ";
+const MND = ["januar","februar","mars","april","mai","juni","juli",
+             "august","september","oktober","november","desember"];
+
+function tall(x, d = 0) {
+  return x.toLocaleString("nb-NO", {minimumFractionDigits: d, maximumFractionDigits: d})
+          .replace(/ |\s/g, NBSP);
+}
+function mndNavn(s) { // "2026-07" -> "juli 2026"
+  return MND[+s.slice(5, 7) - 1] + " " + s.slice(0, 4);
+}
+function statusTekst(s) {
+  return s === "vedtatt_kalender"
+    ? {kl: "vedtatt", tekst: "Prognose under vedtatt regelverkskalender"}
+    : {kl: "basisbane", tekst: "Basisbane: videreført regelverk — antakelse, ikke vedtak"};
+}
+
+async function start() {
+  let art;
+  try {
+    const svar = await fetch("prognose_gjeldende.json", {cache: "no-cache"});
+    art = await svar.json();
+  } catch (e) {
+    document.getElementById("feilmelding").style.display = "block";
+    return;
+  }
+  const meta = art.meta, rader = art.prognoser;
+
+  // Faste felter
+  document.getElementById("modell").textContent = meta.modell;
+  document.getElementById("opprinnelse").textContent =
+    mndNavn(meta.prognoseopprinnelse) + " (siste observerte termin)";
+  document.getElementById("vintage").textContent = "uttrekk " + meta.datavintage;
+  document.getElementById("kalender").textContent =
+    "kuratert per " + meta.regelverkskalender_kunnskap_per +
+    "; vedtatt kalender til og med " + mndNavn(meta.vedtatt_kalender_til);
+  document.getElementById("intervallnote").textContent =
+    "Intervaller: " + meta.intervallmetode + " Nominelt 80 %-nivå traff " +
+    tall(meta.empirisk_dekning_80_backtest, 0) + " % i backtesten (" +
+    meta.empirisk_dekning_utvalg + "). Intervallene er kalibrerte estimater, " +
+    "ikke dekningsgarantier.";
+  document.getElementById("aarsnitt").textContent = tall(meta.aarsgjennomsnitt);
+  document.getElementById("aarsnote").textContent = meta.aarsintervall_merknad;
+  document.getElementById("kolofon").textContent =
+    "Generert " + meta.generert + " · commit " + meta.commit.slice(0, 7) +
+    " · scenario: " + meta.scenario + ".";
+
+  // Tabellen — alltid synlig, full presisjon
+  const tb = document.querySelector("#tabell tbody");
+  for (const r of rader) {
+    const tr = document.createElement("tr");
+    tr.id = "rad-h" + r.horisont;
+    const st = statusTekst(r.informasjonsstatus);
+    tr.innerHTML =
+      `<td>${mndNavn(r.maalmaned)}</td><td>${r.horisont}</td>` +
+      `<td>${tall(r.punkt)}</td><td>${tall(r.lo80)}</td><td>${tall(r.hi80)}</td>` +
+      `<td>${tall(r.lo95)}</td><td>${tall(r.hi95)}</td>` +
+      `<td style="text-align:left">${st.tekst}</td>`;
+    tb.appendChild(tr);
+  }
+
+  // Fan chart — ren SVG fra artefaktens tall
+  const svg = document.getElementById("fanchart");
+  const B = 640, H = 300, mL = 56, mR = 34, mT = 14, mB = 34;
+  const alle = rader.flatMap(r => [r.lo95, r.hi95]).concat(meta.siste_observasjon.verdi);
+  const yMin = Math.min(...alle) * 0.985, yMaks = Math.max(...alle) * 1.015;
+  const x = h => mL + (B - mL - mR) * h / 12;                    // h = 0..12
+  const y = v => mT + (H - mT - mB) * (1 - (v - yMin) / (yMaks - yMin));
+  const p = [];
+  const bane = f => [ {h: 0, v: meta.siste_observasjon.verdi} ]
+    .concat(rader.map(r => ({h: r.horisont, v: f(r)})))
+    .map(q => `${x(q.h).toFixed(1)},${y(q.v).toFixed(1)}`).join(" ");
+  const omraade = (fLo, fHi) =>
+    rader.map(r => `${x(r.horisont).toFixed(1)},${y(fHi(r)).toFixed(1)}`).join(" ") + " " +
+    rader.slice().reverse().map(r => `${x(r.horisont).toFixed(1)},${y(fLo(r)).toFixed(1)}`).join(" ") +
+    ` ${x(1).toFixed(1)},${y(rader[0].lo95).toFixed(1)}`;
+
+  let inner = "";
+  // y-akse: fire gridlinjer med verdier
+  for (let i = 0; i <= 3; i++) {
+    const v = yMin + (yMaks - yMin) * i / 3;
+    inner += `<line x1="${mL}" x2="${B - mR}" y1="${y(v)}" y2="${y(v)}" stroke="#ececec"/>` +
+             `<text x="${mL - 6}" y="${y(v) + 3.5}" text-anchor="end">${tall(v)}</text>`;
+  }
+  // x-akse: kvartalsmerker
+  for (const r of rader) {
+    if (r.horisont % 3 === 0 || r.horisont === 1) {
+      inner += `<text x="${x(r.horisont)}" y="${H - mB + 16}" text-anchor="middle">` +
+               `${r.maalmaned.slice(0, 4)}m${+r.maalmaned.slice(5, 7)}</text>`;
+    }
+  }
+  inner += `<polygon points="${omraade(r => r.lo95, r => r.hi95)}" fill="#00505c" opacity="0.14"/>`;
+  inner += `<polygon points="${omraade(r => r.lo80, r => r.hi80)}" fill="#00505c" opacity="0.30"/>`;
+  inner += `<polyline points="${bane(r => r.punkt)}" fill="none" stroke="#00505c" stroke-width="2"/>`;
+  inner += `<circle cx="${x(0)}" cy="${y(meta.siste_observasjon.verdi)}" r="4" fill="#fff" stroke="#00505c" stroke-width="1.6"/>`;
+  inner += `<text x="${x(11) + 6}" y="${y(rader[11].hi95) - 4}">95${NBSP}%</text>`;
+  inner += `<text x="${x(11) + 6}" y="${y(rader[11].hi80) - 4}">80${NBSP}%</text>`;
+  inner += `<circle id="markor" r="5" fill="#00505c" stroke="#fff" stroke-width="2"/>`;
+  svg.innerHTML = inner;
+  const markor = document.getElementById("markor");
+
+  // Skyvebryteren
+  const skyv = document.getElementById("horisont");
+  function vis(h) {
+    const r = rader[h - 1];
+    const st = statusTekst(r.informasjonsstatus);
+    document.getElementById("h-ut").textContent =
+      h + " " + (h === 1 ? "måned" : "måneder") + " fram";
+    document.getElementById("maalmaned").textContent = mndNavn(r.maalmaned);
+    document.getElementById("punkt").textContent = tall(r.punkt);
+    document.getElementById("i80").textContent = tall(r.lo80) + "–" + tall(r.hi80);
+    document.getElementById("i95").textContent = tall(r.lo95) + "–" + tall(r.hi95);
+    const stEl = document.getElementById("status");
+    stEl.textContent = st.tekst; stEl.className = "status " + st.kl;
+    document.getElementById("kalibrering").textContent =
+      r.n_kalibreringsfeil + " realiserte prognosefeil ved h = " + h;
+    markor.setAttribute("cx", x(h)); markor.setAttribute("cy", y(r.punkt));
+    for (const tr of tb.children) tr.removeAttribute("aria-selected");
+    document.getElementById("rad-h" + h).setAttribute("aria-selected", "true");
+  }
+  skyv.addEventListener("input", () => vis(+skyv.value));
+  vis(1);
+}
+start();
+</script>
+</body>
+</html>
