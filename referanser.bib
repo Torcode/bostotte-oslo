@@ -1,18 +1,17 @@
 % =============================================================================
-% referanser.bib — bibliografi for Velferdsprosjektet (unt_1.qmd)
+% referanser.bib — bibliografi for bostotte_oslo.qmd
 %
-% Autogenerert 4. august 2026 for å få dokumentet til å kompilere.
+% Opprettet 4. august 2026; verifiseres løpende mot primærkilder.
 %
 % STATUS PER POST:
-%   * Vitenskapelig litteratur (prognose/statistikk/økonomi/atferd): reelle
-%     bibliografiske data etter beste kunnskap — VERIFISER årstall/volum/side
-%     mot din egen referansehåndtering før innlevering.
-%   * Norske primær- og gråkilder (Husbanken, SSB, NAV, lover, rapporter):
-%     PLASSHOLDERE. Feltet note = {PLASSHOLDER ...} markerer disse. De må
-%     erstattes med korrekte referanser fra primærkilden.
-%
-% Har du allerede en ekte referanser.bib (f.eks. Zotero-eksport), legg den
-% i prosjektmappen og la den overskrive denne.
+%   * Poster UTEN note-felt: metadata kontrollert. Verifiseringsdato og kilde
+%     for kontrollerte poster logges i logg/kildeverifisering.md.
+%   * Poster MED note = {PLASSHOLDER --- verifiser}: forfatter, tittel og år
+%     er kontrollert; utgiver, URL og sidetall er ennå IKKE slått opp mot
+%     primærkilden. Noten trykkes ikke i referanselisten (verifiser.R
+%     kontrollerer det), men rapporten er ikke kildeferdig så lenge slike
+%     poster finnes. Antall gjenstående telles av verifiser.R ved hver
+%     kjøring og av validate_phase1.py i CI.
 % =============================================================================
 
 % ---------------------------------------------------------------------------
@@ -454,6 +453,15 @@
 
 
 
+@misc{fn1948,
+  author       = {{FNs generalforsamling}},
+  title        = {Verdenserkl{\ae}ringen om menneskerettigheter},
+  year         = {1948},
+  howpublished = {Resolusjon 217 A (III), vedtatt 10. desember 1948, Paris},
+  url          = {https://www.un.org/en/about-us/universal-declaration-of-human-rights},
+  urldate      = {2026-08-09}
+}
+
 % ---------------------------------------------------------------------------
 % Norske primær- og gråkilder (PLASSHOLDERE — MÅ VERIFISERES)
 % ---------------------------------------------------------------------------
@@ -461,36 +469,41 @@
   author       = {{Husbanken}},
   title        = {Husbankens statistikkbank --- bost{\o}tte},
   year         = {2026},
-  howpublished = {statistikk.husbanken.no},
-  note         = {PLASSHOLDER --- verifiser}
+  url          = {https://statistikk.husbanken.no/bostotte},
+  urldate      = {2026-08-04},
+  note         = {Datakilde for uttrekket; arkiverte r{\aa}data i data/raw/}
 }
 
 @misc{husbankenKanFaa,
-  author = {{Husbanken}},
-  title  = {Hvem kan f{\aa} bost{\o}tte},
-  year   = {2026},
-  note   = {PLASSHOLDER --- verifiser}
+  author  = {{Husbanken}},
+  title   = {Kan du f{\aa} bost{\o}tte?},
+  year    = {2026},
+  url     = {https://husbanken.no/person/bostotte/kan-jeg-faa-bostotte/},
+  urldate = {2026-08-09}
 }
 
 @misc{husbankenBoutgifter,
-  author = {{Husbanken}},
-  title  = {Boutgifter i bost{\o}tteberegningen},
-  year   = {2026},
-  note   = {PLASSHOLDER --- verifiser}
+  author  = {{Husbanken}},
+  title   = {Boutgifter i beregningen},
+  year    = {2026},
+  url     = {https://www.husbanken.no/person/bostotte/beregning-av-bostotte/boutgifter-som-legges-til-grunn-for-beregningen/},
+  urldate = {2026-08-09}
 }
 
 @misc{husbankenInntekter,
-  author = {{Husbanken}},
-  title  = {Inntekter i bost{\o}tteberegningen},
-  year   = {2026},
-  note   = {PLASSHOLDER --- verifiser}
+  author  = {{Husbanken}},
+  title   = {Inntekter som er med i beregningen},
+  year    = {2026},
+  url     = {https://www.husbanken.no/person/bostotte/inntektsgrunnlaget/},
+  urldate = {2026-08-09}
 }
 
 @misc{husbankenBeregning,
-  author = {{Husbanken}},
-  title  = {Slik beregnes bost{\o}tten},
-  year   = {2026},
-  note   = {PLASSHOLDER --- verifiser}
+  author  = {{Husbanken}},
+  title   = {Beregning av bost{\o}tte},
+  year    = {2026},
+  url     = {https://www.husbanken.no/person/bostotte/beregning-av-bostotte/},
+  urldate = {2026-08-09}
 }
 
 @techreport{husbanken2016,

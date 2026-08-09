@@ -1,0 +1,168 @@
+{
+  "meta": {
+    "prognoseopprinnelse": "2026-06",
+    "datavintage": "2026-08-04",
+    "commit": "f94222b4eebc566e9fc60ec412f9b6f596e3ab75",
+    "generert": "2026-08-09T22:02:24Z",
+    "modell": "M6 RegARIMA + X + k (point-in-time)",
+    "modell_id": "M6",
+    "intervallmetode": "tidsgyldig split-konformal kvantil av absolutte logfeil, endelig-utvalgsnivå ceiling((n+1)*nivå)/n, per horisont; kalibrert bare på feil som var realisert ved opprinnelsen.",
+    "nominelle_nivaaer": [80, 95],
+    "empirisk_dekning_80_backtest": 79,
+    "empirisk_dekning_utvalg": "kalibreringsutvalget i backtesten, 270 punkter, 2022m12-2025m6",
+    "kalibrering_n_per_h": 31,
+    "regelverkskalender_kunnskap_per": "2026-08-09",
+    "siste_effect_known_from": "2024-12-17",
+    "vedtatt_kalender_til": "2026-12",
+    "scenario": "basis",
+    "siste_observasjon": {
+      "maaned": "2026-06",
+      "verdi": 16428
+    },
+    "aarsgjennomsnitt": 16961,
+    "aarsgjennomsnitt_definisjon": "forventet gjennomsnittlig månedlig antall mottakende husstander over de tolv målmånedene",
+    "aarsintervall_merknad": "Intet intervall for årsgjennomsnittet: de tolv prognosefeilene er avhengige over horisonten, og marginale månedsgrenser kan ikke aggregeres til et intervall med definert dekningsnivå.",
+    "datahash_kilder": [
+      "data/raw/husbanken_bostotte_oslo_manedlig.csv",
+      "data/clean/regelverk_kunnskap.csv"
+    ],
+    "datahash_md5": [
+      "f98f2c5656f65debc82bada324064982",
+      "00f1d8a92f34bb3064e3b43cb06eab3c"
+    ]
+  },
+  "prognoser": [
+    {
+      "maalmaned": "2026-07",
+      "horisont": 1,
+      "punkt": 16725,
+      "lo80": 15778,
+      "hi80": 17729,
+      "lo95": 14790,
+      "hi95": 18913,
+      "n_kalibreringsfeil": 31,
+      "informasjonsstatus": "vedtatt_kalender"
+    },
+    {
+      "maalmaned": "2026-08",
+      "horisont": 2,
+      "punkt": 16843,
+      "lo80": 15480,
+      "hi80": 18326,
+      "lo95": 14769,
+      "hi95": 19209,
+      "n_kalibreringsfeil": 31,
+      "informasjonsstatus": "vedtatt_kalender"
+    },
+    {
+      "maalmaned": "2026-09",
+      "horisont": 3,
+      "punkt": 16838,
+      "lo80": 15409,
+      "hi80": 18399,
+      "lo95": 14775,
+      "hi95": 19189,
+      "n_kalibreringsfeil": 31,
+      "informasjonsstatus": "vedtatt_kalender"
+    },
+    {
+      "maalmaned": "2026-10",
+      "horisont": 4,
+      "punkt": 16867,
+      "lo80": 15349,
+      "hi80": 18536,
+      "lo95": 14831,
+      "hi95": 19183,
+      "n_kalibreringsfeil": 31,
+      "informasjonsstatus": "vedtatt_kalender"
+    },
+    {
+      "maalmaned": "2026-11",
+      "horisont": 5,
+      "punkt": 16939,
+      "lo80": 15219,
+      "hi80": 18853,
+      "lo95": 14694,
+      "hi95": 19528,
+      "n_kalibreringsfeil": 31,
+      "informasjonsstatus": "vedtatt_kalender"
+    },
+    {
+      "maalmaned": "2026-12",
+      "horisont": 6,
+      "punkt": 16944,
+      "lo80": 15117,
+      "hi80": 18993,
+      "lo95": 14549,
+      "hi95": 19734,
+      "n_kalibreringsfeil": 31,
+      "informasjonsstatus": "vedtatt_kalender"
+    },
+    {
+      "maalmaned": "2027-01",
+      "horisont": 7,
+      "punkt": 17030,
+      "lo80": 15103,
+      "hi80": 19204,
+      "lo95": 14471,
+      "hi95": 20043,
+      "n_kalibreringsfeil": 31,
+      "informasjonsstatus": "viderefort_regelverk"
+    },
+    {
+      "maalmaned": "2027-02",
+      "horisont": 8,
+      "punkt": 17087,
+      "lo80": 14763,
+      "hi80": 19778,
+      "lo95": 14373,
+      "hi95": 20314,
+      "n_kalibreringsfeil": 31,
+      "informasjonsstatus": "viderefort_regelverk"
+    },
+    {
+      "maalmaned": "2027-03",
+      "horisont": 9,
+      "punkt": 17147,
+      "lo80": 14670,
+      "hi80": 20042,
+      "lo95": 14211,
+      "hi95": 20690,
+      "n_kalibreringsfeil": 31,
+      "informasjonsstatus": "viderefort_regelverk"
+    },
+    {
+      "maalmaned": "2027-04",
+      "horisont": 10,
+      "punkt": 17147,
+      "lo80": 14756,
+      "hi80": 19927,
+      "lo95": 14087,
+      "hi95": 20873,
+      "n_kalibreringsfeil": 31,
+      "informasjonsstatus": "viderefort_regelverk"
+    },
+    {
+      "maalmaned": "2027-05",
+      "horisont": 11,
+      "punkt": 17071,
+      "lo80": 14821,
+      "hi80": 19662,
+      "lo95": 14027,
+      "hi95": 20775,
+      "n_kalibreringsfeil": 31,
+      "informasjonsstatus": "viderefort_regelverk"
+    },
+    {
+      "maalmaned": "2027-06",
+      "horisont": 12,
+      "punkt": 16896,
+      "lo80": 14355,
+      "hi80": 19887,
+      "lo95": 13939,
+      "hi95": 20481,
+      "n_kalibreringsfeil": 31,
+      "informasjonsstatus": "viderefort_regelverk"
+    }
+  ]
+}

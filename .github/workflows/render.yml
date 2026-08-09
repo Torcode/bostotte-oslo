@@ -1,0 +1,71 @@
+name: Rapport-render (PDF)
+
+# Bygger hele rapporten fra ren checkout: R-pakkene fra renv.lock-settet
+# (binærer fra Posit-speilet), Quarto med innebygd Typst, full rendering med
+# alle byggekontroller — og validerer prognoseartefakten renderingen skrev.
+# Grønn kjøring beviser at PDF-en kan gjenskapes fra repoet alene.
+#
+# Full render er for tung for hver push; workflowen kjører derfor på endringer
+# i beregningsgrunnlaget, på hovedgrenen og på forespørsel.
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "bostotte_oslo.qmd"
+      - "data/**"
+      - "mal/**"
+      - ".Rprofile"
+      - "renv.lock"
+      - ".github/workflows/render.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: render-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  render:
+    name: quarto render fra ren checkout
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: "4.3.3"
+          use-public-rspm: true
+
+      - name: Installer pakkene fra oppsett.R-settet
+        run: >-
+          Rscript -e 'install.packages(c("tidyverse","knitr","rmarkdown",
+          "tsibble","fable","fabletools","feasts","urca","distributional",
+          "jsonlite"))'
+
+      - uses: quarto-dev/quarto-actions/setup@v2
+        with:
+          version: "1.7.34"
+
+      - name: Byggekontroll foer render
+        run: Rscript -e 'source("verifiser.R")'
+
+      - name: Render rapporten
+        run: quarto render bostotte_oslo.qmd
+
+      - name: Valider prognoseartefakten fra renderingen
+        run: python scripts/validate_prognose.py
+
+      - name: Last opp PDF og artefakt
+        uses: actions/upload-artifact@v4
+        with:
+          name: rapport-og-prognose
+          path: |
+            bostotte_oslo.pdf
+            prognose/prognose_gjeldende.csv
+            prognose/prognose_gjeldende.json
+          retention-days: 30

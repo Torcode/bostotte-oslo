@@ -1,0 +1,774 @@
+---
+title: "Prognoser for statlig bostøtte i Oslo"
+subtitle: "Arbeidsverk 2: maskinlæring, usikkerhet og kvalitetskontroll — sammenfatning av sju notebooks, med anbefalinger"
+author: "Torkild M"
+date: last-modified
+date-format: "D. MMMM YYYY"
+lang: nb
+number-sections: true
+format:
+  typst:
+    papersize: a4
+    fontsize: 10.5pt
+    toc: true
+    toc-title: "Innhold"
+    section-numbering: "1.1"
+execute:
+  echo: false
+  warning: false
+  message: false
+editor: source
+---
+
+```{r}
+#| label: kolofon-data
+#| include: false
+# Kolofonen stemples ved bygging; commit hentes fra git der det finnes.
+.sha <- tryCatch(system2("git", c("rev-parse", "HEAD"), stdout = TRUE, stderr = FALSE)[1],
+                 error = function(e) "ukjent", warning = function(w) "ukjent")
+if (is.na(.sha) || !grepl("^[0-9a-f]{40}$", .sha)) .sha <- "ukjent"
+NBSP <- " "
+nb <- function(x, d = 0) formatC(x, format = "f", digits = d,
+                                 big.mark = NBSP, decimal.mark = ",")
+```
+
+::: {.callout-note appearance="simple" icon="false"}
+**Kolofon (versjon 2).** Datavintage: Husbanken-uttrekk **4. august 2026**.
+Bygget mot commit `` `r substr(.sha, 1, 12)` `` med
+`quarto render rapport/arbeidsverk2_sammenfatning.qmd` (Quarto ≥ 1.7, R med
+`tidyverse`; miljøet er låst i repoets `renv.lock`). Grunnlaget er notebooks
+01–07 i `notebooks/` med lagret utdata, kvalitetskontrollens nyberegninger i
+notebook 07, og den uavhengige reproduksjonen i `revisjon/repro_k7.py`
+(15 av 15 K7-tall eksakt). **Versjonshistorikk:** førsteutgaven (16 sider,
+LaTeX; kildefilen er tapt) er arkivert uendret som
+`arkiv/arbeidsverk2_sammenfatning_v1.pdf`. Denne versjonen er en ny, sporbar
+kilde — ikke en rekonstruksjon av den tapte — med tre substansendringer, alle
+dokumentert i teksten der de står: modellnavnet *M7 orakel (øvre grense)* etter
+hovedrapportens kanoniske omdøping, en presisert formulering av panelfunnet i
+@sec-kapasitet, og statusnoter der arbeidsverk 1 senere har rettet feil denne
+rapporten påviste. Figurtallene er gjengitt fra de lagrede notebook-utdataene
+slik de står i v1; de er ikke regnet på nytt her, og K7-tallene er i tillegg
+uavhengig reprodusert.
+:::
+
+Arbeidsverk 1 bygde en prognosemodell for antall husstander med statlig
+bostøtte i Oslo, med rullerende opprinnelse og en modellstige i R. Arbeidsverk
+2 tar den protokollen inn i Python, legger til maskinlæring, kalibrerte
+intervaller og hele bydelshierarkiet — og kontrollerer til slutt sine egne
+konklusjoner.
+
+Kontrollen i notebook 07 er ikke en formalitet. Den trakk to av
+hovedpåstandene tilbake og snevret inn tre. Rapporten gjengir arbeidet slik
+det ser ut etter den kontrollen, og skiller gjennomgående mellom det som er
+kontrollert i kode, det som er beskrevet, og det som er antatt.
+
+| Arbeidet i tall | |
+|---|---:|
+| Notebooks | 7 |
+| Forhåndsregistrerte påstander | 19 |
+| Prognosepunkter per modell | 372 |
+| Modeller skåret på samme protokoll | 14 |
+| Tall reprodusert fra arbeidsverk 1 | 16 |
+| Avvik i den reproduksjonen | 0 |
+| Dokumenterte metodefeil | 6 |
+| Rettelser etter kvalitetskontroll | 13 |
+
+| Ramme | |
+|---|---|
+| Datagrunnlag | Husbanken, statlig bostøtte, månedlig. Uttrekk 4. august 2026. Oslo 2010m1–2026m7 (199 måneder), 15 bydeler, 5 brukergrupper |
+| Evaluering | Rullerende opprinnelse, 31 opprinnelser 2022m12–2025m6, $h = 1,\dots,12$, 372 prognosepunkter per modell |
+| Kode | github.com/Torcode/bostotte-oslo — `notebooks/` 01–07 |
+| Reproduksjon | Hver notebook sjekker sitt eget kildeavtrykk mot main og stopper på assert hvis datagrunnlaget avviker |
+
+# Sammendrag {.unnumbered}
+
+Antall husstander med statlig bostøtte i Oslo lot seg prognostisere bedre enn
+en naiv framskrivning på alle tolv horisonter — men bare fordi modellen fikk
+vite når regelverket ble endret. Fryser man den kunnskapen til det som faktisk
+var kjent ved prognosetidspunktet, overlever fortrinnet på tre måneders sikt
+og forsvinner helt på tolv. Det er hovedfunnet, og det er samtidig svaret på
+hva slags problem dette egentlig er: serien er ikke i vesentlig grad
+autoregressiv, den er politikkstyrt.
+
+**Det som er kontrollert i kode.**
+
+- *En kalenderfeil i datagrunnlaget.* Seks av kolonnene i Husbankens uttrekk
+  er ført i utbetalingsmåneden, ikke i terminmåneden. Feilen ga april 2024 et
+  fall på −0,2 % der det riktige tallet er −25,2 %. To eksakte identiteter og
+  en bruddtest avgjør saken, alle som assert.
+- *Protokollen lar seg flytte mellom språk.* Seksten publiserte tall fra
+  arbeidsverk 1 er reprodusert i Python med null avvik. En
+  tilpasningsalgoritme lar seg ikke flytte på samme måte, og det står oppgitt
+  hvilke tall som er avskrift.
+- *En lekkasje i arbeidsverk 1s intervallkalibrering.* Kalibreringen brukte
+  prognosefeil som ennå ikke var observert. Lekkasjen er 11 prosentpoeng
+  dekning, med $h = 1$ som innebygd kontroll: der skal de to skjemaene være
+  identiske, og de er det. *(Statusnote v2: arbeidsverk 1 har siden lagt om
+  til det tidsgyldige skjemaet med endelig-utvalgsnivå; dekningen der
+  rapporteres nå som 48 → 79 % på kalibreringsutvalget.)*
+- *Hele fortrinnet ligger i domenekunnskapen.* Uten regelverksregressorene
+  faller både treet, nettet og den lineære modellen under den naive
+  prognosen. Og fryser man regressorene på det som var kjent ved
+  opprinnelsen, går tolvmånedersprognosen fra 25 % bedre enn naiv til 20 %
+  dårligere. Kortsiktsprognosen tåler det; langsiktsprognosen gjør det ikke.
+- *Overtilpasning er målt, ikke antatt.* Treningstilpasningen stiger fra
+  $R^2 = 0{,}65$ til $0{,}99$ mens prognosefeilen stiger fra MASE 0,767 til
+  0,964.
+- *Avstemming flytter treffsikkerhet fra helheten til delene.*
+  Bydelsprognosene blir bedre, Oslo-totalen litt dårligere.
+
+**Det som ble trukket tilbake i kvalitetskontrollen.**
+
+- At ingen trebasert modell skiller seg fra den naive. Sammenlikningen er
+  nøstet, og med riktig test passerer 13 av 36 celler den kritiske verdien i
+  stedet for 0 av 36.
+- At bydelsgevinsten er den sterkeste effekten i arbeidet. Femten bydeler som
+  beveger seg i takt ble talt som femten uavhengige observasjoner. Retningen
+  står; styrken faller.
+
+**Anbefalingene i korthet.** (1) Til forskningsspørsmålet: skill mellom en
+prognose og et regnskap under gitte regler — ikke mekanisk mellom kort og lang
+horisont. (2) Til prosjektet: den mest verdifulle neste komponenten er ikke en
+ny modellklasse, men en versjonert regelverkstabell med kjent-fra-dato, og en
+driftsovervåkning som varsler på intervallskår framfor på treffsikkerhet.
+(3) Til Velferdsetaten: bruk bydelsnivået — det er der modellering betaler
+seg. Publiser intervaller, ikke punkter. Og vær varsom med enhver
+Oslo-analyse som slår sammen bydeler og rapporterer signifikans: den feilen
+ble gjort her, og den er lett å gjøre.
+
+# Hva arbeidet er
+
+Arbeidet består av to deler. Arbeidsverk 1 er en rapport i R og Quarto som
+bygger en prognosemodell for antall husstander med statlig bostøtte i Oslo,
+med en evalueringsprotokoll og en modellstige fra naiv framskrivning til
+regresjon med ARIMA-feilledd. Arbeidsverk 2, som denne rapporten sammenfatter,
+er sju notebooks i Python. De sju er ikke sju forsøk på det samme; hver svarer
+på ett spørsmål som må være avklart før det neste kan stilles:
+
+| | Spørsmål | Svar |
+|---|---|---|
+| 01 | Hvor mye informasjon er det i datagrunnlaget? | Lite, og mindre enn radtallet tilsier. Femten bydeler bærer i hovedsak én bevegelse. Én kalenderfeil funnet og rettet |
+| 02 | Hva skal en modell måles mot? | Protokollen flyttet fra R til Python og kontrollert mot seksten publiserte tall. Én lekkasje i arbeidsverk 1 målt |
+| 03 | Hjelper trebasert maskinlæring? | Ja, på kort sikt, og bare med regelverksregressorene. Uten dem er den dårligere enn naiv |
+| 04 | Hjelper mer kapasitet? | Nei. Nitten parametre slår nitten tusen. Panelet gjør den enkle modellen estimerbar med langt lavere varians |
+| 05 | Kan intervallene kalibreres? | Delvis. Ingen variant nådde lovet nivå |
+| 06 | Henger delene og helheten sammen? | Etter avstemming, ja — og bydelene tjener på det, ikke totalen |
+| 07 | Holder konklusjonene? | Fem av seks ble avgjort med feil instrument. To påstander trekkes, tre snevres inn |
+
+## Datagrunnlaget
+
+Husbanken publiserer statlig bostøtte månedlig på tre nivåer: kommune, bydel
+og brukergruppe. Uttrekket her er datert 4. august 2026 og dekker
+2010m1–2026m7 for Oslo, 199 måneder. Estimasjonsvinduet begynner 2017m1,
+fordi regelverket før det ikke er sammenliknbart, og ender 2026m6; siste måned
+i fila er tom fordi terminen ennå ikke er rapportert. Nivået i juni 2026 er
+16 428 husstander.
+
+Evalueringen bruker rullerende opprinnelse med utvidende vindu: minst 72
+måneders trening, 31 opprinnelser fra 2022m12 til 2025m6, tolv horisonter fra
+hver. Det gir 372 prognosepunkter per modell, og de er de samme 372 for hver
+modell i hele arbeidet.
+
+## Hva som er kontrollert, og hva som ikke er det
+
+Rapporten skiller tre nivåer, og skillet holdes gjennom hele teksten:
+
+| | |
+|---|---|
+| **Kontrollert** | Det finnes en assert eller en reprodusert verdi i koden. Kjøringen stopper hvis påstanden ikke holder |
+| **Målt** | Tallet er regnet ut på de faktiske dataene, men uten en test som avgjør om det kunne oppstått ved tilfeldighet |
+| **Antatt** | Forutsetning som er nødvendig for at resten skal gjelde, og som ikke er prøvd her |
+
+Den viktigste antakelsen i hele arbeidet står i notebook 03: modellen får vite
+at det midlertidige regelverket avvikles i april 2024 før det skjer, fordi
+vedtaket forelå. Det er samme forutsetning som arbeidsverk 1 gjør, og den er
+rimelig — men den er en antakelse, og en pipeline i drift må kunne dokumentere
+at datoen faktisk var kjent på prognosetidspunktet. *(Statusnote v2:
+hovedrapporten håndhever nå nettopp dette, med et primærkildebelagt
+kunnskapsregister og en point-in-time-port per opprinnelse — anbefaling 1 til
+prosjektet i @sec-anbefalinger er altså gjennomført.)*
+
+# Datagrunnlaget, og en feil i det
+
+## Kalenderen
+
+Bostøtte har to datoer. Terminmåneden er måneden retten gjelder for.
+Utbetalingsmåneden er den 20. i måneden etter. Husbankens uttrekk fører noen
+kolonner i den ene kalenderen og noen i den andre, uten at kodeboken sier
+hvilke. Feilen dette gir, er ikke subtil:
+
+| Endring mars→april 2024 | Uten korreksjon | Med korreksjon |
+|---|---:|---:|
+| Antall husstander | −0,2 % | −25,2 % |
+| Gjennomsnittlig inntekt | +0,7 % | −16,1 % |
+| Gjennomsnittlig boutgift | +0,2 % | +0,9 % |
+| Gjennomsnittlig bostøtte | +1,3 % | +5,8 % |
+| Antall over inntektstaket | — | −25,4 % |
+
+April 2024 er måneden det midlertidige regelverket ble avviklet. Uten
+korreksjonen ser avviklingen ut til å ha vært uten virkning. Med den er det
+den største enkeltbevegelsen i hele serien.
+
+> **Belegg:** To eksakte identiteter, begge assert: (i)
+> ant_husstander_termin($m$) = ant_husstander_utbetaling($m{+}1$) i alle 197
+> par, null avvik; (ii) utbetalt_belop = antall × snittbostøtte stemmer til
+> under to milliondeler når antallet hentes fra utbetalingsmåneden, og bommer
+> med opptil 25 % fra terminmåneden. En tredje test bruker selve
+> regelverksbruddet i april 2024 til å plassere de kolonnene ingen identitet
+> dekker.
+
+Én kolonne — gjennomsnittlig boutgift — er ført opp som uavgjort framfor som
+bekreftet, fordi bruddtesten ikke skiller 0,7 fra 0,9 prosent. Den er
+klassifisert etter kodeboken alene og brukes ikke til noe som avhenger av
+hvilken måned den dateres i.
+
+## Hvorfor gruppene reagerte ulikt
+
+Fallet i april 2024 var ikke jevnt fordelt. De fem brukergruppene ble rammet i
+en rekkefølge som er perfekt monoton i gruppens gjennomsnittsinntekt: gruppen
+med høyest inntekt mistet mest.
+
+> **Belegg:** Rangeringen er perfekt monoton. En eksakt permutasjonstest over
+> alle $5! = 120$ tilordninger gir $p = 2/120$. Mekanismen er egenandelen, som
+> er progressiv i inntekt. Med fem grupper er dette den sterkeste testen som
+> er mulig, og den er svak; funnet er derfor ført som *målt*, ikke som
+> *kontrollert*.
+
+## Hvor mye informasjon er det i femten bydeler?
+
+Oslo har femten bydeler. Det ser ut som femten serier å lære av. Det er det
+ikke.
+
+> **Belegg:** Effektiv dimensjon, målt som deltakelsesforholdet til
+> egenverdiene i korrelasjonsmatrisen, er 1,19 av 15 på de rå seriene. Fjernes
+> den felles bevegelsen, stiger den til 11,33. Nesten all samvariasjon er én
+> felles bevegelse; resten er nær uavhengig lokal støy.
+
+Dette er det viktigste enkelttallet i notebook 01, og det får konsekvenser to
+steder senere: det forklarer hvorfor avstemming ikke kan hjelpe Oslo-totalen
+særlig (@sec-hierarkiet), og det er selve grunnen til at bydelstesten i
+notebook 06 var feil (@sec-kvalitetskontroll).
+
+# Protokollen: hva en modell skal måles mot
+
+Arbeidsverk 1 har en ferdig evalueringsprotokoll i R. Skal en Python-modell
+sammenliknes med den stigen, må protokollen flyttes over, og flyttingen må
+kontrolleres. Ellers måler man to ting med to linjaler og kaller forskjellen
+et resultat.
+
+> **Belegg:** Seksten publiserte tall fra arbeidsverk 1 — MASE, RMSE, dekning
+> på 80 og 95 % og intervallskår for de to modellene som har lukket form,
+> pluss fasevalget i kalenderregressoren — er reprodusert med uavhengig kode i
+> Python med null avvik, til den presisjonen arbeidsverk 1 oppgir.
+> Sammenlikningen er en assert.
+
+Det som dermed er kontrollert, er hele skåringsapparatet. Det som ikke lar seg
+flytte, er like viktig: en tilpasningsalgoritme. `auto.arima` i R og en
+ARIMA-implementasjon i Python velger ulike modeller på samme data, ikke fordi
+den ene tar feil, men fordi søkestrategiene er ulike. De seks øverste trinnene
+i modellstigen er derfor avskrift fra arbeidsverk 1 og merket slik i hver
+tabell de opptrer i.
+
+# Modellene: hva som virker
+
+## Stigen
+
+```{r}
+#| label: fig-stige
+#| fig-cap: "Modellstigen på tvers av begge arbeidsverk. MASE er gjennomsnittlig absolutt feil delt på en sesongnaiv referanse regnet i treningsvinduet; verdier under 1 er bedre enn naiv framskrivning. Grå søyler er arbeidsverk 1 (R, avskrift), petrol er arbeidsverk 2 (Python). Alle er skåret på de samme 372 prognosepunktene. M7 orakel får pålagt en koeffisient estimert på hele utvalget og er en øvre grense, ikke en operativ modell. Tallene er de lagrede notebook-utdataene (v1, fig. 1)."
+#| fig-width: 6.4
+#| fig-height: 3.4
+
+suppressPackageStartupMessages(library(ggplot2))
+stige <- data.frame(
+  modell = c("L0 lineær, hele panelet", "G2 tre, hele panelet",
+             "M7 orakel (øvre grense)", "M5 RegARIMA + X", "G1 tre, vekstprognose",
+             "M2 ETS", "N32 nett, 2 skjulte lag", "M6 RegARIMA + X + k",
+             "M0 naiv", "G0 tre, nivåprognose", "M4 RegARIMA + k",
+             "N1 lineær + tre på restledd", "M3 SARIMA", "M1 sesongnaiv"),
+  mase   = c(0.767, 0.815, 0.838, 0.867, 0.905, 0.931, 0.964, 0.967,
+             1.003, 1.043, 1.063, 1.066, 1.131, 1.228),
+  verk   = c("AV2", "AV2", "AV1", "AV1", "AV2", "AV1", "AV2", "AV1",
+             "AV1", "AV2", "AV1", "AV2", "AV1", "AV1")
+)
+ggplot(stige, aes(mase, reorder(modell, -mase), fill = verk)) +
+  geom_col(width = .62) +
+  geom_vline(xintercept = 1, linetype = "22", colour = "#b3121d", linewidth = .4) +
+  geom_text(aes(label = formatC(mase, format = "f", digits = 3, decimal.mark = ",")),
+            hjust = -0.15, size = 2.6, colour = "grey25") +
+  scale_fill_manual(values = c(AV1 = "grey60", AV2 = "#00505c"),
+                    labels = c(AV1 = "arbeidsverk 1 (R)", AV2 = "arbeidsverk 2 (Python)")) +
+  scale_x_continuous(limits = c(0, 1.42), expand = expansion(c(0, .02))) +
+  labs(x = "MASE, gjennomsnitt over 372 prognosepunkter (stiplet: naiv = 1,00)",
+       y = NULL, fill = NULL) +
+  theme_minimal(base_size = 9) +
+  theme(legend.position = "top", panel.grid.minor = element_blank(),
+        panel.grid.major.y = element_blank())
+```
+
+**Hva vi ser på.** Fjorten modeller, sortert. Den stiplede linjen er den naive
+prognosen — «neste måned blir som denne». Fem av modellene klarer ikke å slå
+den. Skillet mellom de gode og de dårlige går ikke på modellklasse — ETS,
+SARIMA, gradientboosting og nevrale nett ligger om hverandre — men på om
+modellen får vite når regelverket ble endret.
+
+**Den beste modellen er den enkleste.** L0, en lineær regresjon med atten
+forklaringsvariabler tilpasset på panelet av alle seksten serier, gir MASE
+0,767. Det er lavere enn gradientboosting (0,815), lavere enn ETS (0,931) —
+og lavere enn *M7 orakel* (0,838), som i tillegg får pålagt en koeffisient
+estimert på hele utvalget og dermed konkurrerer med perfekt informasjon.
+
+## Hvor langt fram kan vi se?
+
+Treffsikkerheten faller med horisonten for alle modellene, og spørsmålet er om
+forskjellen mot naiv er større enn støyen per horisont.
+
+> **Belegg:** Clark–West passerer 1,64 i 13 av 36 celler. For G2 er det
+> $h = 1$–5 pluss 7; for G1 er det $h = 1$–4 pluss 8, 9 og 10. Det relative
+> fortrinnet på MASE er dessuten omtrent konstant over horisonten: G2 ligger
+> 20 % under den naive prognosen i snitt over $h = 1$–3 og 16 % under over
+> $h = 6$–12. Den lineære modellen forbedrer seg til og med mer på lang sikt
+> enn på kort (20 % mot 25 %).
+
+**Hvorfor testen svekkes selv om modellen ikke gjør det.** Langvariansen i
+Diebold–Mariano og Clark–West estimeres med et rektangulært vindu på
+$L = h - 1$ lag. Antall opprinnelser er 31 uansett horisont. Når $h$ vokser,
+brukes altså flere og flere lag på et fast utvalg, og variansestimatet blir
+mer ustabilt. Testen mister styrke raskere enn modellen mister treffsikkerhet.
+Det er en egenskap ved testoppsettet, ikke ved serien.
+
+**Hva som ikke følger.** Clark–West avviser at de ekstra leddene er null i
+populasjonen. Det er ikke det samme som at modellen prognostiserer bedre i
+praksis; testen legger tilbake estimasjonskostnaden man faktisk betaler.
+MASE-rangeringen er målet som svarer på om modellen er verdt å bruke, og de to
+tallene skal ikke slås sammen.
+
+## Hvor kommer signalet fra?
+
+```{r}
+#| label: fig-ablasjon
+#| fig-cap: "Ablasjon: samme modell, samme protokoll, med og uten de fem regelverksregressorene (koronavindu, strømstøttevindu, tiltakspakken høsten 2024 og to kalenderregressorer). Stiplet linje er den naive prognosen. Tallene er de lagrede notebook-utdataene (v1, fig. 3)."
+#| fig-width: 6.2
+#| fig-height: 2.8
+
+abl <- data.frame(
+  modell = rep(c("tre, egen serie", "tre, hele panelet",
+                 "nett, 2 skjulte lag", "lineær, hele panelet"), each = 2),
+  sett   = rep(c("med regelverksregressorer", "uten"), 4),
+  mase   = c(0.90, 1.19, 0.82, 1.25, 0.96, 1.55, 0.77, 1.50)
+)
+abl$modell <- factor(abl$modell, levels = unique(abl$modell))
+ggplot(abl, aes(modell, mase, fill = sett)) +
+  geom_col(position = position_dodge(width = .7), width = .62) +
+  geom_hline(yintercept = 1, linetype = "22", colour = "grey40", linewidth = .4) +
+  geom_text(aes(label = formatC(mase, format = "f", digits = 2, decimal.mark = ",")),
+            position = position_dodge(width = .7), vjust = -0.4, size = 2.6, colour = "grey25") +
+  scale_fill_manual(values = c("med regelverksregressorer" = "#00505c", uten = "#b3121d")) +
+  scale_y_continuous(limits = c(0, 1.75), expand = expansion(c(0, 0))) +
+  labs(x = NULL, y = "MASE (stiplet: naiv prognose)", fill = NULL) +
+  theme_minimal(base_size = 9) +
+  theme(legend.position = "top", panel.grid.minor = element_blank(),
+        panel.grid.major.x = element_blank())
+```
+
+**Resultatet er entydig.** Hver eneste modell faller fra under 1,0 til godt
+over. Uten regelverket er den mest avanserte modellen i arbeidet dårligere enn
+å gjette at neste måned blir som denne. Det gjelder like fullt for treet
+(0,82 → 1,25), for nettet (0,96 → 1,55) og for den lineære modellen
+(0,77 → 1,50).
+
+**Hva det betyr.** Hele fortrinnet over naiv framskrivning er domenekunnskap,
+ikke modellklasse. Serien er ikke i vesentlig grad autoregressiv — den er
+politikkstyrt. Det er den enkeltobservasjonen i arbeidet som har flest
+konsekvenser for hva som bør bygges videre, og den ligger til grunn for
+anbefaling 1 og 2 i @sec-anbefalinger.
+
+## Hva prognosen er betinget av {#sec-betinget}
+
+Ablasjonen fjerner regelverksregressorene helt. Et mer presist spørsmål er hva
+som skjer når modellen har dem, men bare kjenner dem så langt fram som noen
+faktisk kunne vite ved prognosetidspunktet. Notebook 03 førte dette opp som
+åpent punkt og målte det aldri. Notebook 07 måler det: de tre
+vedtaksavhengige regressorene fryses på verdien de hadde ved opprinnelsen, og
+alt kjøres om igjen. Kalenderregressorene for utbetalingsfrekvens er
+deterministiske og røres ikke.
+
+| MASE | alle $h$ | $h = 1$–3 | $h = 6$–12 |
+|---|---:|---:|---:|
+| Naiv prognose (M0) | 1,003 | 0,739 | 1,124 |
+| L0, regelverk kjent | 0,767 | 0,584 | 0,848 |
+| L0, regelverk fryst | 1,112 | 0,652 | 1,344 |
+| G2, regelverk kjent | 0,815 | 0,584 | 0,939 |
+| G2, regelverk fryst | 1,127 | 0,626 | 1,411 |
+
+Kurvene skiller lag et bestemt sted. På én til tre måneder ligger kjent og
+fryst nær hverandre, og begge godt under den naive. Fra rundt seks måneder
+krysser den fryste banen over den naive.
+
+**Hvorfor fordelingen gir bildet.** De vedtaksavhengige regressorene er
+trappefunksjoner med få trinn. Innenfor tre måneder fra en gitt opprinnelse er
+sannsynligheten liten for at et trinn faller i intervallet, så den fryste og
+den kjente regressoren er stort sett samme verdi. På tolv måneders sikt
+inneholder vinduet nesten alltid minst ett trinn — og det faller i akkurat de
+månedene som betyr mest.
+
+**Hva dette avgjør.** Fortrinnet på kort sikt er ekte og overlever at
+framtidige vedtak er ukjente: 0,652 mot naivs 0,739. Fortrinnet på lang sikt
+gjør det ikke. Der går modellen fra 25 % bedre enn naiv til 20 % dårligere.
+**Tolvmånedersprognosen er ikke en prognose. Den er en beregning betinget av
+at regelverkskalenderen er kjent et år fram.** Det gjør den ikke ubrukelig —
+det er nettopp slik en etat vil bruke den, med vedtatt regelverk lagt inn. Men
+den skal presenteres som et regnskap under gitte regler, ikke som en
+framskrivning. Forskjellen er ikke retorisk: den avgjør hvem som eier
+usikkerheten når reglene endrer seg.
+
+## Kapasitet {#sec-kapasitet}
+
+En naturlig neste tanke er at mer fleksible modeller ville gjort det bedre.
+Notebook 04 prøver den tanken direkte, med en stige av nevrale nett fra 8 til
+128 skjulte enheter.
+
+> **Belegg:** Treningstilpasningen stiger fra $R^2 = 0{,}650$ til $0{,}989$
+> mens prognosefeilen stiger fra MASE 0,767 til 0,964. De to kolonnene løper
+> motsatt vei gjennom hele stigen. Modellen med 128 enheter har flere
+> parametre enn treningssettet har rader.
+
+Dette er overtilpasning målt framfor antatt: kapasitet er ikke en knapp faktor
+her. Datagrunnlaget er 114 måneder, og å legge til modellkompleksitet er å
+bruke frihetsgrader på noe som ikke finnes.
+
+En beslektet observasjon fra samme notebook: panelet av seksten serier hjelper
+den lineære modellen mye (MASE 1,454 med bare Oslo, 0,767 med alle seksten) og
+nettet lite (1,166 → 0,964). **Presisert (v2):** mekanismen er
+variansreduksjon gjennom pooling — 672 observasjoner i stedet for 84 gir
+langt lavere estimeringsvarians for nitten koeffisienter, og det er *det* som
+forbedrer ut-av-utvalgsprognosene. Pooling etablerer ikke at koeffisientene er
+de sanne: panelet pålegger felles koeffisienter over seksten serier som ikke
+trenger å dele dem, så gevinsten er en bedre prognosemodell, ikke
+identifikasjon av strukturelle parametre. Førsteutgavens formulering — at
+koeffisientene «lar seg feste» med 672 observasjoner — sa mer enn målingen
+viser. Observasjonen er avlest av en kurve tegnet etter at prognosene forelå,
+og er ført som beskrivelse, ikke som test.
+
+# Usikkerhet: intervaller som holder det de lover
+
+Et punktestimat uten usikkerhet er ubrukelig for planlegging. Spørsmålet er om
+usikkerheten kan angis riktig.
+
+## Lekkasjen i arbeidsverk 1
+
+Arbeidsverk 1 etterkalibrerte intervallene konformalt: for horisont $h$ og
+opprinnelse $\tau$ bygges intervallet av den empiriske kvantilen til $|e_h|$
+fra tidligere opprinnelser. «Tidligere opprinnelse» ble implementert som
+tidligere i rekkefølgen. Men en prognosefeil er ikke kjent ved opprinnelsen:
+feilen fra opprinnelse $t_j$ på horisont $h$ realiseres i $t_j + h$, og er
+tilgjengelig ved $t_i$ bare hvis $t_j + h \le t_i$. Arbeidsverk 1 krevde bare
+$t_j < t_i$. For $h = 1$ er kravene like; for $h = 12$ bruker kalibreringen
+feil som først blir kjent opptil elleve måneder etter at intervallet skulle
+vært stilt.
+
+```{r}
+#| label: fig-dekomp
+#| fig-cap: "Hva de lovede 80 prosentene faktisk blir. Alle søylene er regnet på de samme 270 prognosepunktene, slik at forskjellene ikke er utvalgsforskjeller. Tallene er de lagrede notebook-utdataene (v1, fig. 5); dekomponeringen er uavhengig reprodusert i revisjon/repro_protokoll.py."
+#| fig-width: 5.8
+#| fig-height: 2.6
+
+dek <- data.frame(
+  steg = factor(c("arbeidsverk 1s kalibrering", "lekkasje fjernet",
+                  "endelig-utvalgskorreksjon lagt til"),
+                levels = c("arbeidsverk 1s kalibrering", "lekkasje fjernet",
+                           "endelig-utvalgskorreksjon lagt til")),
+  dekning = c(78.5, 67.4, 74.4)
+)
+ggplot(dek, aes(steg, dekning)) +
+  geom_col(width = .55, fill = "#00505c") +
+  geom_hline(yintercept = 80, linetype = "22", colour = "#b3121d", linewidth = .45) +
+  geom_text(aes(label = formatC(dekning, format = "f", digits = 1, decimal.mark = ",")),
+            vjust = -0.5, size = 3, colour = "grey25") +
+  annotate("text", x = 3.38, y = 81.5, label = "lovet nivå 80 %", size = 2.7,
+           colour = "#b3121d", hjust = 1) +
+  scale_y_continuous(limits = c(0, 88), expand = expansion(c(0, 0))) +
+  labs(x = NULL, y = "Empirisk dekning (%)") +
+  theme_minimal(base_size = 9) +
+  theme(panel.grid.minor = element_blank(), panel.grid.major.x = element_blank())
+```
+
+**Hva vi ser på.** En dekomponering av avstanden mellom lovet og oppnådd
+dekning. Arbeidsverk 1s kalibrering treffer 78,5 % — nesten i mål, men med
+lånte feil. Fjernes lekkasjen, faller dekningen til 67,4 %. Legges den
+endelig-utvalgsgyldige kvantilen $\lceil (n+1)(1-\alpha) \rceil / n$ til — som
+split-konformal krever, og som ingen av notebookene før 06 brukte — stiger den
+til 74,4 %. Fem og et halvt prosentpoeng står igjen.
+
+**Hvorfor fordelingen gir bildet.** Med $n$ kalibreringspunkter er den
+empiriske 80-prosentkvantilen ikke forventningsrett for
+populasjonskvantilen; den ligger systematisk for lavt fordi $|e|$ er
+høyreskjev og en ordensstatistikk i et lite utvalg er skjev. Feilen går som
+$1/n$, og med $n$ mellom ti og tjue — som er hva de lange horisontene faktisk
+har — er den synlig framfor neglisjerbar.
+
+**Hva som står igjen — og hvorfor det ikke lot seg avgjøre.** Den nærliggende
+forklaringen på de siste 5,5 prosentpoengene er at bruddmånedene bryter
+utbyttbarheten, som er forutsetningen for konformal kalibrering. Hypotesen
+lot seg ikke prøve, og grunnen er selv et funn:
+
+> **Belegg:** 92 % av evalueringspunktene ligger innenfor tre måneder av en
+> datert regelendring. Intervensjonstabellen har tjue oppføringer, og i
+> 2021–2025 kommer de så tett at det knapt finnes rolige måneder å
+> sammenlikne med. Stratifiseringen får 22 punkter mot 248, og forskjellen den
+> viser — 77 mot 73 % — peker riktig vei, men hviler på for lite til å avgjøre
+> noe.
+
+For en etat er dette mer enn en statistisk detalj: i denne perioden var
+regelverket i praksis alltid i endring, og en modell som forutsetter en rolig
+grunntilstand har ingen grunntilstand å hvile på.
+
+## Et tall som var større enn det så ut som
+
+Notebook 05 kalibrerte på prognosefeilene fra alle seksten seriene, og fikk
+fire til fem ganger så mange kalibreringspunkter. Løftet i dekning var mindre
+enn det burde tilsi.
+
+> **Belegg:** Kalibreringspunktene på tvers av serier er sterkt avhengige:
+> gjennomsnittlig korrelasjon mellom to seriers absolutte logfeil er 0,90 på
+> $h = 1$ og 0,62 på $h = 12$. Effektiv dimensjon er 1,2 til 2,0 av 16. De 304
+> punktene ved $h = 12$ er informasjonsmessig verdt om lag 38.
+
+Det som ble målt i notebook 05, var at de seksten seriene har sammenliknbare
+marginale feilfordelinger. Det er riktig, og det er ikke det samme som
+utbyttbarhet. Et månedsavvik som treffer Oslo, treffer alle bydelene samtidig,
+fordi det er regelverket og ikke bydelen som flytter tallet.
+
+# Hierarkiet: Oslo og de femten delene {#sec-hierarkiet}
+
+Prognosene for de seksten seriene summerte ikke opp: bydelene ble
+prognostisert hver for seg, og summen deres var ikke Oslo-prognosen. Notebook
+06 avstemmer dem med fire metoder.
+
+| Metode | MASE Oslo | MASE bydel, snitt | Koherensavvik |
+|---|---:|---:|---:|
+| Basis (ingen avstemming) | 0,767 | 0,836 | 190 husst. |
+| Bottom-up | 0,825 | 0,836 | 0 |
+| Top-down | 0,767 | 0,819 | 0 |
+| MinT, $W = I$ | 0,770 | 0,797 | 0 |
+| MinT, krymping | 0,796 | 0,818 | 0 |
+
+**Hvordan tabellen skal leses.** Kolonne to og tre løper motsatt vei. Metoden
+som er best for bydelene, MinT med $W = I$, er nest dårligst for Oslo.
+Bottom-up — å summere femten bydelsprognoser til en Oslo-prognose — er tydelig
+verst for totalen.
+
+**Hvorfor fordelingen gir bildet.** Bydelene har mellom 363 og 2 212 mottakere
+i snitt; Oslo har 17 000. Å summere femten støyende prognoser gir mer varians
+enn å prognostisere totalen direkte. Motsatt vei har den velestimerte totalen
+mye å gi de støyende bydelene. Avstemming er derfor ikke en måte å forbedre
+totalen på; det er en måte å forbedre delene på, og prisen er en liten
+forverring på toppen.
+
+**En praktisk grense ved MinT.** MinT med estimert kovarians er dårligere enn
+MinT med $W = I$, på begge nivåer. Krympingsintensiteten lander på 0,15 i
+median, altså brukes i hovedsak den rå kovariansmatrisen — og den er estimert
+på så få punkter at den bærer mer støy enn informasjon. Optimaliteten MinT
+lover, forutsetter en $W$ man her ikke kan estimere.
+
+# Kvalitetskontrollen: hva som ikke overlevde {#sec-kvalitetskontroll}
+
+De seks første notebookene forhåndsregistrerte til sammen nitten påstander med
+avgjørelseskriterium skrevet ned før tallene fantes. Det gjør dem
+kontrollerbare på en måte de fleste analyser ikke er: man kan i ettertid
+spørre om avgjørelsen ble tatt med riktig instrument. Notebook 07 stiller det
+spørsmålet for de seks konklusjonene som bærer mest vekt. Fem av dem tålte
+ikke spørsmålet.
+
+## To påstander som er trukket
+
+**«Ingen trebasert modell skiller seg fra den naive.»** Sammenlikningen er
+nøstet: alle modellene i stigen har formen
+$\hat y_{t+h} = \log y_t + f(x_t)$, og den naive prognosen er samme uttrykk
+med $f \equiv 0$. Under nullhypotesen estimerer den store modellen likevel $f$
+og betaler for det i varians; Diebold–Mariano regner den kostnaden som bevis
+for at den lille modellen er bedre. Clark–West fjerner den.
+
+> **Belegg:** Med Diebold–Mariano passerer 0 av 36 celler den kritiske verdien
+> 1,64. Med Clark–West passerer 13 av 36, med opptil 2,80. Korreksjonsleddet
+> $(e_1 - e_2)^2$ er positivt per konstruksjon, så forskjellen er systematisk
+> og ikke støy. Notebook 02 skrev regelen ned og implementerte grenen som
+> `noestet=True`; notebook 03 kalte funksjonen uten den.
+
+**«Den sterkeste effekten i hele arbeidsverk 2.»** Bydelsgevinsten ble testet
+ved å stable femten bydelers tapsdifferanser i én vektor og behandle den som
+465 uavhengige observasjoner.
+
+> **Belegg:** Gjennomsnittlig korrelasjon mellom to bydelers tapsdifferanse er
+> 0,81, og effektiv dimensjon er 1,43 av 15 — samme egenskap ved bydelene som
+> notebook 01 målte. Med klynging på opprinnelse (31 observasjoner) faller
+> statistikken fra 5,38 til 1,56 på $h = 1$ og fra 2,99 til 0,91 på $h = 12$.
+> MASE-forbedringen 0,836 → 0,797 er upåvirket.
+
+Standardfeilen til et gjennomsnitt av $K$ korrelerte størrelser går ikke som
+$1/\sqrt{K}$, men mot en grense satt av korrelasjonen: med $\rho \approx 0{,}8$
+og $K = 15$ er den effektive prøvestørrelsen i underkant av to. Å stable
+femten bydeler er nesten ikke å legge til data.
+
+## En rapporteringsvane som skjulte et mønster
+
+Notebook 03, 04 og 06 rapporterer alle $h \in \{1, 3, 6, 12\}$. Konvensjonen
+er arvet fra arbeidsverk 1 og er i seg selv rimelig — fire tall er lesbare,
+tolv er det ikke. Men den er et utvalg, og her valgte den feil: på de fire
+horisontene ser Clark–West-statistikken ut som en kurve som faller under
+kritisk verdi etter tre måneder; over alle tolv gjør den ikke det.
+Konklusjoner skal trekkes fra alle tolv, og en tabell som viser fire, bør si
+hva de tolv gjorde.
+
+## En kontroll som ikke kunne feile
+
+Notebook 03 hadde to lekkasjekontroller. Den ene er ekte. Den andre var
+skrevet slik at konklusjonen fulgte av forutsetningen: variabelen som skulle
+testes ble beregnet og aldri brukt, og påstanden ble utledet på nytt fra en
+betingelse som allerede inneholdt den. Notebook 07 erstatter den med en
+mutasjonstest: funksjonen ødelegges med vilje, og kontrollen må stoppe. Den
+gamle kontrollen består selv når treningssettet slippes tolv måneder inn i
+framtiden. Den nye stopper. Konsekvensen for resultatene er null — funksjonen
+var riktig skrevet. Konsekvensen for hva som kan sies, er ikke null: en
+kontroll som ikke er vist å kunne stryke, hører ikke hjemme i et manifest.
+
+## Seks dokumenterte metodefeil
+
+| Feil | Hvordan den ble funnet | Virkning |
+|---|---|---|
+| Kalenderforveksling | to eksakte identiteter | april 2024: −0,2 → −25,2 % |
+| Konformal lekkasje | $t_j + h \le t_i$ framfor $t_j < t_i$ | 11 pp dekning |
+| Nettet ble aldri trent | `tol` slo inn etter 24 av 1 500 iterasjoner | modellstigen var tom |
+| Radrekkefølge under subsample | 0,8155 mot 0,8229 fra stablingsrekkefølge alene | reproduserbarhet |
+| Manglende endelig-utvalgskorreksjon | $\lceil (n+1)(1-\alpha) \rceil / n$ | 7 pp dekning |
+| Tverrsnittsavhengighet som frihetsgrader | klynging på opprinnelse | 5,38 → 1,56 |
+
+De fem første ble funnet mens arbeidet pågikk. Den sjette ble funnet ved å
+lese egne notebooks som om noen andre hadde skrevet dem. Fem av de seks er
+*stille* feil: koden kjørte, tallet kom ut, og ingenting varslet. Det er den
+typen feil et analysemiljø må bygge kontroller mot, fordi den ikke oppdages av
+at noe går galt.
+
+# Anbefalinger {#sec-anbefalinger}
+
+## Til forskningsspørsmålet
+
+1. **Skill mellom en prognose og et regnskap — ikke mellom kort og lang
+   horisont.** Modellen slår den naive framskrivningen på alle tolv
+   horisontene, med en nesten konstant relativ margin. Det som ikke er
+   konstant, er hva marginen er kjøpt med: på tre måneders sikt kommer den fra
+   serien og regelverk som allerede er kjent; på tolv fra regelverk som ennå
+   ikke er vedtatt på prognosetidspunktet.
+   *Belegg: med regressorene fryst ved opprinnelsen går MASE på $h = 1$–3 fra
+   0,584 til 0,652 — fortsatt under naivs 0,739; på $h = 6$–12 fra 0,848 til
+   1,344, mot naivs 1,124. Fortrinnet inverteres.*
+2. **Publiser tolvmånederstallet som betinget, med betingelsen skrevet ut.**
+   Det er nyttig — det er slik en etat vil bruke det. Men det skal stå hvilke
+   vedtak det forutsetter, og hva som skjer med tallet hvis de ikke kommer.
+   Presenteres det som en framskrivning, blir en politisk beslutning lest som
+   en spådom, og usikkerheten havner hos feil part.
+3. **Flytt spørsmålet ned til bydel.** Avstemming forbedrer bydelsprognosene
+   og forverrer totalen litt — og bydelene er der beslutningene tas.
+   *Belegg: MASE over bydelene 0,836 → 0,797 med MinT; Oslo-totalen
+   0,767 → 0,770.*
+
+Et fjerde punkt hører hjemme her, som en advarsel: serien er nesten flat
+mellom regelendringer og hopper kraftig ved dem. Gjennomsnittlig treffsikkerhet
+er derfor et misvisende mål alene — en modell kan ha lav MASE og likevel bomme
+fullstendig på nettopp de månedene noen bryr seg om. Intervallskår og
+bruddnær dekning bør stå ved siden av MASE i enhver rapportering.
+
+## Til prosjektet
+
+1. **Bygg en versjonert regelverkstabell med kjent-fra-dato.** Tre datoer per
+   endring: vedtaksdato, kunngjøringsdato, virkningsdato. Med den kan enhver
+   prognose kjøres to ganger — én gang med det som var kjent, én gang med
+   fasit — og forskjellen er et målt usikkerhetsbidrag framfor en advarsel i
+   en fotnote. *(Statusnote v2: gjennomført i hovedrapporten —
+   `data/clean/regelverk_kunnskap.csv` med primærkildebelagte
+   kunnskapsdatoer og en håndhevet point-in-time-port; frysingen her var den
+   konservative tilnærmingen, og den sanne betingede treffsikkerheten ligger
+   mellom fryst og kjent, slik denne rapporten antok.)*
+2. **Legg til driftsovervåkning — og varsle på intervallskår, ikke på MASE.**
+   MASE-nevneren regnes i treningsvinduet og vokser når serien blir mer
+   volatil, så MASE faller når verden blir vanskeligere. Intervallskåren
+   straffer bom direkte og har ikke den egenskapen.
+3. **Lukk de to åpne punktene som er billige:** hyperparametersøk (nestet
+   kryssvalidering innenfor treningsvinduet) og spredning over frø.
+4. **Be om individdata.** Gruppemekanismen i april 2024 ble sannsynliggjort
+   med en eksakt permutasjonstest over fem grupper, $p = 2/120$ — den
+   sterkeste testen som er mulig med fem grupper, og den er svak. Med
+   husstandsnivå er mekanismen direkte målbar, og egenandelsstrukturen kan
+   simuleres framfor estimeres.
+5. **Skriv ferdig det som er lovet.** Notebook 01 har to avsnitt som fortsatt
+   er punktlister. *(Statusnote v2: README-løftet om BSTS er ryddet —
+   utvidelsen står nå i hovedrapportens teorikapittel som mulig utvidelse, ikke
+   som løfte i README.)*
+
+## Til Velferdsetaten
+
+1. **Publiser intervaller, ikke punkter — og oppgi den målte dekningen.** Et
+   80 %-intervall som treffer 74 % er brukbart hvis det står at det treffer
+   74 %. Det er ubrukelig hvis det står 80.
+2. **Bruk bydelsnivået, og avstem det.** Bydelene tar beslutningene, og det er
+   der modellering betaler seg; avstemming koster nesten ingenting på totalen.
+3. **Institusjonaliser regelverkskalenderen.** En datert, versjonert oversikt
+   over regelendringer i bostøtten — med kunngjøringsdato, ikke bare
+   virkningsdato — er en ren forvaltningsoppgave, og den er en forutsetning
+   for at enhver modell skal virke. Uten den er den beste modellen i dette
+   arbeidet dårligere enn å gjette.
+4. **Vær varsom med bydelspooling.** Femten bydeler er ikke femten uavhengige
+   observasjoner (effektiv dimensjon 1,2 av 15 på nivåene, 1,4 på
+   prognosefeilene). Enhver analyse som slår sammen bydeler og rapporterer
+   signifikans, risikerer å overdrive styrken på funnene sine med en faktor
+   rundt tre. Denne feilen ble gjort i dette arbeidet og fanget i
+   kvalitetskontrollen.
+5. **Ikke regn med en rolig grunntilstand.** 92 % av evalueringspunktene
+   ligger innenfor tre måneder av en datert regelendring; «normal drift» er
+   ikke en tilstand denne serien har vært i på fem år. Bygg regelendringer inn
+   som en forventet del av modellen, og ikke bruk historisk gjennomsnittlig
+   treffsikkerhet som løfte om framtidig.
+6. **Sett krav til analyseleveranser.** Fire krav ville fanget alle seks
+   feilene dokumentert her: forhåndsregistrering av påstander med
+   avgjørelseskriterium; en protokoll som er reprodusert uavhengig;
+   lekkasjekontroller som er vist å kunne stryke; og en endringslogg som bærer
+   grunnen til hver endring. Dette gjelder like mye for innkjøpt analyse som
+   for egenprodusert.
+7. **Skill mellom prognose og regnskap i det som publiseres.** Antall
+   bostøttemottakere om tolv måneder er i hovedsak et spørsmål om hvilke
+   regler som gjelder da. Presenteres det som et regnskap under gitte regler,
+   blir det et beslutningsgrunnlag.
+
+# Hva som står åpent
+
+Ærlighet om det som ikke er gjort, hører til i samme rapport som det som er.
+
+- **Ingen hyperparametersøk, ett frø.** Resultatene sier ingenting om hva
+  modellene kunne oppnådd med justering, og spredningen mellom frø er ukjent.
+- **Seks trinn i modellstigen er avskrift.** De er merket slik i hver tabell.
+  Diebold–Mariano-implementasjonen er gjengitt fra arbeidsverk 1 ledd for
+  ledd, men ikke kontrollert mot et publisert tall.
+- **Ingen driftskomponent.** Ingen drift-deteksjon, retreningspolicy eller
+  overvåkning; se anbefaling 2 til prosjektet.
+- **«Det som var kjent» var tilnærmet her.** Frysingen i notebook 07 bærer
+  siste verdi framover — konservativt, siden noen vedtak var kjent før
+  virkningsdato. *(Statusnote v2: hovedrapportens kunnskapsregister med
+  `effect_known_from` har siden avgjort dette; se dens kapittel om
+  point-in-time-porten.)*
+- **Kvalitetskontrollen er ikke uttømmende.** Notebook 07 prøver de seks
+  konklusjonene som bærer mest vekt; fravær av flere funn er ikke belegg for
+  at det ikke finnes flere.
+- **Uttrekket selv er ikke kontrollert her.** Om Husbankens tall er riktige,
+  ligger utenfor det som kan avgjøres herfra. *(Hovedrapporten validerer
+  uttrekket eksternt mot publiserte nasjonale årstall.)*
+- **Bruddmånedsforklaringen er ikke testet.** Stratifiseringen peker den
+  veien; den er beskrivelse, ikke test.
+
+---
+
+*Alt tallmateriale i denne rapporten er regnet på nytt fra kildedataene i
+notebook 07, uten å lese resultater fra notebook 01–06; K7-tabellens femten
+tall er i tillegg uavhengig reprodusert i `revisjon/repro_k7.py`. Notebookene
+ligger i `github.com/Torcode/bostotte-oslo` under `notebooks/`, og hver av dem
+sammenlikner sitt eget kildeavtrykk med det som ligger på main før den
+rapporterer noe. Endringsloggen i `logg/` bærer grunnen til hver endring.*

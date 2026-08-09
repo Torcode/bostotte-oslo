@@ -1,0 +1,56 @@
+name: Prognoseside
+
+# Publiserer prognose/ (index.html + artefaktene) som statisk GitHub Pages-side.
+# Siden leser prognose_gjeldende.json og regner ingenting selv; artefakten
+# valideres av validate_prognose.py i Datakontrakt-workflowen før den når main.
+#
+# Engangsoppsett i repoet (kan ikke gjøres fra en workflow):
+#   Settings -> Pages -> Build and deployment -> Source: "GitHub Actions".
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "prognose/**"
+      - ".github/workflows/pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  bygg:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Valider prognoseartefakten foer publisering
+        run: python scripts/validate_prognose.py
+
+      - name: Pakk siden
+        run: |
+          mkdir -p _site
+          cp prognose/index.html prognose/prognose_gjeldende.json prognose/prognose_gjeldende.csv _site/
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  publiser:
+    needs: bygg
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
