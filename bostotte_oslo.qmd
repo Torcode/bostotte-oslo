@@ -228,7 +228,7 @@ oslo_est    <- oslo_termin |> filter(dato >= EST_START)
 # Landsserien trimmes etter samme regel som Oslo-serien (V1), og av samme grunn:
 # siste rad er strukturell null i begge, og 0/0 gir NaN. Oslos andel av
 # mottakerne nasjonalt brukes til aa skalere nasjonale forhaandsanslag ned til
-# Oslo i M7 (@sec-met-m7), og maa derfor regnes paa terminer med data i begge.
+# Oslo i M7 (@sec-met-prior), og maa derfor regnes paa terminer med data i begge.
 nasj_raa    <- d$nasjonalt |> transmute(dato, M = ant_husstander_termin)
 nasj_termin <- nasj_raa |>
   anti_join(nasj_raa |> filter(dato == max(dato), M == 0), by = "dato")
