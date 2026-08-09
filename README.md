@@ -5,7 +5,7 @@
 > **Hovedformålet er å lære mest mulig, kortest mulig. Filene og arbeidet inneholder
 > ikke-verifisert KI-informasjon.**
 
-### → [Les rapporten (PDF, 36 sider)](bostotte_oslo.pdf)
+### → [Les rapporten (PDF, 38 sider)](bostotte_oslo.pdf)
 
 [Kilden bak den](bostotte_oslo.qmd) · [datagrunnlaget](data/) · [kodebok](data/docs/kodebok.md) · [endringslogg](logg/)
 
@@ -62,7 +62,8 @@ sesongnaiv referanse, har ikke fortjent plassen sin.
 | **Datagrunnlaget** | Verifisert. 47 maskinelle datakontrakter ved hver push, ni regnskapsidentiteter ved hver rendering, og ekstern validering mot Husbankens publiserte nasjonale årstall |
 | **Evalueringsmekanikken** | Backtestet. 31 prognoseopprinnelser × 8 modeller × horisont 1–12, med Clark–West på nøstede par |
 | **Litteraturlista** | Delvis verifisert. 30 av 81 oppføringer har ukontrollert utgiver, URL og sidetall |
-| **Enkelte resultatpåstander** | Under retting. Se [åpne issues](https://github.com/Torcode/bostotte-oslo/issues) — tre gjenstår, den fjerde er rettet og logget |
+| **Arbeidsverk 2 (Python)** | Sju notebooks kjørt med lagret utdata, inkl. kvalitetskontroll (notebook 07) som trakk to påstander og målte at fortrinnet på 6–12 måneder er betinget av kjent regelverkskalender. Kjernetallene er uavhengig reprodusert (`revisjon/`) |
+| **Enkelte resultatpåstander** | Under retting. Se [åpne issues](https://github.com/Torcode/bostotte-oslo/issues) — 17 åpne, hvorav fem P0. Konformalkalibreringen bruker urealiserte feil (rettet i kilden på revisjonsgrenen, krever re-render), og informasjonssettet mangler `known_from` per opprinnelse (#6) |
 
 Feil som blir funnet, legges ut som [issues](https://github.com/Torcode/bostotte-oslo/issues)
 med diagnose og rettelse framfor å bli stille rettet. Begrunnelsen for hver endring ligger
@@ -76,16 +77,24 @@ intervensjonsvinduer og to kalenderregressorer — er den stasjonær (KPSS 0,16)
 modellvalget bekrefter det uavhengig: referansen uten regressorer velger *d* = 1,
 spesifikasjonene med intervensjonsmatrisen velger *d* = 0.
 
-**Regelverkskalenderen gjør det tunge arbeidet.** Mot termin april 2024 — seriens
-største bevegelse, et fall på 25 % på én termin — landet hovedspesifikasjonen på
-15 093 husstander fra ni måneders horisont, mot en fasit på 15 588. Sesongnaiv og
-SARIMA lander på 19 500–20 900 fra samtlige horisonter.
+**Regelverkskalenderen gjør det tunge arbeidet — fra den dagen den er kjent.**
+Mot termin april 2024 — seriens største bevegelse, et fall på 25 % på én termin —
+landet hovedspesifikasjonen på 15 552 husstander mot fasit 15 588 (0,2 %) fra seks
+måneders horisont, den første opprinnelsen etter at avviklingen ble offentlig
+6. oktober 2023. Sesongnaiv og SARIMA lander på 19 500–20 900 fra samtlige
+horisonter. Fra ni måneder — før kunngjøringen — treffer bare det eksplisitt
+merkede orakelscenarioet med fasitkalender (15 093); point-in-time-modellen deler
+referansenes skjebne der, og skal det. Kryssvalideringen håndhever skillet med en
+port per opprinnelse mot et primærkildebelagt kunnskapsregister
+(`data/clean/regelverk_kunnskap.csv`).
 
 **Å modellere bruddene forverrer intervalldekningen.** Det var ikke forventet. Modellen
 blir mer selvsikker uten å bli mer treffsikker der informasjonen mangler, og
 underdekningen er en *skjevhet*, ikke for smale intervaller: der høstpakken 2024 ikke er
-estimerbar, underpredikerer modellen med 7,2 % — praktisk talt den utelatte koeffisienten.
-Konformal etterkalibrering reparerer dekningen.
+estimerbar, underpredikerer modellen med om lag 6 % — praktisk talt den utelatte
+koeffisienten. Tidsgyldig konformal etterkalibrering — kalibrert bare på feil som var
+realisert ved opprinnelsen, med endelig-utvalgsnivå — reparerer dekningen delvis
+(48 → 79 % for hovedspesifikasjonen på kalibreringsutvalget).
 
 **En regressor kan ikke estimeres før hendelsen har skjedd.** Ved 24 av 31
 prognoseopprinnelser er høstpakken identisk null i treningsvinduet. Det rammer 56 % av
@@ -116,8 +125,10 @@ kryssvalideringen er cachet, så senere tekstendringer koster sekunder.
 
 Krever R med `tidyverse`, `knitr`, `fable`, `fabletools`, `feasts`, `tsibble`, `urca`
 og `distributional`, samt Quarto ≥ 1.7. **Ingen LaTeX** — Typst følger med
-Quarto, og malen bruker bare fonter Typst har innebygd, slik at PDF-en blir identisk på
-enhver maskin.
+Quarto, og malen bruker bare fonter Typst har innebygd. Målet er en PDF som er
+identisk på enhver maskin; den innsjekkede PDF-en viser at tegnsettvakten ennå
+ikke garanterer det (escapede sekvenser i maskingenererte tabeller — issue #3),
+så påstanden står som ambisjon til den er demonstrert i CI.
 
 ## Hva ligger hvor
 
@@ -247,5 +258,7 @@ faller MASE med 31,5 % på de 138 rammede punktene, og dekningen stiger 16 prose
 To kontroller er lagt inn som stopper byggingen hvis det skjer igjen. Diagnose og tall
 står i [`logg/`](logg/), post M10.
 
-Bydelsnivået er dokumentert i datagrunnlaget, men ikke analysert. Det finnes ingen
-publisert framtidsprognose og ingen produksjonsmodell — fase 3 og 4 er ikke påbegynt.
+Bydelsnivået er analysert i arbeidsverk 2 (notebooks 05–07: panelkalibrering,
+hierarkisk avstemming og kvalitetskontroll); resultatene der er ennå ikke tatt inn
+i hovedrapporten. Det finnes ingen publisert framtidsprognose og ingen
+produksjonsmodell — fase 3 er ikke påbegynt.

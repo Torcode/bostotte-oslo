@@ -29,7 +29,7 @@ execute:
   warning: false
   message: false
   freeze: false
-editor: visual
+editor: source
 ---
 
 ```{r}
@@ -228,7 +228,7 @@ oslo_est    <- oslo_termin |> filter(dato >= EST_START)
 # Landsserien trimmes etter samme regel som Oslo-serien (V1), og av samme grunn:
 # siste rad er strukturell null i begge, og 0/0 gir NaN. Oslos andel av
 # mottakerne nasjonalt brukes til aa skalere nasjonale forhaandsanslag ned til
-# Oslo i M7 (@sec-met-m7), og maa derfor regnes paa terminer med data i begge.
+# Oslo i M7 (@sec-met-prior), og maa derfor regnes paa terminer med data i begge.
 nasj_raa    <- d$nasjonalt |> transmute(dato, M = ant_husstander_termin)
 nasj_termin <- nasj_raa |>
   anti_join(nasj_raa |> filter(dato == max(dato), M == 0), by = "dato")
@@ -276,6 +276,26 @@ vol_bg <- bg_est |>
 BEH <- "Husstander med midlertidige trygdeytelser"
 vol_beh   <- vol_bg |> filter(brukergruppe == BEH)
 vol_andre <- vol_bg |> filter(brukergruppe != BEH)
+
+# --- Vakten en gang til, PAA SLUTTEN av oppsettet ----------------------------
+# Probe 3 (9. august 2026) maalte prosessen frisk (UTF-8, cp 65001) FOER dette
+# oppsettet og i C-locale ETTER: et av leddene over - pakkelasting eller
+# datapakkelasting - flipper localen paa Windows. Vakten oeverst passerte
+# derfor aerlig, og voktet ingenting: dokumentet rendret i C og skrev
+# <U+00E5> og <U+00A0> i hver maskingenerert tabell. En vakt maa staa der
+# tilstanden faktisk brukes. Denne reparerer flippet, og stopper hvis den
+# ikke klarer det. Foerste kandidat er navnet med aa, som er det Windows
+# faktisk rapporterer; ASCII-varianten i den oevre listen traff aldri.
+if (!.tegnsett_ok()) {
+  for (loc in c("Norwegian Bokm\u00e5l_Norway.utf8",
+                "Norwegian Bokmal_Norway.utf8", "nb-NO.UTF-8",
+                "nb_NO.UTF-8", "nb_NO.utf8", "Norwegian_Norway.utf8",
+                "English_United States.utf8", "C.UTF-8", "en_US.UTF-8")) {
+    if (.tegnsett_ok()) break
+    suppressWarnings(try(Sys.setlocale("LC_ALL", loc), silent = TRUE))
+  }
+}
+stopifnot("Tegnsettet er ikke UTF-8 ved slutten av oppsettet; se forklaringen i vaktblokken oeverst" = .tegnsett_ok())
 ```
 
 # Introduksjon
@@ -433,7 +453,7 @@ Teorien over gir fire testbare implikasjoner. **T1:** Beholdningsstrukturen (@eq
 
 Metodekapitlet gjør én kontrakt eksplisitt: hver størrelse som inngår i analysen skal kunne regenereres av navngitt kode fra navngitt kilde, og hver modellbeslutning skal kunne spores tilbake til et argument i @sec-teori eller et dokumentert empirisk faktum. Kapitlet åpner med datagrunnlaget — hva vi ideelt sett burde hatt, hva vi faktisk har, hva forskjellen koster, og hva som er gjort med dataene før de brukes (@sec-met-data). Deretter formaliseres estimanden (@sec-met-estimand), og de deterministiske regressorene bygges: intervensjonsmatrisen (@sec-met-x) og kalenderregressoren (@sec-met-kalender). Modellspesifikasjoner, prognoseprotokoll og evaluering følger i kapitlets andre del.
 
-All kode som produserer tallene nedenfor kjører når dokumentet bygges. Selve koden er utelatt fra PDF-en av lesbarhetshensyn; den ligger i kildefilen `unt_1.qmd` og i `data/scripts/`, og hver tabell i dette avsnittet oppgir hvilket objekt den er beregnet fra.
+All kode som produserer tallene nedenfor kjører når dokumentet bygges. Selve koden er utelatt fra PDF-en av lesbarhetshensyn; den ligger i kildefilen `bostotte_oslo.qmd` og i `data/scripts/`, og hver tabell i dette avsnittet oppgir hvilket objekt den er beregnet fra.
 
 ## Datagrunnlaget {#sec-met-data}
 
@@ -506,7 +526,7 @@ To hull dokumenteres like eksplisitt som kildene, fordi et kjent hull er en anne
 
 ### Fire former — hva formen bestemmer {#sec-met-former}
 
-Datagrunnlaget består av tjueto datasett. De er ikke tjue ulike ting å lære seg. En *form* sier ikke hva et datasett handler om, men hvordan det er lagret: hvilken enhet én rad representerer — **kornet** — og dermed hvilken operasjon som er lovlig uten videre bearbeiding. Fire former dekker alle sammen. @tbl-former gir for hver av dem kornet, det kanoniske grepet og den karakteristiske feilen formen inviterer til.
+Datagrunnlaget består av `r nb(length(d))` datasett. De er ikke like mange ulike ting å lære seg. En *form* sier ikke hva et datasett handler om, men hvordan det er lagret: hvilken enhet én rad representerer — **kornet** — og dermed hvilken operasjon som er lovlig uten videre bearbeiding. Fire former dekker alle sammen. @tbl-former gir for hver av dem kornet, det kanoniske grepet og den karakteristiske feilen formen inviterer til.
 
 | Form | Kornet: én rad er | Kanonisk grep | Karakteristisk feil |
 |:---|:---|:---|:---|
@@ -523,7 +543,7 @@ Datagrunnlaget består av tjueto datasett. De er ikke tjue ulike ting å lære s
 
 *Form 3 — statistikk-kuber i langformat* (SSB- og Oslo-statbanktabellene). Én rad er én celle, med kode-, navn- og verdikolonner. En kube er ikke en serie før alle dimensjoner unntatt tid er låst. Toromsleien i Oslo og Bærum krever for eksempel `Soner2_kode == "01"`, `AntRom_kode == "2"` og `ContentsCode_kode == "Husleie"` — tre filtre for én tallrekke. Uten full nedlåsing summerer man over en glemt dimensjon og får et tall som ser plausibelt ut. Det er kubefellen, og grunnen til at hver kube i denne analysen bare brukes gjennom navngitte filteroppskrifter, dokumentert i kodeboken.
 
-*Form 4 — oppslagstabeller* (`intervensjoner`, `parametre`, `stromstotte`, `grunnbelop`, `arsrapport`, `forhandsanslag`). Én rad er én datert regelendring med mekanisme, forventet fortegn og verifiseringsstatus; en regelparameter; et månedsbeløp; et G-vedtak; et publisert nasjonalt årstall; et datert effektanslag for én intervensjon. Disse brukes aldri som serier. De *genererer* de deterministiske regressorene i @sec-met-x og forsyner regelmotorens konstanter.
+*Form 4 — oppslagstabeller* (`intervensjoner`, `parametre`, `stromstotte`, `grunnbelop`, `arsrapport`, `forhandsanslag`, `regelverk_kunnskap`). Én rad er én datert regelendring med mekanisme, forventet fortegn og verifiseringsstatus; en regelparameter; et månedsbeløp; et G-vedtak; et publisert nasjonalt årstall; et datert effektanslag for én intervensjon; ett vedtaksavhengig regressorsteg med primærkildebelagt kunnskapsdato (`effect_known_from` — grunnlaget for point-in-time-porten i @sec-met-protokoll). Disse brukes aldri som serier. De *genererer* de deterministiske regressorene i @sec-met-x og forsyner regelmotorens konstanter.
 
 @tbl-datasett plasserer alle objektene i denne inndelingen. Rad- og kolonnetall er telt programmatisk fra objektene, og oppslaget mot formtabellen er sikret med en konsistenssjekk: dersom datapakken en dag inneholder et objekt som ikke er klassifisert, stopper renderingen.
 
@@ -554,7 +574,8 @@ korn <- tribble(
   "stromstotte",             "4 oppslag",  "én utbetalingsmåned",
   "grunnbelop",              "4 oppslag",  "ett G-vedtak (1. mai)",
   "arsrapport",              "4 oppslag",  "ett publisert årstall (nasjonalt)",
-  "forhandsanslag",          "4 oppslag",  "ett effektanslag for én intervensjon"
+  "forhandsanslag",          "4 oppslag",  "ett effektanslag for én intervensjon",
+  "regelverk_kunnskap",      "4 oppslag",  "ett vedtaksavhengig regressorsteg med kunnskapsdato"
 )
 
 # Kontrakt: hvert objekt i datapakken skal være klassifisert, og hver
@@ -609,6 +630,11 @@ spenn <- function(x) {
     v <- x$virkningsdato
     return(tibble(frekvens = "år", fra = format(min(v), "%Y"),
                   til = format(max(v), "%Y"), perioder = n_distinct(v), slutt = max(v)))
+  }
+  if ("steg_dato" %in% names(x)) {
+    v <- x$steg_dato
+    return(tibble(frekvens = "hendelse", fra = format(min(v), "%Y-%m"),
+                  til = format(max(v), "%Y-%m"), perioder = nrow(x), slutt = max(v)))
   }
   if ("aar" %in% names(x)) {
     v <- x$aar[!is.na(x$aar)]
@@ -1220,7 +1246,7 @@ $$\ln M^{T}_{t} \;=\; \beta'_{\text{est}} x^{\text{est}}_t \;+\; \underbrace{\te
 
 der $\mathcal{U}_\tau$ er regressorene som ikke passerer inngangsregelen ved opprinnelse $\tau$. Leddet er en *offset*: det inngår i prognosen, men ikke i estimeringen, slik at det ikke forstyrrer de øvrige koeffisientene.
 
-**Hvor $\lambda_j$ kommer fra.** Fra `forhandsanslag.csv`, som kobler hver intervensjon til et datert anslag med kilde og verifiseringsstatus. Det nasjonale anslaget skaleres med Oslos målte andel av mottakerne, `r pst(osloandel)`, og omregnes til logskala mot nivået ved opprinnelsen. Anslagene er av tre slag, og forskjellen mellom dem er ikke kosmetisk: *forhåndsanslag* er publisert før hendelsen og er det eneste en prognose i drift faktisk ville hatt; *etterberegnet* er realisert utfall og kan bare brukes til å validere metoden, aldri i en prognose; *mekanisk* er utledet av regelverket selv.
+**Hvor $\lambda_j$ kommer fra.** Fra `forhandsanslag.csv`, som kobler hver intervensjon til et datert anslag med kilde og verifiseringsstatus. Det nasjonale anslaget skaleres med Oslos målte andel av mottakerne, `r pst(osloandel)` — målt over de siste tolv terminene i utvalget; i drift må andelen måles ved hver opprinnelse, siden den har beveget seg fra rundt 14 til rundt 19 prosent siden 2010 (M13 i endringsloggen) — og omregnes til logskala mot nivået ved opprinnelsen. Anslagene er av tre slag, og forskjellen mellom dem er ikke kosmetisk: *forhåndsanslag* er publisert før hendelsen og er det eneste en prognose i drift faktisk ville hatt; *etterberegnet* er realisert utfall og kan bare brukes til å validere metoden, aldri i en prognose; *mekanisk* er utledet av regelverket selv.
 
 **Begrunnelsen er ikke bekvemmelighet, men at det ikke finnes noe nøytralt alternativ.** Å utelate regressoren pålegger $\lambda_j = 0$ — en påstand om at en vedtatt regelendring ikke vil ha effekt. Valget står altså mellom å pålegge null og å pålegge det beste daterte tallet som finnes; ingen av delene er antakelsesfri. M7 gjør valget eksplisitt og kildebelagt i stedet for implisitt.
 
@@ -1261,7 +1287,7 @@ Designet er rullerende opprinnelse med ekspanderende vindu [@tashman2000], som e
 Fire regler gjelder ved hver opprinnelse.
 
 1.  **Alt re-estimeres.** Ordensvalg, regresjonskoeffisienter og feilleddets parametre bestemmes på nytt fra treningsvinduet. Ingenting bæres over fra en tidligere opprinnelse.
-2.  **Ingen informasjon utover opprinnelsen.** Treningsvinduet slutter ved opprinnelsen, og enhver modellbeslutning tas på det vinduet alene. De deterministiske regressorene er unntaket som beviser regelen: de er *per konstruksjon* kjent for alle framtidige måneder — regelverkskalenderen fordi vedtakene er fattet, meldekortgridet fordi det er en kalender (@sec-met-kalender). Nettopp derfor kan de brukes på hele horisonten uten å bryte disiplinen, og nettopp derfor er de verdifulle.
+2.  **Ingen informasjon utover opprinnelsen.** Treningsvinduet slutter ved opprinnelsen, og enhver modellbeslutning tas på det vinduet alene. De deterministiske regressorene er *ikke* et blankofritak: meldekortgridet er en kalender og kjent vilkårlig langt fram (@sec-met-kalender), men regelverksstegene er kjent framover bare fra den datoen vedtaket var offentlig. Det håndheves per opprinnelse med en point-in-time-port: hvert vedtaksavhengige steg brukes i horisonten bare dersom dets dokumenterte kunnskapsdato (`data/clean/regelverk_kunnskap.csv`, primærkildebelagt) ligger ved eller før opprinnelsen; ukjente steg bærer siste kjente verdi videre. «Fordi vedtakene er fattet» er dermed en *testet* egenskap ved hver enkelt opprinnelse, ikke en antakelse på dokumentnivå — og prognoser med dagens fulle kalender rapporteres bare som eksplisitt merkede orakel-/scenariokolonner.
 3.  **Vedtatt, men ikke ikrafttrådt, regelverk regnes som kjent.** Det er den operative situasjonen en prognose i drift står i, og det er innholdet i underspørsmål **UB**.
 4.  **Pseudo-sanntid, ikke sanntid.** Serien revideres bakover ved etterkontroll mot skatteoppgjøret, og historiske vintages er ikke offentlig tilgjengelige (@sec-met-dv). Evalueringen bruker derfor gjeldende vintage gjennomgående. Det er en kjent optimistisk skjevhet, den gjelder alle modellene likt, og den er den eneste avviket fra ekte sanntidsdisiplin i protokollen.
 
@@ -1322,7 +1348,7 @@ Av de `r nb(n_prognosepkt)` prognosepunktene er `r pst(andel_rammet, 0)` slik at
 
 For `k_post` er null *nøyaktig* det teorien predikerer: når to tredeler av ytelsen medregnes i tre-utbetalingsmåneder, blir telt inntekt $3 \times \tfrac{2}{3} = 2$ — identisk med en normalmåned (@sec-met-kalender). Utelatelse og korrekt prior sammenfaller dermed, og de `r nb(sum(rammet$mangler[rammet$regressor == "k_post"]))` rammede punktene for `k_post` er rammet på en ufarlig måte. For `pakke_2024h2` er situasjonen motsatt: både regelverket og kronebeløpene i årsrapporten sier at effekten er positiv, og å utelate regressoren pålegger en påstand kildene motsier.
 
-Det er også verdt å merke seg hva som *ikke* er et problem. Seriens største brudd — avviklingen i termin april 2024 — bæres av `win_strom`, som er identifisert ved alle opprinnelser fra `r mnd(min(opprinnelser))`, fordi vinduets åpning ligger i treningsvinduet. Modellen kan derfor framskrive lukkingen selv om lukkingen selv ligger i horisonten. Identifikasjonsproblemet rammer altså ikke den hendelsen studien er mest opptatt av.
+Det er også verdt å merke seg hva som *ikke* er et problem. Seriens største brudd — avviklingen i termin april 2024 — bæres av `win_strom`, som er identifisert ved alle opprinnelser fra `r mnd(min(opprinnelser))`, fordi vinduets åpning ligger i treningsvinduet. Modellen kan derfor framskrive lukkingen selv om lukkingen selv ligger i horisonten — fra og med opprinnelsene der lukkingen var offentlig kunngjort (6. oktober 2023); ved tidligere opprinnelser holder point-in-time-porten den ute, og framskrivingen bærer vinduet videre. Identifikasjonsproblemet rammer altså ikke den hendelsen studien er mest opptatt av.
 
 **Protokollens svar: en eksplisitt inngangsregel.** En regressor inngår i spesifikasjonen ved opprinnelse $\tau$ hvis og bare hvis den har minst `r nb(MIN_NZ)` ikke-null observasjoner i treningsvinduet; ellers utelates den for den opprinnelsen. Regelen er deterministisk og logges, slik at spesifikasjonen ved hver opprinnelse er kjent. Alternativet — å la modelltilpasningen selv droppe kollineære kolonner — ville gitt samme resultat i stillhet, og «M6» ville da vært syv ulike modeller uten at noen sto oppført.
 
@@ -1374,11 +1400,11 @@ To ting i tabellen fortjener en kommentar. **T3** er formulert som en *ekvivalen
 
 Kontrakten fra kapitlets åpning gjelder også modelldelen: hver størrelse skal kunne regenereres av navngitt kode fra navngitt kilde.
 
-*Beregningen ligger i dokumentet.* Estimering, rullerende kryssvalidering og diagnostikk kjører når `unt_1.qmd` bygges. Det gir den sterkeste formen for konsistens mellom tekst og tall — de kan ikke komme i utakt, fordi de er samme kjøring — og prisen er byggetid: `r nb(n_modeller * n_opprinnelser)` modelltilpasninger per render. Blir det upraktisk, er `execute: freeze: auto` i YAML-hodet den dokumenterte utveien; den fryser chunk-resultatene til kildefilen endres, uten å endre noe ved beregningen.
+*Beregningen ligger i dokumentet.* Estimering, rullerende kryssvalidering og diagnostikk kjører når `bostotte_oslo.qmd` bygges. Det gir den sterkeste formen for konsistens mellom tekst og tall — de kan ikke komme i utakt, fordi de er samme kjøring — og prisen er byggetid: `r nb(n_modeller * n_opprinnelser)` modelltilpasninger per render. Blir det upraktisk, er `execute: freeze: auto` i YAML-hodet den dokumenterte utveien; den fryser chunk-resultatene til kildefilen endres, uten å endre noe ved beregningen.
 
 *Determinisme.* Løypa inneholder ingen tilfeldighet: ordensvalget er en deterministisk søkeprosedyre, den konformale kalibreringen er empiriske kvantiler, og kalenderfasen kalibreres fra data (@sec-met-kalender). To renderinger av samme kildefil mot samme datapakke gir derfor identisk resultat, og det er kontrollert ved å sammenlikne tekstinnholdet i to bygg framfor å anta det. Seeds settes likevel eksplisitt, slik at stokastiske metoder kan legges til senere uten at determinismen stilltiende forsvinner.
 
-*Miljø.* Pakkeversjonene låses med `renv`, og låsefilen versjoneres. R- og Quarto-versjon, samt datapakkens uttrekksdato (`r UTTREKKSDATO`), stemples i dokumentet. Typst-malen bruker bare fonter Typst har innebygd; det er et typografisk valg, men det hører hjemme her, fordi det er grunnen til at PDF-en blir identisk uansett vertsmaskin.
+*Miljø.* Miljøet er per i dag ikke låst: `oppsett.R` installerer nyeste tilgjengelige pakkeversjoner, og noen låsefil er ikke versjonert — `renv` er planen, ikke tilstanden (issue #3). Datapakkens uttrekksdato (`r UTTREKKSDATO`) stemples i dokumentet; R- og Quarto-versjon bør stemples sammen med den. Typst-malen bruker bare fonter Typst har innebygd; det er et typografisk valg, men det hører hjemme her, fordi det er grunnen til at PDF-en blir identisk uansett vertsmaskin.
 
 *Kart over løypa.* Datalasting og verifikasjon i chunkene `oppsett` til `tbl-kontroller`; regressorkonstruksjon i `met-intervensjoner` og `met-kalender-reg`; analysesettet i `met-analysesett`; protokollparametrene i `protokoll`. Uttrekksskriptene som produserer datapakken, ligger i `data/scripts/` og er dokumentert i `datakilder.md` og `kodebok.md`.
 
@@ -1398,10 +1424,45 @@ Kapitlet rapporterer den rullerende kryssvalideringen som @sec-met-protokoll spe
 # --- ved hver av opprinnelsene, med ordensvalg og re-estimering per opprinnelse.
 LAMBDA_ORAKEL <- NULL   # settes under; full-utvalgsestimatet for pakke_2024h2
 
-kjor_opprinnelse <- function(t0) {
+# --- Point-in-time-port (issue #6) -------------------------------------------
+# Ved opprinnelse t0 faar de vedtaksavhengige regressorene bare de framtids-
+# stegene som var offentlig kjent senest ved utgangen av maaned t0.
+# Kunnskapsdatoene er primaerkildebelagt i data/clean/regelverk_kunnskap.csv
+# (Norsk Lovtidend, stortingsinnstillinger, regjeringen.no; jf. revisjon/).
+# Treningsdata roeres ikke: historikk er observert virkelighet. Kalender-
+# frekvensen u er astronomisk og kjent vilkaarlig langt fram; det vedtaks-
+# avhengige ved k-regressorene er SKILLET k_pre/k_post (I17, offentlig
+# 2024-12-17) - foer den datoen fortsetter k_pre-banen og k_post er null,
+# ogsaa i maaneder etter 2024m12.
+KUNNSKAP_STEG   <- d$regelverk_kunnskap |> filter(regressor != "k_split") |>
+  arrange(regressor, steg_dato)
+KUNNSKAP_KSPLIT <- d$regelverk_kunnskap |> filter(regressor == "k_split") |>
+  pull(effect_known_from)
+stopifnot(length(KUNNSKAP_KSPLIT) == 1,
+          all(unique(KUNNSKAP_STEG$regressor) %in% c("win_covid", "win_strom", "pakke_2024h2")))
+
+pit_gate <- function(nd_tbl, t0) {
+  cutoff <- (t0 %m+% months(1)) - 1          # informasjon t.o.m. utgangen av t0-maaneden
+  ut <- nd_tbl
+  for (r in unique(KUNNSKAP_STEG$regressor)) {
+    s <- KUNNSKAP_STEG |> filter(regressor == r, effect_known_from <= cutoff)
+    ut[[r]] <- map_dbl(ut$dato, \(m) {
+      v <- s |> filter(steg_dato <= m)
+      if (nrow(v)) tail(v$ny_verdi, 1) else 0
+    })
+  }
+  if (KUNNSKAP_KSPLIT > cutoff) {
+    ut$k_pre  <- ut$u - 26 / 12
+    ut$k_post <- 0
+  }
+  ut
+}
+
+kjor_opprinnelse <- function(t0, kalender = "pit") {
   tr <- analyse |> mutate(mnd = yearmonth(dato)) |> filter(dato <= t0) |> as_tsibble(index = mnd)
   nd <- analyse |> mutate(mnd = yearmonth(dato)) |>
     filter(dato > t0, dato <= t0 %m+% months(H_MAKS)) |> as_tsibble(index = mnd)
+  if (kalender == "pit") nd <- pit_gate(nd, t0)
 
   # Inngangsregelen fra @sec-met-identifikasjon
   slipper <- function(v) v[map_lgl(v, \(r) sum(tr[[r]] != 0) >= MIN_NZ)]
@@ -1442,7 +1503,36 @@ LAMBDA_ORAKEL <- analyse |> mutate(mnd = yearmonth(dato)) |> as_tsibble(index = 
   model(m = ARIMA(log_M ~ win_covid + win_strom + pakke_2024h2 + k_pre + k_post)) |>
   tidy() |> filter(term == "pakke_2024h2") |> pull(estimate)
 
-cv <- map_dfr(opprinnelser, kjor_opprinnelse)
+# Automatiske kontroller paa porten (issue #6). Tre haandvalgte invarianser som
+# stopper byggingen - de to foerste er issue-tekstens manuelle kontroll av
+# origin juli 2023 -> april 2024, og den foerste opprinnelsen etter
+# kunngjoeringen 6. oktober 2023:
+#   (i)  juli 2023 VISSTE IKKE at vinduet lukkes: framtidig win_strom er 1
+#        gjennom hele horisonten;
+#   (ii) oktober 2023 VET det: win_strom er 0 fra og med termin april 2024;
+#   (iii) foer I17 var kjent (2024-12-17) fortsetter k_pre-banen og k_post er
+#        null, ogsaa i 2025-maaneder.
+nd_pit <- function(t0) analyse |> mutate(mnd = yearmonth(dato)) |>
+  filter(dato > t0, dato <= t0 %m+% months(H_MAKS)) |> as_tsibble(index = mnd) |>
+  pit_gate(t0)
+w_jul <- nd_pit(as.Date("2023-07-01")); w_okt <- nd_pit(as.Date("2023-10-01"))
+w_nov24 <- nd_pit(as.Date("2024-11-01"))
+stopifnot(
+  "PIT-port: juli 2023 skal ikke se avviklingen" =
+    all(w_jul$win_strom == 1),
+  "PIT-port: oktober 2023 skal se avviklingen fra termin april 2024" =
+    all(w_okt$win_strom == as.numeric(w_okt$dato <= as.Date("2024-03-01"))),
+  "PIT-port: k-skillet skal ikke vaere synlig foer 2024-12-17" =
+    all(w_nov24$k_post == 0) && all(abs(w_nov24$k_pre - (w_nov24$u - 26/12)) < 1e-12)
+)
+
+# Hovedloepet er point-in-time. Fasitkalenderen (dagens komplette regelverks-
+# kalender ved alle opprinnelser) beholdes som eksplisitt merket orakel-/
+# scenariokjoering: den svarer paa "hva ville prognosen vaert med kalenderen
+# vi HAR i dag", ikke "hva kunne noen ha visst da".
+cv       <- map_dfr(opprinnelser, kjor_opprinnelse)
+cv_fasit <- map_dfr(opprinnelser, kjor_opprinnelse, kalender = "fasit")
+stopifnot(nrow(cv_fasit) == length(opprinnelser) * H_MAKS * 8)
 stopifnot(nrow(cv) == length(opprinnelser) * H_MAKS * 8,
           !anyNA(cv$mu), !anyNA(cv$sd), all(cv$sd > 0),
           all(cv$dato == cv$opprinnelse %m+% months(cv$h)))
@@ -1456,7 +1546,10 @@ nevner <- map_dfr(opprinnelser, \(t0) {
 iv_dato <- bind_rows(d$intervensjoner |> filter(!is.na(termin_fra)) |> transmute(dato = termin_fra),
                      d$intervensjoner |> filter(!is.na(termin_til)) |> transmute(dato = termin_til))
 
-R <- cv |> left_join(nevner, by = "opprinnelse") |>
+# Samme skaaring for begge informasjonssett; R (point-in-time) er hovedobjektet
+# alle tabeller og inline-tall bygger paa, R_fasit brukes bare der teksten
+# eksplisitt sammenlikner med orakel-/scenariokalenderen.
+skaar_cv <- function(cvdf) cvdf |> left_join(nevner, by = "opprinnelse") |>
   mutate(pred = exp(mu), e = M_sant - pred, mase = abs(e) / q, le = log_M_sant - mu,
          l80 = exp(mu - z80*sd), u80 = exp(mu + z80*sd),
          l95 = exp(mu - z95*sd), u95 = exp(mu + z95*sd),
@@ -1464,6 +1557,16 @@ R <- cv |> left_join(nevner, by = "opprinnelse") |>
          ws80 = (u80-l80) + 10*(l80-M_sant)*(M_sant<l80) + 10*(M_sant-u80)*(M_sant>u80),
          pakke_ute = str_detect(ute, "pakke_2024h2"),
          bruddnaer = map_lgl(dato, \(m) any(abs(as.numeric(m - iv_dato$dato))/30.44 <= 3)))
+R       <- skaar_cv(cv)
+R_fasit <- skaar_cv(cv_fasit)
+
+# Der kalenderen var kjent ved opprinnelsen, skal de to informasjonssettene gi
+# identiske prognoser - det er kontrollen paa at porten bare virker der den
+# skal. Fra oktober 2023 var avviklingen kjent, og fra desember 2024 ogsaa
+# k-skillet; for opprinnelser fra desember 2024 er alt i horisonten kjent.
+like_fra <- as.Date("2024-12-01")
+stopifnot("PIT- og fasitkalenderen skal falle sammen der alt var kjent" =
+  all(abs(R$mu[R$opprinnelse >= like_fra] - R_fasit$mu[R_fasit$opprinnelse >= like_fra]) < 1e-9))
 
 # En modell som per konstruksjon skal avvike fra sin referanse, og ikke gjør det,
 # er en byggefeil — ikke et resultat. Kontrollen finnes fordi den manglet: M7 var
@@ -1475,10 +1578,27 @@ stopifnot(
     all(R$mu[R$.model == "M7" & !R$pakke_ute] == R$mu[R$.model == "M6" & !R$pakke_ute])
 )
 
-# Konformal kalibrering: kvantil av |logfeil| fra alle TIDLIGERE opprinnelser
+# Konformal kalibrering, tidsgyldig: kvantil av |logfeil| fra opprinnelser hvis
+# feil var REALISERT ved kalibreringstidspunktet. Feilen fra opprinnelse t_j paa
+# horisont h er foerst kjent i t_j + h; kravet er derfor t_j + h <= t_i, ikke
+# t_j < t_i. Det gamle kravet lakk h-1 urealiserte feil inn i kalibreringen
+# (maalt i notebook 02/07 og uavhengig reprodusert i revisjon/repro_protokoll.py:
+# 78,5 mot 67,4 % dekning paa de 270 felles punktene for M0). Nivaaet justeres
+# samtidig med endelig-utvalgskorreksjonen ceiling((n+1)*niv)/n for split-
+# konformal gyldighet (K3/M19). q80_lekk beholdes som eksplisitt merket
+# sammenlikningskolonne for erratum-noten; den skal ikke brukes i tabeller.
+kvant_endelig <- function(x, niv) {
+  n <- length(x)
+  quantile(x, min(1, ceiling((n + 1) * niv) / n), names = FALSE, type = 7)
+}
 K <- R |> arrange(.model, h, opprinnelse) |> group_by(.model, h) |>
-  mutate(q80 = map_dbl(row_number(), \(i) if (i <= 3) NA_real_ else quantile(abs(le[seq_len(i-1)]), .80, names = FALSE)),
-         q95 = map_dbl(row_number(), \(i) if (i <= 3) NA_real_ else quantile(abs(le[seq_len(i-1)]), .95, names = FALSE))) |>
+  mutate(
+    n_real = map_int(row_number(), \(i) sum(opprinnelse[seq_len(i-1)] %m+% months(h[1]) <= opprinnelse[i])),
+    q80 = map_dbl(row_number(), \(i) { j <- which(opprinnelse %m+% months(h[1]) <= opprinnelse[i])
+      if (length(j) < 3) NA_real_ else kvant_endelig(abs(le[j]), .80) }),
+    q95 = map_dbl(row_number(), \(i) { j <- which(opprinnelse %m+% months(h[1]) <= opprinnelse[i])
+      if (length(j) < 3) NA_real_ else kvant_endelig(abs(le[j]), .95) }),
+    q80_lekk = map_dbl(row_number(), \(i) if (i <= 3) NA_real_ else quantile(abs(le[seq_len(i-1)]), .80, names = FALSE))) |>
   ungroup() |>
   mutate(kdekk80 = M_sant >= exp(mu-q80) & M_sant <= exp(mu+q80),
          kdekk95 = M_sant >= exp(mu-q95) & M_sant <= exp(mu+q95),
@@ -1501,6 +1621,22 @@ dmtest <- function(a, b, nested, hh) {
 MNAVN <- c(M0="M0 naiv", M1="M1 sesongnaiv", M2="M2 ETS", M3="M3 SARIMA",
            M4="M4 RegARIMA + k", M5="M5 RegARIMA + X", M6="M6 RegARIMA + X + k",
            M7="M7 med pålagt bidrag")
+
+# En DM/CW-statistikk kan vaere udefinert: med rektangulaert vindu og L = h-1
+# lag er langtidsvariansen ikke garantert positiv, og der to prognoser
+# sammenfaller er tapsdifferansen identisk null. Det er utfall av METODEN,
+# ikke datafeil - nb() skal fortsatt stoppe paa NA alle andre steder, men
+# testverdier trykkes gjennom nb_test(), som sier det som det er.
+nb_test <- function(x, siffer = 2) if (is.na(x)) "udefinert" else nb(x, siffer)
+
+# Samlede MASE-verdier og teststatistikker som proseavsnittene doemmer med.
+# Beregnet EN gang her, saa tekst og tabeller ikke kan regne hver for seg.
+mase_M0 <- mean(R$mase[R$.model == "M0"]); mase_M1 <- mean(R$mase[R$.model == "M1"])
+mase_M2 <- mean(R$mase[R$.model == "M2"]); mase_M5 <- mean(R$mase[R$.model == "M5"])
+mase_M6 <- mean(R$mase[R$.model == "M6"])
+dm_m2m6_h12 <- dmtest("M2", "M6", FALSE, 12)
+dm_m5m6_h1  <- dmtest("M5", "M6", TRUE, 1)
+dm_m5m6_h12 <- dmtest("M5", "M6", TRUE, 12)
 ```
 
 ## Presisjon over horisonten {#sec-res-presisjon}
@@ -1518,11 +1654,11 @@ R |> summarise(MASE = mean(mase), RMSE = sqrt(mean(e^2)),
   kab(align = "lrrrrr")
 ```
 
-@tbl-res-samlet samler utfallet. **T1 holder mot de naive referansene, men ikke mot alle.** M6 oppnår MASE `r nb(R |> filter(.model=="M6") |> pull(mase) |> mean(), 3)` mot sesongnaivs `r nb(R |> filter(.model=="M1") |> pull(mase) |> mean(), 3)` — struktur slår gjentakelse, som forventet. Men ETS ligger på `r nb(R |> filter(.model=="M2") |> pull(mase) |> mean(), 3)` og slår M6 samlet, og på tolv måneders horisont er forskjellen signifikant i ETS' favør (Diebold–Mariano `r nb(dmtest("M2","M6",FALSE,12), 2)`). Det er M4-konkurransens lærdom i praksis [@makridakis2020]: en enkel, veletablert metode er vanskelig å slå, og en modell som vet mer om regelverket vinner ikke automatisk på alle horisonter. @fig-res-mase viser hvordan forspranget forsvinner med horisonten.
+@tbl-res-samlet samler utfallet. M6 oppnår MASE `r nb(mase_M6, 3)` mot sesongnaivs `r nb(mase_M1, 3)` `r if (mase_M6 < mase_M1) "— struktur slår gjentakelse på samlet MASE, som forventet." else "— med point-in-time-kalender slår strukturen ikke lenger gjentakelsen på samlet MASE; fortrinnet ligger på horisontene der kalenderen faktisk var kjent (@tbl-res-april), og gjennomsnittet over alle opprinnelser bærer prisen for dem der den ikke var det."` ETS ligger på `r nb(mase_M2, 3)``r if (mase_M2 < mase_M6) " og slår M6 samlet" else ""`; ved tolv måneders horisont er Diebold–Mariano-statistikken `r nb_test(dm_m2m6_h12)``r if (is.na(dm_m2m6_h12)) " — langtidsvariansen er ikke positiv med det rektangulære vinduet (L = h − 1) på 31 opprinnelser, så testen finnes ikke der, og samlet MASE får stå alene" else if (dm_m2m6_h12 > 1.64) ", signifikant i ETS' favør" else ", under kritisk verdi"`. Det er M4-konkurransens lærdom i praksis [@makridakis2020]: en enkel, veletablert metode er vanskelig å slå, og en modell som vet mer om regelverket vinner ikke automatisk på alle horisonter. @fig-res-mase viser hvordan forspranget beveger seg med horisonten.
 
 ```{r}
 #| label: fig-res-mase
-#| fig-cap: "MASE per horisont. Stiplet linje ved 1 er sesongnaiv prognose i treningsvinduet. Ingen modell dominerer over hele horisonten: de regelinformerte er klart best på korte horisonter, mens forspranget spises opp mot tolv måneder."
+#| fig-cap: "MASE per horisont, point-in-time. Stiplet linje ved 1 er sesongnaiv prognose i treningsvinduet. Ingen modell dominerer over hele horisonten: de regelinformerte er best på korte horisonter, mens bildet mot tolv måneder avgjøres av hva som var kjent om regelverkskalenderen ved opprinnelsen."
 #| fig-width: 6.6
 #| fig-height: 3.2
 
@@ -1546,7 +1682,7 @@ R |> filter(.model %in% vis) |> summarise(mase = mean(mase), .by = c(.model, h))
 
 ```{r}
 #| label: tbl-res-cw
-#| tbl-cap: "Sammenlikninger langs modellstigen. Clark–West brukes på nøstede par, Diebold–Mariano med Harvey-korreksjon på ikke-nøstede (@sec-met-evaluering). Positiv verdi favoriserer den første modellen; ensidig kritisk verdi ved 5 prosent er 1,64."
+#| tbl-cap: "Sammenlikninger langs modellstigen. Clark–West brukes på nøstede par, Diebold–Mariano med Harvey-korreksjon på ikke-nøstede (@sec-met-evaluering). Positiv verdi favoriserer den første modellen; ensidig kritisk verdi ved 5 prosent er 1,64. «Udefinert» betyr at langtidsvariansen ikke er positiv med det rektangulære vinduet (L = h − 1) — testen finnes ikke der; den er ikke utelatt."
 
 tribble(~par, ~a, ~b, ~nested,
         "M6 mot M3 — samlet verdi av deterministisk informasjon", "M3","M6", TRUE,
@@ -1554,7 +1690,7 @@ tribble(~par, ~a, ~b, ~nested,
         "M6 mot M5 — kalenderens bidrag",                         "M5","M6", TRUE,
         "M6 mot M2 — mot en veletablert referanse",               "M2","M6", FALSE) |>
   mutate(map_dfr(seq_along(par), \(i) set_names(
-    map(c(1,3,6,12), \(hh) nb(dmtest(a[i], b[i], nested[i], hh), 2)),
+    map(c(1,3,6,12), \(hh) nb_test(dmtest(a[i], b[i], nested[i], hh))),
     c("h = 1","h = 3","h = 6","h = 12")))) |>
   transmute(Sammenlikning = par, Test = if_else(nested, "Clark–West", "DM–Harvey"),
             `h = 1`, `h = 3`, `h = 6`, `h = 12`) |>
@@ -1563,7 +1699,7 @@ tribble(~par, ~a, ~b, ~nested,
 
 @tbl-res-cw gjør sammenlikningene langs stigen eksplisitte. **T2 holder i retning, men ikke i styrke.** M6 slår M3 med `r pst(abs(100*(mean(R$mase[R$.model=="M6"])/mean(R$mase[R$.model=="M3"]) - 1)))` på MASE, og på hver enkelt horisont. Clark–West-statistikken er positiv gjennomgående, men når ikke kritisk verdi på noen horisont. Med `r nb(length(opprinnelser))` opprinnelser per horisont er testen rett og slett for svak til å avgjøre en forskjell av denne størrelsen; det er en utvalgsbegrensning, ikke et bevis for fravær av effekt.
 
-**Kalenderregressoren hjelper på korte horisonter og skader på lange.** M6 mot M5 gir `r nb(dmtest("M5","M6",TRUE,1), 2)` ved én måned og `r nb(dmtest("M5","M6",TRUE,12), 2)` ved tolv. Sammenholdt med at M5 har lavere samlet MASE enn M6, er dette kapitlets tydeligste påminnelse om at innenfor-utvalgs-signifikans ikke er ut-av-utvalgs-verdi: kalendereffekten er utvilsomt reell (@sec-res-kalender), men den er en høyfrekvent svingning som betyr lite for nivået tolv måneder fram, og to ekstra parametre koster mer enn de smaker på et treningsvindu av denne lengden.
+**Kalenderregressoren hjelper på korte horisonter og skader på lange.** M6 mot M5 gir `r nb_test(dm_m5m6_h1)` ved én måned og `r nb_test(dm_m5m6_h12)` ved tolv. Sammenholdt med de samlede MASE-verdiene (M5 `r nb(mase_M5, 3)`, M6 `r nb(mase_M6, 3)`; @tbl-res-samlet) er dette kapitlets tydeligste påminnelse om at innenfor-utvalgs-signifikans ikke er ut-av-utvalgs-verdi: kalendereffekten er utvilsomt reell (@sec-res-kalender), men den er en høyfrekvent svingning som betyr lite for nivået tolv måneder fram, og to ekstra parametre koster mer enn de smaker på et treningsvindu av denne lengden.
 
 ## Aprilbruddet 2024: hva regelverksinformasjon faktisk er verdt {#sec-res-april}
 
@@ -1571,20 +1707,23 @@ Gjennomsnittstall over 372 prognosepunkter skjuler den hendelsen studien er bygg
 
 ```{r}
 #| label: tbl-res-april
-#| tbl-cap: "Alle prognoser mot termin april 2024, fra hver opprinnelse som når fram. Fasit er 15 588 husstander; nivået måneden før var 20 849. En modell som ikke kjenner regelendringen, må lande nær 20 000."
+#| tbl-cap: "Alle prognoser mot termin april 2024, fra hver opprinnelse som når fram. Fasit er 15 588 husstander; nivået måneden før var 20 849. Point-in-time-kolonnene bruker bare regelverksinformasjon som var offentlig ved opprinnelsen; avviklingen ble kjent 6. oktober 2023, så skillet mellom M6 og M6 med fasitkalender viser nøyaktig hva den kunnskapen er verdt ved h > 6. En modell som ikke kjenner regelendringen, må lande nær 20 000."
 
 R |> filter(dato == as.Date("2024-04-01"), .model %in% c("M1","M3","M5","M6")) |>
   transmute(.model, h, pred = round(pred)) |>
   pivot_wider(names_from = .model, values_from = pred) |>
   arrange(h) |>
+  left_join(R_fasit |> filter(dato == as.Date("2024-04-01"), .model == "M6") |>
+              transmute(h, M6_fasit = round(pred)), by = "h") |>
   transmute(`Horisont (mnd)` = h,
             `M1 sesongnaiv` = nb(M1), `M3 SARIMA` = nb(M3),
             `M5 RegARIMA + X` = nb(M5), `M6 RegARIMA + X + k` = nb(M6),
+            `M6, fasitkalender (orakel)` = nb(M6_fasit),
             `Fasit` = nb(15588)) |>
-  kab(align = "rrrrrr")
+  kab(align = "rrrrrrr")
 ```
 
-Referansemodellene lander mellom 19 500 og 20 900 fra samtlige horisonter: de ser ikke bruddet, og kan ikke se det. M6 lander på `r nb(R |> filter(dato==as.Date("2024-04-01"), .model=="M6", h==9) |> pull(pred))` husstander fra ni måneders horisont, mot en fasit på 15 588 — et avvik på `r pst(abs(100*(R |> filter(dato==as.Date("2024-04-01"), .model=="M6", h==9) |> pull(pred))/15588 - 100))`. Å treffe et strukturelt fall på en fjerdedel innenfor tre prosent, ni måneder i forveien, er ikke en modelleringsprestasjon: det er informasjonen i regelverkskalenderen som gjør arbeidet, og det er hele poenget.
+Referansemodellene lander mellom 19 500 og 20 900 fra samtlige horisonter: de ser ikke bruddet, og kan ikke se det. Point-in-time-modellen deler den skjebnen på de lengste horisontene, og skal gjøre det: fra ni måneder er opprinnelsen juli 2023, avviklingen ble først offentlig 6. oktober 2023 (Prop. 1 S (2023–2024); forskriftsfestet 4. januar 2024), og M6 lander på `r nb(R |> filter(dato==as.Date("2024-04-01"), .model=="M6", h==9) |> pull(pred))`. Med fasitkalenderen som merket orakelscenario lander samme spesifikasjon på `r nb(R_fasit |> filter(dato==as.Date("2024-04-01"), .model=="M6", h==9) |> pull(pred))` — `r pst(abs(100*(R_fasit |> filter(dato==as.Date("2024-04-01"), .model=="M6", h==9) |> pull(pred))/15588 - 100))` fra fasit; det tallet måler verdien av regelverkskunnskap som ennå ikke fantes. Det ekte pseudo-sanntidsresultatet står ved seks måneders horisont: fra første opprinnelse etter kunngjøringen lander M6 på `r nb(R |> filter(dato==as.Date("2024-04-01"), .model=="M6", h==6) |> pull(pred))` mot 15 588 — `r pst(abs(100*(R |> filter(dato==as.Date("2024-04-01"), .model=="M6", h==6) |> pull(pred))/15588 - 100))`. Å treffe et strukturelt fall på en fjerdedel så tett, seks måneder i forveien og med dokumentert kjent kalender, er ikke en modelleringsprestasjon: det er informasjonen i regelverkskalenderen som gjør arbeidet, og det er hele poenget.
 
 Mønsteret er dessuten motsatt av det vanlige — M6 er *bedre* på lang enn på kort horisont for denne hendelsen. Forklaringen ligger i modellen: autoregressivkoeffisienten er nær 0,9, så på korte horisonter trekkes prognosen mot marsnivået, mens intervensjonsregressoren dominerer først når AR-leddet har fått tid til å dø ut.
 
@@ -1618,7 +1757,7 @@ En ordinær nullhypotesetest ville her gitt $p = `r nb(kq$p.value, 3)`$ og invit
 
 ```{r}
 #| label: fig-res-dekning
-#| fig-cap: "Empirisk dekning ved nominelt 80 prosent, før og etter konformal kalibrering. Åpent punkt er modellens eget intervall, fylt punkt etter kalibrering. De regelinformerte modellene har de smaleste intervallene og den dårligste dekningen — og kalibreringen lukker mesteparten av gapet."
+#| fig-cap: "Empirisk dekning ved nominelt 80 prosent, før og etter tidsgyldig konformal kalibrering. Åpent punkt er modellens eget intervall, fylt punkt etter kalibrering — begge regnet på kalibreringsutvalget (punkter med minst tre realiserte feil ved opprinnelsen; se teksten for skillet mot hovedutvalget i tabell @tbl-res-samlet)."
 #| fig-width: 6.4
 #| fig-height: 2.6
 
@@ -1642,7 +1781,9 @@ K |> filter(.model %in% vis) |>
         axis.title = element_text(size = 8, colour = "grey35"))
 ```
 
-@fig-res-dekning viser dekningen før og etter kalibrering. **T4 falt, og motsatt vei av det som var forventet.** Implikasjonen sa at nominell dekning *krever* at brudd og kalender modelleres. Det stemmer ikke. M3 uten regressorer dekker `r pst(100*mean(K$dekk80[K$.model=="M3"]), 0)`, mens M6 dekker `r pst(100*mean(K$dekk80[K$.model=="M6"]), 0)`. Å modellere bruddene halverer restvariansen, intervallene krymper tilsvarende — og treffsikkerheten i sentrum følger ikke med.
+@fig-res-dekning viser dekningen før og etter kalibrering. To utvalg er i bruk i dette avsnittet, og de holdes fra hverandre med navn: *hovedutvalget* er alle `r nb(sum(R$.model == "M6"))` prognosepunktene, det samme som @tbl-res-samlet regner på; *kalibreringsutvalget* er de `r nb(sum(K$.model == "M6"))` punktene der minst tre realiserte prognosefeil forelå ved opprinnelsen — kalibrert dekning finnes bare der. Figuren regner begge punktene sine på kalibreringsutvalget; tallene i den avviker derfor med noen prosentpoeng fra tabellens, uten at noe er galt noe sted.
+
+**T4 falt, og motsatt vei av det som var forventet.** Implikasjonen sa at nominell dekning *krever* at brudd og kalender modelleres. Det stemmer ikke. På hovedutvalget dekker M3 uten regressorer `r pst(100*mean(R$dekk80[R$.model=="M3"]), 0)`, mens M6 dekker `r pst(100*mean(R$dekk80[R$.model=="M6"]), 0)` — samme tall som i @tbl-res-samlet. Å modellere bruddene halverer restvariansen, intervallene krymper tilsvarende — og treffsikkerheten i sentrum følger ikke med.
 
 @tbl-res-skjevhet viser hvorfor, og svaret er ikke det nærliggende.
 
@@ -1663,7 +1804,7 @@ R |> filter(.model %in% c("M3","M5","M6")) |>
 
 Der høstpakken ikke er estimerbar, underpredikerer M6 systematisk med `r pst(100*(exp(mean(R$le[R$.model=="M6" & R$pakke_ute]))-1))`. Full-utvalgskoeffisienten for pakken er `r pst(100*(exp(LAMBDA_ORAKEL)-1))`. Skjevheten er altså praktisk talt den utelatte koeffisienten — et lærebokeksempel på utelatt-variabel-skjevhet, her kvantifisert. Intervallene er ikke først og fremst for smale; de står på feil sted.
 
-Det har en konsekvens for hvordan kalibreringen skal forstås. Konformal etterkalibrering løfter dekningen til `r pst(100*mean(K$kdekk80[K$.model=="M6"]), 0)`, og intervallskåren faller. Men den gjør det ved å *utvide intervallet til å dekke en systematisk feil*, ikke ved å fjerne feilen. Som korreksjon av dekning er det legitimt og virksomt; som svar på hvorfor prognosen bommer, er det symptombehandling. Den egentlige kuren er å skaffe effektstørrelsen utenfra — som er nettopp det M7 gjør.
+Det har en konsekvens for hvordan kalibreringen skal forstås. Tidsgyldig konformal etterkalibrering løfter M6-dekningen på kalibreringsutvalget fra `r pst(100*mean(K$dekk80[K$.model=="M6"]), 0)` til `r pst(100*mean(K$kdekk80[K$.model=="M6"]), 0)`, og intervallskåren faller. Men den gjør det ved å *utvide intervallet til å dekke en systematisk feil*, ikke ved å fjerne feilen. Som korreksjon av dekning er det legitimt og virksomt; som svar på hvorfor prognosen bommer, er det symptombehandling. Den egentlige kuren er å skaffe effektstørrelsen utenfra — som er nettopp det M7 gjør.
 
 ## Verdien av et anslag, og hvor mye det er verdt {#sec-res-prior}
 
@@ -1717,17 +1858,33 @@ Konsekvensen er en presisering av protokollen som bør inn i en revidert versjon
 
 |   | Implikasjon | Utfall |
 |:---|:---|:---|
-| **T1** | Struktur slår naive referanser | **Holder delvis.** Slår naiv og sesongnaiv klart; ETS slår M6 samlet og signifikant på tolv måneder |
+| **T1** | Struktur slår naive referanser | `r if (mase_M6 < mase_M1 && mase_M6 < mase_M0) "**Holder delvis.** Slår naiv og sesongnaiv på samlet MASE" else "**Holder bare betinget.** Slår ikke begge de naive referansene på samlet point-in-time-MASE; fortrinnet er konsentrert der kalenderen var kjent (@tbl-res-april)"`; ETS ligger på `r nb(mase_M2, 3)` mot M6s `r nb(mase_M6, 3)` — testene per horisont står i @tbl-res-cw |
 | **T2** | Eksplisitte intervensjoner hjelper | **Holder i retning.** MASE ned; Clark–West når ikke kritisk verdi på noen horisont |
 | **T3** | Kalendereffekt stor før 2025, eksakt null etter | **Holder i første ledd.** Ekvivalens ikke etablert ved den forhåndssatte grensen; full styrke utelukket, halv styrke ikke |
-| **T4** | Nominell dekning krever brudd og kalender | **Faller.** Modellering forverrer dekningen; konformal kalibrering reparerer den |
+| **T4** | Nominell dekning krever brudd og kalender | **Faller.** Modellering forverrer dekningen; tidsgyldig konformal kalibrering reparerer den delvis (@sec-res-dekning) — resten er skjevhet, ikke bredde |
 | **T5** | Daterte anslag bærer informasjon | **Ikke testbar som formulert.** Ingen publiserte husstandstall for hendelsen det gjaldt; demonstrert med perfekt informasjon som øvre grense |
 
 : Utfallet holdt opp mot «faller dersom»-kolonnen i @tbl-tester, som ble skrevet før estimeringen. {#tbl-res-oppgjor}
 
 @tbl-res-oppgjor stiller utfallet opp mot kontrakten. To av implikasjonene overlevde ikke møtet med dataene, og begge feilene er informative. T4 falt fordi den bygde på en feil intuisjon: at bedre modellering av kjente brudd også gir bedre kalibrert usikkerhet. Det motsatte skjer, fordi en modell som forklarer mer av fortiden blir mer selvsikker om framtiden uten å bli mer treffsikker der informasjonen mangler. T5 lot seg ikke teste fordi kildegrunnlaget sviktet — og at det sviktet, er i seg selv et funn om kunnskapsgrunnlaget på feltet.
 
-Det som står igjen som studiens sterkeste enkeltresultat, er ikke et gjennomsnitt: det er at en modell med regelverkskalenderen traff et strukturelt fall på en fjerdedel innenfor tre prosent, ni måneder i forveien (@sec-res-april). Gjennomsnitt over rolige måneder skjuler den evnen. Det er nettopp derfor evalueringen er stratifisert, og nettopp derfor et samlet MASE-tall er utilstrekkelig som beslutningsgrunnlag.
+Det som står igjen som studiens sterkeste enkeltresultat, er ikke et gjennomsnitt: det er at en modell med regelverkskalenderen traff et strukturelt fall på en fjerdedel innenfor 0,2 prosent fra første opprinnelse etter at avviklingen var offentlig kjent — og innenfor 3,2 prosent fra ni måneder, dersom kalenderen legges til grunn før den var kunngjort (@sec-res-april). Gjennomsnitt over rolige måneder skjuler den evnen. Det er nettopp derfor evalueringen er stratifisert, og nettopp derfor et samlet MASE-tall er utilstrekkelig som beslutningsgrunnlag.
+
+# Diskusjon {#sec-diskusjon}
+
+Fire kapitler tall lar seg samle i én setning: *informasjonen gjør arbeidet, modellen forvalter den.* De to beste spesifikasjonene i @tbl-res-samlet — M5 på `r nb(mase_M5, 3)` og M6 på `r nb(mase_M6, 3)` mot naivens `r nb(mase_M0, 3)` — skiller seg fra referansene ved nøyaktig én ting: daterte regelverkssteg som regressorer. Verdien av den informasjonen er ikke jevnt fordelt. Den er konsentrert på korte horisonter — kalenderbidraget M6 mot M5 passerer kritisk verdi ved én måneds horisont (`r nb_test(dm_m5m6_h1)`) og forsvinner ved tolv (`r nb_test(dm_m5m6_h12)`) — og rundt kjente brudd: @tbl-res-april viser `r pst(abs(100*(R |> filter(dato==as.Date("2024-04-01"), .model=="M6", h==6) |> pull(pred))/15588 - 100))` avvik på seks måneders horisont *med* kunngjort avvikling, mot referansemodeller som bommer med rundt 30 prosent. Der kunnskapen ikke fantes, finnes heller ikke gevinsten: fra ni måneder deler point-in-time-modellen referansenes skjebne, og bare det merkede orakelscenarioet treffer. Arbeidsverk 2 (notebooks 01–07 i repoet) kommer til samme svar fra en annen kant: maskinlæringsklasser uten regelverksregressorene taper mot den naive referansen, og med regressorene fryst på opprinnelsesverdien inverteres langsiktsfortrinnet. Kapasitet erstatter ikke kunnskap.
+
+Det gjør point-in-time-disiplinen til leveransens kontrakt, ikke en teknisk detalj. Regelen fra @sec-met-protokoll — hvert vedtaksavhengig steg brukes i horisonten bare fra sin dokumenterte kunnskapsdato — hviler på et primærkildebelagt register (`data/clean/regelverk_kunnskap.csv`; Norsk Lovtidend, stortingsinnstillinger, regjeringens fremleggelser), og registeret lærte oss noe forskriftshistorikken alene ikke sier: sluttdatoer er upålitelige prediktorer. Det midlertidige egenandelsregelverket fikk fem lovfestede sluttdatoer før det faktisk utløp; i juli 2023 var kunngjort sluttdato 31. desember 2023, ikke termin april 2024. En prognoseprosess har dermed tre legitime informasjonsbaner — regressorer fryst ved opprinnelsen som konservativ nedre grense, kunngjort kalender som hovedløp (denne rapportens valg), og dagens fasitkalender som eksplisitt merket scenario — og det er avstanden mellom dem, ikke noen av banene alene, som forteller en beslutningstaker hva regelverkskunnskap er verdt.
+
+Usikkerheten står nå på ærlig grunn, og den er ubehageligere enn den så ut. De regelinformerte modellene underdekker grovt (M6 `r pst(100*mean(R$dekk80[R$.model=="M6"]), 0)` ved nominelt 80 på hovedutvalget), tidsgyldig konformal etterkalibrering — kalibrert bare på feil som var realisert ved opprinnelsen, med endelig-utvalgsnivå — løfter dekningen til `r pst(100*mean(K$kdekk80[K$.model=="M6"]), 0)` på kalibreringsutvalget, og resten er ikke bredde, men skjevhet: der høstpakken ikke er estimerbar, ligger systematikken (@tbl-res-skjevhet) praktisk talt på den utelatte koeffisienten. Kalibrering er symptombehandling for et informasjonsproblem; kuren er daterte effektanslag utenfra, og M7 viser mekanismen uten å kunne demonstrere den for hendelsen som trengte den mest. At enkelte teststatistikker er udefinerte (@tbl-res-cw), er samme ærlighet i en annen form — med 31 opprinnelser og rektangulært vindu finnes ikke testen ved alle horisonter, og en tabell som sier det, er å foretrekke framfor en som fyller hullet.
+
+For en etat følger arbeidsformen mer eller mindre direkte: en månedlig basisprognose der vedtatte regelendringer inngår fra sin kunngjøringsdato; ikke-vedtatte forslag utelukkende i navngitte scenarioer; horisont én til tre måneder kommunisert som prognose, seks til tolv som beregning betinget av en oppgitt regelverkskalender — med kalenderen trykt ved siden av tallet; og en overvåkning av kunngjøringskildene (Norsk Lovtidend, innstillinger, fremleggelser) der en oppdaget hendelse går inn i prognosegrunnlaget først etter menneskelig godkjenning. Ingenting av dette krever mer modell enn det som alt står i dette dokumentet.
+
+# Konklusjon {#sec-konklusjon}
+
+Hvor presist kan månedlig antall bostøttemottakere i Oslo prognostiseres ett til tolv måneder fram med åpne data? Presist nok til å være nyttig på kort horisont, og presist nok til å være ærlig om resten: beste spesifikasjon ligger `r pst(abs(100*(mase_M5/mase_M0 - 1)))` under naiv framskrivning på samlet MASE, gevinsten er konsentrert der regelverkskalenderen var kjent, og seriens største bevegelse — et fall på en fjerdedel — ble truffet på `r pst(abs(100*(R |> filter(dato==as.Date("2024-04-01"), .model=="M6", h==6) |> pull(pred))/15588 - 100))` seks måneder i forveien *fordi* avviklingen var kunngjort seks måneder i forveien. Hvor mye bedre blir prognosen når kjente regelendringer modelleres eksplisitt? Svaret er betinget: vesentlig bedre fra den dagen endringen er offentlig, ikke målbart bedre før. Det er ikke en svakhet ved metoden; det er hva spørsmålet faktisk svarer når informasjonssettet dateres redelig.
+
+Det varige bidraget er derfor ikke én modell, men en prosess som kan etterprøves: et versjonert datagrunnlag med maskinelle kontrakter, et primærkildebelagt kunnskapsregister med håndhevet point-in-time-port, en evalueringsprotokoll som er reprodusert i to språk, tidsgyldig kalibrert usikkerhet, og tekst som dømmer sine egne påstander fra beregnede verdier. Veien videre er tilsvarende konkret: arbeidsverk 2 har allerede prøvd trebaserte og nevrale klasser mot samme protokoll og målt at gevinsten deres bor i de samme regressorene; det som gjenstår før drift er registervedlikeholdet som rutine, varsling på intervallskår framfor MASE, og en månedlig kjøring med logget vintage — fase 3 i planen, med denne rapportens informasjonskontrakt som styringsdokument.
 
 # Referanser {.unnumbered}
 

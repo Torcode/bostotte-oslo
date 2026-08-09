@@ -1,0 +1,19 @@
+---
+title: "Tegnsettprobe 4: hvem flipper localen?"
+format: typst
+---
+
+```{r}
+pk <- function(navn) cat(sprintf("%-24s LC_CTYPE=%-32s UTF8=%s\n", navn,
+  Sys.getlocale("LC_CTYPE"), l10n_info()[["UTF-8"]]))
+pk("start")
+suppressPackageStartupMessages(library(tidyverse)); pk("tidyverse")
+suppressPackageStartupMessages(library(knitr)); pk("knitr")
+suppressPackageStartupMessages(library(tsibble)); pk("tsibble")
+suppressPackageStartupMessages(library(fable)); pk("fable+fabletools")
+suppressPackageStartupMessages(library(feasts)); pk("feasts")
+suppressPackageStartupMessages(library(urca)); pk("urca")
+suppressPackageStartupMessages(library(distributional)); pk("distributional")
+source("data/scripts/last_datapakke.R"); pk("source last_datapakke")
+d <- last_alt("data"); pk("last_alt (readr/vroom)")
+```

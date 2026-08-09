@@ -1,0 +1,9 @@
+regressor,steg_dato,ny_verdi,intervensjon_id,effect_known_from,kilde,merknad
+win_covid,2020-04-01,1,I01,2020-03-31,Innst. 216 S (2019-2020) / anmodningsvedtak 31.03.2020; FOR-2020-05-04-935,Ramme (500 mill.) og sluttdato (31.10.2020) kjent 31.03.2020; presise satser kunngjort 06.05.2020
+win_covid,2020-11-01,0,I01,2020-03-31,FOR-2020-05-04-935 (april-oktober 2020),Sluttdato eksplisitt i anmodningsvedtaket og forskriften
+win_strom,2021-12-01,1,I05,2021-12-19,Pressemelding regjeringen+SV 19.12.2021; FOR-2021-12-20-3780 (kunngjort 22.12.2021),Innhold kjent 19.12; presise satser 22.12; formelt Prop. 46 S (2021-2022)
+win_strom,2024-04-01,0,I12,2023-10-06,Prop. 1 S (2023-2024)/A-til-AA 06.10.2023; vedtatt 15.12.2023; FOR-2024-01-04-35 (oppheves 01.04.2024),I juli 2023 var kunngjort sluttdato 31.12.2023 (FOR-2023-07-10-1262); sluttdatoen ble lovfestet fem ganger. Se revisjon/regelverksregister_kunnskapsdatoer.csv
+pakke_2024h2,2024-07-01,0.333333,I14,2024-06-18,Innst. 447 S (2023-2024) avgitt 18.06.2024; FOR-2024-06-28-1393,RNB-forliket - ikke Prop. 104 S (den hadde bare utgiftsanslag)
+pakke_2024h2,2024-09-01,0.666667,I15,2024-06-18,Innst. 447 S; FOR-2024-08-28-2046 (kunngjort 29.08.2024),Innhold og 2024-oppstart kjent 18.06; ikrafttredelse rettslig sikker 29.08.2024
+pakke_2024h2,2024-10-01,1,I16,2024-06-18,Innst. 447 S; FOR-2024-09-23-2234,Fra 1. oktober eksplisitt i forliket
+k_split,2025-01-01,,I17,2024-12-17,Budsjettforlik 01.12.2024; Innst. 16 S (2024-2025); FOR-2024-12-19-3386 (kunngjort 23.12.2024),Skillet k_pre/k_post. Foer kunnskapsdatoen fortsetter k_pre-banen inn i 2025 og k_post er null. Regelinnhold: tre meldekortutbetalinger i samme maaned telles med 2/3

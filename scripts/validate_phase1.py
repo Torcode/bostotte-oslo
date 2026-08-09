@@ -385,6 +385,71 @@ def intervention_contract(run: Run) -> None:
         run.emit("passed", "interventions:all_source_verified")
 
 
+def knowledge_contract(run: Run) -> None:
+    """Kunnskapsregisteret for point-in-time-porten (issue #6).
+
+    Kontraktene speiler det porten i bostotte_oslo.qmd faktisk forutsetter:
+    kjente kolonner, ISO-daterte steg- og kunnskapsdatoer, regressornavn fra
+    et lukket sett, kilde per rad, og at hvert vedtaksavhengige steg har en
+    kunnskapsdato (k_split-raden er markoer for k_pre/k_post-skillet og har
+    ingen ny_verdi; alle andre skal ha en tallverdi i [0, 1]).
+    """
+    path = Path("data/clean/regelverk_kunnskap.csv")
+    required = {
+        "regressor",
+        "steg_dato",
+        "ny_verdi",
+        "intervensjon_id",
+        "effect_known_from",
+        "kilde",
+        "merknad",
+    }
+    rows = read_csv(run, path, required)
+    if not rows:
+        return
+
+    kjente = {"win_covid", "win_strom", "pakke_2024h2", "k_split"}
+    ukjente = sorted({row["regressor"] for row in rows} - kjente)
+    run.check("knowledge:known_regressors", not ukjente, unexpected=ukjente)
+
+    iso = re.compile(r"\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])")
+    bad_dates = [
+        {"regressor": row["regressor"], "field": field, "value": row[field]}
+        for row in rows
+        for field in ("steg_dato", "effect_known_from")
+        if not iso.fullmatch(row[field].strip())
+    ]
+    run.check("knowledge:date_format", not bad_dates, examples=bad_dates[:10])
+
+    blanke_kilder = [row["regressor"] for row in rows if not row["kilde"].strip()]
+    run.check("knowledge:sources_present", not blanke_kilder, rows=blanke_kilder)
+
+    bad_verdi = []
+    for row in rows:
+        v = row["ny_verdi"].strip()
+        if row["regressor"] == "k_split":
+            if v:
+                bad_verdi.append({"regressor": "k_split", "value": v})
+            continue
+        try:
+            if not 0.0 <= float(v) <= 1.0:
+                bad_verdi.append({"regressor": row["regressor"], "value": v})
+        except ValueError:
+            bad_verdi.append({"regressor": row["regressor"], "value": v})
+    run.check("knowledge:step_values", not bad_verdi, examples=bad_verdi[:10])
+
+    if not bad_dates:
+        # Avviklingen (I12) er ankeret for hele PIT-argumentet: kunnskapsdatoen
+        # skal vaere 2023-10-06, ikke tidligere. En stille endring her ville
+        # flyttet flaggskipsresultatets status uten at noen sa fra.
+        i12 = [row for row in rows if row["intervensjon_id"] == "I12"]
+        run.check(
+            "knowledge:i12_anchor",
+            len(i12) == 1 and i12[0]["effect_known_from"].strip() == "2023-10-06",
+            found=[row["effect_known_from"] for row in i12],
+        )
+
+
 def citation_contract(run: Run) -> None:
     paths = (ROOT / REPORT, ROOT / BIB)
     if not all(run.check(f"file:{path.relative_to(ROOT)}", path.is_file()) for path in paths):
@@ -448,6 +513,7 @@ def validate(run: Run) -> None:
     panel_contract(run, "bydel", bydel_rows, "kommunenr", oslo)
     panel_contract(run, "brukergruppe", group_rows, "brukergruppe", oslo)
     intervention_contract(run)
+    knowledge_contract(run)
     citation_contract(run)
 
 

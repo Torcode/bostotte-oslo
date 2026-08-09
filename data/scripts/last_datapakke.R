@@ -132,7 +132,19 @@ last_alt <- function(sti = NULL) {
     # Daterte forhaands- og etterberegnede effektanslag per intervensjon. Brukes
     # som prior der regressoren ennaa ikke er estimerbar (modell M7).
     forhandsanslag           = read_csv(file.path(cln, "forhandsanslag.csv"),
-                                        show_col_types = FALSE)
+                                        show_col_types = FALSE),
+    # Kunnskapsdatoer per regressorsteg (issue #6): naar hvert vedtaksavhengige
+    # steg tidligst var offentlig kjent, med primaerkilde. Grunnlaget for
+    # point-in-time-porten i kryssvalideringen.
+    regelverk_kunnskap       = read_csv(file.path(cln, "regelverk_kunnskap.csv"),
+                                        col_types = cols(
+                                          regressor = col_character(),
+                                          steg_dato = col_date(),
+                                          ny_verdi = col_double(),
+                                          intervensjon_id = col_character(),
+                                          effect_known_from = col_date(),
+                                          kilde = col_character(),
+                                          merknad = col_character()))
   )
 }
 

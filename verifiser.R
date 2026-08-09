@@ -112,11 +112,52 @@ sjekk_bibliografi <- function(bib = "referanser.bib", qmd = QMD) {
   !any(synlig) && !length(mangler)
 }
 
+# --- Formattererskade --------------------------------------------------------
+# RStudios visuelle redigering (og liknende markdown-formatterere) kan ved
+# lagring (i) escape tegn inne i inline-R-chunker - `r pst(100\*(x))` - som
+# stopper renderingen med en parsefeil langt unna aarsaken, og (ii) strippe
+# tabellmerkelapper {#tbl-...}, som IKKE stopper noe, men stille gjor hver
+# @tbl-referanse i teksten om til et sporsmaalstegn i PDF-en. Begge deler har
+# truffet dette dokumentet (M11, 7. august; og igjen 9. august). Escapene
+# fanges delvis av parsesjekken over, men en escapet BAKOVERFNUTT gjor at
+# inline-uttrykket ikke engang gjenkjennes som chunk og dermed aldri parses -
+# derfor sjekkes raa byte her. Referansesjekken er toveis: alt som refereres
+# skal ha et anker (chunk-label eller {#...}), og den rapporterer per navn.
+sjekk_formattererskade <- function(qmd = QMD) {
+  src <- readLines(qmd, encoding = "UTF-8", warn = FALSE)
+  tekst <- paste(src, collapse = "\n")
+
+  esc <- grep("\\\\[*$`_]", src)
+  if (length(esc)) {
+    cat("escapede tegn (\\*, \\$, \\`, \\_) - formattererskade:\n")
+    for (l in head(esc, 10)) cat(sprintf("  linje %d: %s\n", l, substr(src[l], 1, 76)))
+  } else {
+    cat("ingen escapede tegn av formatterer-typen\n")
+  }
+
+  ref <- unique(unlist(regmatches(tekst, gregexpr("@(tbl|fig|eq|sec)-[a-z0-9-]+", tekst))))
+  ank <- c(
+    unlist(regmatches(tekst, gregexpr("\\{#(tbl|fig|eq|sec)-[a-z0-9-]+\\}", tekst))),
+    unlist(regmatches(tekst, gregexpr("#\\| label: (tbl|fig)-[a-z0-9-]+", tekst)))
+  )
+  ank <- unique(gsub(".*((tbl|fig|eq|sec)-[a-z0-9-]+).*", "\\1", ank))
+  mangler <- setdiff(sub("^@", "", ref), ank)
+  if (length(mangler)) {
+    cat("referanser uten anker (strippede merkelapper?):\n")
+    cat("  ", paste(sort(mangler), collapse = ", "), "\n")
+  } else {
+    cat(length(ref), "kryssreferanser, alle har anker\n")
+  }
+  !length(esc) && !length(mangler)
+}
+
 cat("Portabilitetssjekk av ", QMD, "\n", sep = "")
 cat(strrep("-", 62), "\n")
 ok_parse <- sjekk_i_c_locale()
 cat(strrep("-", 62), "\n")
 ok_bib <- sjekk_bibliografi()
+cat(strrep("-", 62), "\n")
+ok_form <- sjekk_formattererskade()
 cat(strrep("-", 62), "\n")
 
 if (!isTRUE(ok_parse)) {
@@ -130,4 +171,12 @@ if (!isTRUE(ok_bib)) {
   cat("BIBLIOGRAFI: en oppforing ville trykt klammetekst i referanselisten.\n")
 } else {
   cat("BIBLIOGRAFI: ingen oppforing trykker klammetekst.\n")
+}
+if (!isTRUE(ok_form)) {
+  cat("FORMATTERER: skade funnet. Ikke lagre denne fila fra visuell\n")
+  cat("markdown-redigering; rett de rapporterte linjene (git restore, eller\n")
+  cat("fjern backslashene og sett merkelappene tilbake) foer rendering.\n")
+  stop("verifiser.R: formattererskade i ", QMD, call. = FALSE)
+} else {
+  cat("FORMATTERER: ingen escapede chunker, alle kryssreferanser har anker.\n")
 }
