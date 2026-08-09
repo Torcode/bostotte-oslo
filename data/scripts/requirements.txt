@@ -1,0 +1,10 @@
+# Python-avhengigheter for datauttrekket — og bare for det.
+#
+# Valideringene som CI kjører (scripts/validate_phase1.py og
+# scripts/validate_prognose.py) bruker utelukkende standardbiblioteket i
+# Python >= 3.11 og har INGEN tredjepartsavhengigheter; det er hele poenget
+# med at en leser kan kontrollere datagrunnlaget uten å installere noe.
+#
+# Uttrekksskriptene trenger én pakke: Qlik Engine-API-et går over WebSocket.
+# Installer med:  pip install -r data/scripts/requirements.txt
+websocket-client>=1.6,<2
