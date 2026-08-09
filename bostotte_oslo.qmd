@@ -433,7 +433,7 @@ Teorien over gir fire testbare implikasjoner. **T1:** Beholdningsstrukturen (@eq
 
 Metodekapitlet gjør én kontrakt eksplisitt: hver størrelse som inngår i analysen skal kunne regenereres av navngitt kode fra navngitt kilde, og hver modellbeslutning skal kunne spores tilbake til et argument i @sec-teori eller et dokumentert empirisk faktum. Kapitlet åpner med datagrunnlaget — hva vi ideelt sett burde hatt, hva vi faktisk har, hva forskjellen koster, og hva som er gjort med dataene før de brukes (@sec-met-data). Deretter formaliseres estimanden (@sec-met-estimand), og de deterministiske regressorene bygges: intervensjonsmatrisen (@sec-met-x) og kalenderregressoren (@sec-met-kalender). Modellspesifikasjoner, prognoseprotokoll og evaluering følger i kapitlets andre del.
 
-All kode som produserer tallene nedenfor kjører når dokumentet bygges. Selve koden er utelatt fra PDF-en av lesbarhetshensyn; den ligger i kildefilen `unt_1.qmd` og i `data/scripts/`, og hver tabell i dette avsnittet oppgir hvilket objekt den er beregnet fra.
+All kode som produserer tallene nedenfor kjører når dokumentet bygges. Selve koden er utelatt fra PDF-en av lesbarhetshensyn; den ligger i kildefilen `bostotte_oslo.qmd` og i `data/scripts/`, og hver tabell i dette avsnittet oppgir hvilket objekt den er beregnet fra.
 
 ## Datagrunnlaget {#sec-met-data}
 
@@ -1374,11 +1374,11 @@ To ting i tabellen fortjener en kommentar. **T3** er formulert som en *ekvivalen
 
 Kontrakten fra kapitlets åpning gjelder også modelldelen: hver størrelse skal kunne regenereres av navngitt kode fra navngitt kilde.
 
-*Beregningen ligger i dokumentet.* Estimering, rullerende kryssvalidering og diagnostikk kjører når `unt_1.qmd` bygges. Det gir den sterkeste formen for konsistens mellom tekst og tall — de kan ikke komme i utakt, fordi de er samme kjøring — og prisen er byggetid: `r nb(n_modeller * n_opprinnelser)` modelltilpasninger per render. Blir det upraktisk, er `execute: freeze: auto` i YAML-hodet den dokumenterte utveien; den fryser chunk-resultatene til kildefilen endres, uten å endre noe ved beregningen.
+*Beregningen ligger i dokumentet.* Estimering, rullerende kryssvalidering og diagnostikk kjører når `bostotte_oslo.qmd` bygges. Det gir den sterkeste formen for konsistens mellom tekst og tall — de kan ikke komme i utakt, fordi de er samme kjøring — og prisen er byggetid: `r nb(n_modeller * n_opprinnelser)` modelltilpasninger per render. Blir det upraktisk, er `execute: freeze: auto` i YAML-hodet den dokumenterte utveien; den fryser chunk-resultatene til kildefilen endres, uten å endre noe ved beregningen.
 
 *Determinisme.* Løypa inneholder ingen tilfeldighet: ordensvalget er en deterministisk søkeprosedyre, den konformale kalibreringen er empiriske kvantiler, og kalenderfasen kalibreres fra data (@sec-met-kalender). To renderinger av samme kildefil mot samme datapakke gir derfor identisk resultat, og det er kontrollert ved å sammenlikne tekstinnholdet i to bygg framfor å anta det. Seeds settes likevel eksplisitt, slik at stokastiske metoder kan legges til senere uten at determinismen stilltiende forsvinner.
 
-*Miljø.* Pakkeversjonene låses med `renv`, og låsefilen versjoneres. R- og Quarto-versjon, samt datapakkens uttrekksdato (`r UTTREKKSDATO`), stemples i dokumentet. Typst-malen bruker bare fonter Typst har innebygd; det er et typografisk valg, men det hører hjemme her, fordi det er grunnen til at PDF-en blir identisk uansett vertsmaskin.
+*Miljø.* Miljøet er per i dag ikke låst: `oppsett.R` installerer nyeste tilgjengelige pakkeversjoner, og noen låsefil er ikke versjonert — `renv` er planen, ikke tilstanden (issue #3). Datapakkens uttrekksdato (`r UTTREKKSDATO`) stemples i dokumentet; R- og Quarto-versjon bør stemples sammen med den. Typst-malen bruker bare fonter Typst har innebygd; det er et typografisk valg, men det hører hjemme her, fordi det er grunnen til at PDF-en blir identisk uansett vertsmaskin.
 
 *Kart over løypa.* Datalasting og verifikasjon i chunkene `oppsett` til `tbl-kontroller`; regressorkonstruksjon i `met-intervensjoner` og `met-kalender-reg`; analysesettet i `met-analysesett`; protokollparametrene i `protokoll`. Uttrekksskriptene som produserer datapakken, ligger i `data/scripts/` og er dokumentert i `datakilder.md` og `kodebok.md`.
 
@@ -1475,10 +1475,27 @@ stopifnot(
     all(R$mu[R$.model == "M7" & !R$pakke_ute] == R$mu[R$.model == "M6" & !R$pakke_ute])
 )
 
-# Konformal kalibrering: kvantil av |logfeil| fra alle TIDLIGERE opprinnelser
+# Konformal kalibrering, tidsgyldig: kvantil av |logfeil| fra opprinnelser hvis
+# feil var REALISERT ved kalibreringstidspunktet. Feilen fra opprinnelse t_j paa
+# horisont h er foerst kjent i t_j + h; kravet er derfor t_j + h <= t_i, ikke
+# t_j < t_i. Det gamle kravet lakk h-1 urealiserte feil inn i kalibreringen
+# (maalt i notebook 02/07 og uavhengig reprodusert i revisjon/repro_protokoll.py:
+# 78,5 mot 67,4 % dekning paa de 270 felles punktene for M0). Nivaaet justeres
+# samtidig med endelig-utvalgskorreksjonen ceiling((n+1)*niv)/n for split-
+# konformal gyldighet (K3/M19). q80_lekk beholdes som eksplisitt merket
+# sammenlikningskolonne for erratum-noten; den skal ikke brukes i tabeller.
+kvant_endelig <- function(x, niv) {
+  n <- length(x)
+  quantile(x, min(1, ceiling((n + 1) * niv) / n), names = FALSE, type = 7)
+}
 K <- R |> arrange(.model, h, opprinnelse) |> group_by(.model, h) |>
-  mutate(q80 = map_dbl(row_number(), \(i) if (i <= 3) NA_real_ else quantile(abs(le[seq_len(i-1)]), .80, names = FALSE)),
-         q95 = map_dbl(row_number(), \(i) if (i <= 3) NA_real_ else quantile(abs(le[seq_len(i-1)]), .95, names = FALSE))) |>
+  mutate(
+    n_real = map_int(row_number(), \(i) sum(opprinnelse[seq_len(i-1)] %m+% months(h[1]) <= opprinnelse[i])),
+    q80 = map_dbl(row_number(), \(i) { j <- which(opprinnelse %m+% months(h[1]) <= opprinnelse[i])
+      if (length(j) < 3) NA_real_ else kvant_endelig(abs(le[j]), .80) }),
+    q95 = map_dbl(row_number(), \(i) { j <- which(opprinnelse %m+% months(h[1]) <= opprinnelse[i])
+      if (length(j) < 3) NA_real_ else kvant_endelig(abs(le[j]), .95) }),
+    q80_lekk = map_dbl(row_number(), \(i) if (i <= 3) NA_real_ else quantile(abs(le[seq_len(i-1)]), .80, names = FALSE))) |>
   ungroup() |>
   mutate(kdekk80 = M_sant >= exp(mu-q80) & M_sant <= exp(mu+q80),
          kdekk95 = M_sant >= exp(mu-q95) & M_sant <= exp(mu+q95),
@@ -1584,7 +1601,7 @@ R |> filter(dato == as.Date("2024-04-01"), .model %in% c("M1","M3","M5","M6")) |
   kab(align = "rrrrrr")
 ```
 
-Referansemodellene lander mellom 19 500 og 20 900 fra samtlige horisonter: de ser ikke bruddet, og kan ikke se det. M6 lander på `r nb(R |> filter(dato==as.Date("2024-04-01"), .model=="M6", h==9) |> pull(pred))` husstander fra ni måneders horisont, mot en fasit på 15 588 — et avvik på `r pst(abs(100*(R |> filter(dato==as.Date("2024-04-01"), .model=="M6", h==9) |> pull(pred))/15588 - 100))`. Å treffe et strukturelt fall på en fjerdedel innenfor tre prosent, ni måneder i forveien, er ikke en modelleringsprestasjon: det er informasjonen i regelverkskalenderen som gjør arbeidet, og det er hele poenget.
+Referansemodellene lander mellom 19 500 og 20 900 fra samtlige horisonter: de ser ikke bruddet, og kan ikke se det. M6 lander på `r nb(R |> filter(dato==as.Date("2024-04-01"), .model=="M6", h==9) |> pull(pred))` husstander fra ni måneders horisont, mot en fasit på 15 588 — et avvik på `r pst(abs(100*(R |> filter(dato==as.Date("2024-04-01"), .model=="M6", h==9) |> pull(pred))/15588 - 100))`. Å treffe et strukturelt fall på en fjerdedel innenfor 3,2 prosent, ni måneder i forveien, er ikke en modelleringsprestasjon: det er informasjonen i regelverkskalenderen som gjør arbeidet, og det er hele poenget. Forbeholdet hører til her: avviklingen ble offentlig kjent 6. oktober 2023 (Prop. 1 S (2023–2024); forskriftsfestet 4. januar 2024), så opprinnelsen juli 2023 hadde ikke denne kalenderen — ni-månederstallet er en betinget beregning med fasitkalender. Fra første opprinnelse etter kunngjøringen, oktober 2023, er tallet et ekte pseudo-sanntidsresultat: 15 552 mot 15 588 på seks måneders horisont, et avvik på 0,2 prosent.
 
 Mønsteret er dessuten motsatt av det vanlige — M6 er *bedre* på lang enn på kort horisont for denne hendelsen. Forklaringen ligger i modellen: autoregressivkoeffisienten er nær 0,9, så på korte horisonter trekkes prognosen mot marsnivået, mens intervensjonsregressoren dominerer først når AR-leddet har fått tid til å dø ut.
 
@@ -1727,7 +1744,7 @@ Konsekvensen er en presisering av protokollen som bør inn i en revidert versjon
 
 @tbl-res-oppgjor stiller utfallet opp mot kontrakten. To av implikasjonene overlevde ikke møtet med dataene, og begge feilene er informative. T4 falt fordi den bygde på en feil intuisjon: at bedre modellering av kjente brudd også gir bedre kalibrert usikkerhet. Det motsatte skjer, fordi en modell som forklarer mer av fortiden blir mer selvsikker om framtiden uten å bli mer treffsikker der informasjonen mangler. T5 lot seg ikke teste fordi kildegrunnlaget sviktet — og at det sviktet, er i seg selv et funn om kunnskapsgrunnlaget på feltet.
 
-Det som står igjen som studiens sterkeste enkeltresultat, er ikke et gjennomsnitt: det er at en modell med regelverkskalenderen traff et strukturelt fall på en fjerdedel innenfor tre prosent, ni måneder i forveien (@sec-res-april). Gjennomsnitt over rolige måneder skjuler den evnen. Det er nettopp derfor evalueringen er stratifisert, og nettopp derfor et samlet MASE-tall er utilstrekkelig som beslutningsgrunnlag.
+Det som står igjen som studiens sterkeste enkeltresultat, er ikke et gjennomsnitt: det er at en modell med regelverkskalenderen traff et strukturelt fall på en fjerdedel innenfor 0,2 prosent fra første opprinnelse etter at avviklingen var offentlig kjent — og innenfor 3,2 prosent fra ni måneder, dersom kalenderen legges til grunn før den var kunngjort (@sec-res-april). Gjennomsnitt over rolige måneder skjuler den evnen. Det er nettopp derfor evalueringen er stratifisert, og nettopp derfor et samlet MASE-tall er utilstrekkelig som beslutningsgrunnlag.
 
 # Referanser {.unnumbered}
 
