@@ -120,6 +120,14 @@ if (!.tegnsett_ok()) {
 # står det <U+00A0> i PDF-en i stedet for et mellomrom.
 NBSP <- "\u00a0"
 
+# Menneskenavn for regressorene i lesertabeller. Variabelnavnene hører hjemme i
+# kodeboken og intervensjonstabellen, ikke i en tabell en fagleser skal tolke.
+REGNAVN <- c(win_covid    = "Koronavinduet (2020m4–m10)",
+             win_strom    = "Strømvinduet (2021m12–2024m3)",
+             pakke_2024h2 = "Høstpakken 2024, samlet trinn",
+             k_pre        = "Meldekortkalenderen, før skjerming",
+             k_post       = "Meldekortkalenderen, etter skjerming")
+
 # Ikke-endelige tall stopper byggingen framfor å bli trykt. Bakgrunnen er
 # konkret: en 0/0 i sanntidskanten sto som NaN i løpende tekst i en tidligere
 # PDF. Ni regnskapsidentiteter stoppet byggingen, men ingen av dem så på et
@@ -277,25 +285,29 @@ BEH <- "Husstander med midlertidige trygdeytelser"
 vol_beh   <- vol_bg |> filter(brukergruppe == BEH)
 vol_andre <- vol_bg |> filter(brukergruppe != BEH)
 
-# --- Vakten en gang til, PAA SLUTTEN av oppsettet ----------------------------
-# Probe 3 (9. august 2026) maalte prosessen frisk (UTF-8, cp 65001) FOER dette
-# oppsettet og i C-locale ETTER: et av leddene over - pakkelasting eller
-# datapakkelasting - flipper localen paa Windows. Vakten oeverst passerte
-# derfor aerlig, og voktet ingenting: dokumentet rendret i C og skrev
-# <U+00E5> og <U+00A0> i hver maskingenerert tabell. En vakt maa staa der
+# --- Vakten en gang til, PÅ SLUTTEN av oppsettet -----------------------------
+# Probe 3 (9. august 2026) målte prosessen frisk (UTF-8, cp 65001) FØR dette
+# oppsettet og i C-locale ETTER: et av leddene over — pakkelasting eller
+# datapakkelasting — flipper localen på Windows. Vakten øverst passerte
+# derfor ærlig, og voktet ingenting: dokumentet rendret i C og skrev
+# <U+00E5> og <U+00A0> i hver maskingenerert tabell. En vakt må stå der
 # tilstanden faktisk brukes. Denne reparerer flippet, og stopper hvis den
-# ikke klarer det. Foerste kandidat er navnet med aa, som er det Windows
-# faktisk rapporterer; ASCII-varianten i den oevre listen traff aldri.
-if (!.tegnsett_ok()) {
-  for (loc in c("Norwegian Bokm\u00e5l_Norway.utf8",
-                "Norwegian Bokmal_Norway.utf8", "nb-NO.UTF-8",
-                "nb_NO.UTF-8", "nb_NO.utf8", "Norwegian_Norway.utf8",
-                "English_United States.utf8", "C.UTF-8", "en_US.UTF-8")) {
-    if (.tegnsett_ok()) break
-    suppressWarnings(try(Sys.setlocale("LC_ALL", loc), silent = TRUE))
+# ikke klarer det. Første kandidat er localenavnet med å, som er det Windows
+# faktisk rapporterer; ASCII-varianten i den øvre listen traff aldri.
+fiks_tegnsett <- function() {
+  if (!.tegnsett_ok()) {
+    for (loc in c("Norwegian Bokm\u00e5l_Norway.utf8",
+                  "Norwegian Bokmal_Norway.utf8", "nb-NO.UTF-8",
+                  "nb_NO.UTF-8", "nb_NO.utf8", "Norwegian_Norway.utf8",
+                  "English_United States.utf8", "C.UTF-8", "en_US.UTF-8")) {
+      if (.tegnsett_ok()) break
+      suppressWarnings(try(Sys.setlocale("LC_ALL", loc), silent = TRUE))
+    }
   }
+  stopifnot("Tegnsettet lot seg ikke reparere til UTF-8; se vaktblokken i oppsettet" = .tegnsett_ok())
+  invisible(TRUE)
 }
-stopifnot("Tegnsettet er ikke UTF-8 ved slutten av oppsettet; se forklaringen i vaktblokken oeverst" = .tegnsett_ok())
+fiks_tegnsett()
 ```
 
 # Introduksjon
@@ -1335,7 +1347,7 @@ estimerbar |>
             .by = regressor) |>
   left_join(rammet |> summarise(punkter = sum(mangler), .by = regressor),
             by = "regressor") |>
-  transmute(Regressor = regressor,
+  transmute(Regressor = REGNAVN[regressor],
             `Opprinnelser uten identifikasjon` = uten,
             `Første opprinnelse der den slipper inn` = inn,
             `Rammede punkter` = punkter) |>
@@ -1425,15 +1437,15 @@ Kapitlet rapporterer den rullerende kryssvalideringen som @sec-met-protokoll spe
 LAMBDA_ORAKEL <- NULL   # settes under; full-utvalgsestimatet for pakke_2024h2
 
 # --- Point-in-time-port (issue #6) -------------------------------------------
-# Ved opprinnelse t0 faar de vedtaksavhengige regressorene bare de framtids-
-# stegene som var offentlig kjent senest ved utgangen av maaned t0.
-# Kunnskapsdatoene er primaerkildebelagt i data/clean/regelverk_kunnskap.csv
+# Ved opprinnelse t0 får de vedtaksavhengige regressorene bare de framtids-
+# stegene som var offentlig kjent senest ved utgangen av måned t0.
+# Kunnskapsdatoene er primærkildebelagt i data/clean/regelverk_kunnskap.csv
 # (Norsk Lovtidend, stortingsinnstillinger, regjeringen.no; jf. revisjon/).
-# Treningsdata roeres ikke: historikk er observert virkelighet. Kalender-
-# frekvensen u er astronomisk og kjent vilkaarlig langt fram; det vedtaks-
+# Treningsdata røres ikke: historikk er observert virkelighet. Kalender-
+# frekvensen u er astronomisk og kjent vilkårlig langt fram; det vedtaks-
 # avhengige ved k-regressorene er SKILLET k_pre/k_post (I17, offentlig
-# 2024-12-17) - foer den datoen fortsetter k_pre-banen og k_post er null,
-# ogsaa i maaneder etter 2024m12.
+# 2024-12-17) — før den datoen fortsetter k_pre-banen og k_post er null,
+# også i måneder etter 2024m12.
 KUNNSKAP_STEG   <- d$regelverk_kunnskap |> filter(regressor != "k_split") |>
   arrange(regressor, steg_dato)
 KUNNSKAP_KSPLIT <- d$regelverk_kunnskap |> filter(regressor == "k_split") |>
@@ -1442,7 +1454,7 @@ stopifnot(length(KUNNSKAP_KSPLIT) == 1,
           all(unique(KUNNSKAP_STEG$regressor) %in% c("win_covid", "win_strom", "pakke_2024h2")))
 
 pit_gate <- function(nd_tbl, t0) {
-  cutoff <- (t0 %m+% months(1)) - 1          # informasjon t.o.m. utgangen av t0-maaneden
+  cutoff <- (t0 %m+% months(1)) - 1          # informasjon t.o.m. utgangen av t0-måneden
   ut <- nd_tbl
   for (r in unique(KUNNSKAP_STEG$regressor)) {
     s <- KUNNSKAP_STEG |> filter(regressor == r, effect_known_from <= cutoff)
@@ -1503,15 +1515,15 @@ LAMBDA_ORAKEL <- analyse |> mutate(mnd = yearmonth(dato)) |> as_tsibble(index = 
   model(m = ARIMA(log_M ~ win_covid + win_strom + pakke_2024h2 + k_pre + k_post)) |>
   tidy() |> filter(term == "pakke_2024h2") |> pull(estimate)
 
-# Automatiske kontroller paa porten (issue #6). Tre haandvalgte invarianser som
-# stopper byggingen - de to foerste er issue-tekstens manuelle kontroll av
-# origin juli 2023 -> april 2024, og den foerste opprinnelsen etter
-# kunngjoeringen 6. oktober 2023:
+# Automatiske kontroller på porten (issue #6). Tre håndvalgte invarianser som
+# stopper byggingen — de to første er issue-tekstens manuelle kontroll av
+# origin juli 2023 → april 2024, og den første opprinnelsen etter
+# kunngjøringen 6. oktober 2023:
 #   (i)  juli 2023 VISSTE IKKE at vinduet lukkes: framtidig win_strom er 1
 #        gjennom hele horisonten;
 #   (ii) oktober 2023 VET det: win_strom er 0 fra og med termin april 2024;
-#   (iii) foer I17 var kjent (2024-12-17) fortsetter k_pre-banen og k_post er
-#        null, ogsaa i 2025-maaneder.
+#   (iii) før I17 var kjent (2024-12-17) fortsetter k_pre-banen og k_post er
+#        null, også i 2025-måneder.
 nd_pit <- function(t0) analyse |> mutate(mnd = yearmonth(dato)) |>
   filter(dato > t0, dato <= t0 %m+% months(H_MAKS)) |> as_tsibble(index = mnd) |>
   pit_gate(t0)
@@ -1526,10 +1538,10 @@ stopifnot(
     all(w_nov24$k_post == 0) && all(abs(w_nov24$k_pre - (w_nov24$u - 26/12)) < 1e-12)
 )
 
-# Hovedloepet er point-in-time. Fasitkalenderen (dagens komplette regelverks-
+# Hovedløpet er point-in-time. Fasitkalenderen (dagens komplette regelverks-
 # kalender ved alle opprinnelser) beholdes som eksplisitt merket orakel-/
-# scenariokjoering: den svarer paa "hva ville prognosen vaert med kalenderen
-# vi HAR i dag", ikke "hva kunne noen ha visst da".
+# scenariokjøring: den svarer på «hva ville prognosen vært med kalenderen
+# vi HAR i dag», ikke «hva kunne noen ha visst da».
 cv       <- map_dfr(opprinnelser, kjor_opprinnelse)
 cv_fasit <- map_dfr(opprinnelser, kjor_opprinnelse, kalender = "fasit")
 stopifnot(nrow(cv_fasit) == length(opprinnelser) * H_MAKS * 8)
@@ -1618,19 +1630,24 @@ dmtest <- function(a, b, nested, hh) {
   if (is.na(v) || v <= 0) return(NA_real_)
   (mean(dd)/sqrt(v)) * sqrt((n + 1 - 2*hh + hh*(hh-1)/n)/n)
 }
+# Modelltilpasningen over kan flippe localen på nytt (samme mekanisme som i
+# oppsettet — målt: 294 → 1 escapes, og den ene satt i MNAVN-strengen under).
+# Reparer før noe skrives ut.
+fiks_tegnsett()
+
 MNAVN <- c(M0="M0 naiv", M1="M1 sesongnaiv", M2="M2 ETS", M3="M3 SARIMA",
            M4="M4 RegARIMA + k", M5="M5 RegARIMA + X", M6="M6 RegARIMA + X + k",
-           M7="M7 med pålagt bidrag")
+           M7="M7 med p\u00e5lagt bidrag")
 
-# En DM/CW-statistikk kan vaere udefinert: med rektangulaert vindu og L = h-1
+# En DM/CW-statistikk kan være udefinert: med rektangulært vindu og L = h-1
 # lag er langtidsvariansen ikke garantert positiv, og der to prognoser
 # sammenfaller er tapsdifferansen identisk null. Det er utfall av METODEN,
-# ikke datafeil - nb() skal fortsatt stoppe paa NA alle andre steder, men
+# ikke datafeil — nb() skal fortsatt stoppe på NA alle andre steder, men
 # testverdier trykkes gjennom nb_test(), som sier det som det er.
 nb_test <- function(x, siffer = 2) if (is.na(x)) "udefinert" else nb(x, siffer)
 
-# Samlede MASE-verdier og teststatistikker som proseavsnittene doemmer med.
-# Beregnet EN gang her, saa tekst og tabeller ikke kan regne hver for seg.
+# Samlede MASE-verdier og teststatistikker som prosaavsnittene dømmer med.
+# Beregnet én gang her, så tekst og tabeller ikke kan regne hver for seg.
 mase_M0 <- mean(R$mase[R$.model == "M0"]); mase_M1 <- mean(R$mase[R$.model == "M1"])
 mase_M2 <- mean(R$mase[R$.model == "M2"]); mase_M5 <- mean(R$mase[R$.model == "M5"])
 mase_M6 <- mean(R$mase[R$.model == "M6"])
@@ -1691,9 +1708,9 @@ tribble(~par, ~a, ~b, ~nested,
         "M6 mot M2 — mot en veletablert referanse",               "M2","M6", FALSE) |>
   mutate(map_dfr(seq_along(par), \(i) set_names(
     map(c(1,3,6,12), \(hh) nb_test(dmtest(a[i], b[i], nested[i], hh))),
-    c("h = 1","h = 3","h = 6","h = 12")))) |>
-  transmute(Sammenlikning = par, Test = if_else(nested, "Clark–West", "DM–Harvey"),
-            `h = 1`, `h = 3`, `h = 6`, `h = 12`) |>
+    c("h=1","h=3","h=6","h=12")))) |>
+  transmute(Sammenlikning = par, Test = if_else(nested, "Clark–West", "DM"),
+            `h=1`, `h=3`, `h=6`, `h=12`) |>
   kab(align = "llrrrr")
 ```
 
@@ -1717,8 +1734,8 @@ R |> filter(dato == as.Date("2024-04-01"), .model %in% c("M1","M3","M5","M6")) |
               transmute(h, M6_fasit = round(pred)), by = "h") |>
   transmute(`Horisont (mnd)` = h,
             `M1 sesongnaiv` = nb(M1), `M3 SARIMA` = nb(M3),
-            `M5 RegARIMA + X` = nb(M5), `M6 RegARIMA + X + k` = nb(M6),
-            `M6, fasitkalender (orakel)` = nb(M6_fasit),
+            `M5 RegARIMA+X` = nb(M5), `M6 RegARIMA+X+k` = nb(M6),
+            `M6 fasitkalender (orakel)` = nb(M6_fasit),
             `Fasit` = nb(15588)) |>
   kab(align = "rrrrrrr")
 ```
@@ -1741,7 +1758,7 @@ ki <- kq$estimate + c(-1,1)*qnorm(.975)*kq$std.error
 delta <- abs(kp$estimate)/2
 
 ko |> filter(term %in% c("win_covid","win_strom","pakke_2024h2","k_pre","k_post")) |>
-  transmute(Regressor = term, Koeffisient = nb(estimate, 4), `Std.feil` = nb(std.error, 4),
+  transmute(Regressor = REGNAVN[term], Koeffisient = nb(estimate, 4), `Std.feil` = nb(std.error, 4),
             `t` = nb(statistic, 2), `Nivåeffekt` = pst(100*(exp(estimate)-1)),
             Forventet = c("opp","opp","opp","ned","null")) |>
   kab(align = "lrrrrl")
