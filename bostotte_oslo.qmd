@@ -1601,6 +1601,22 @@ dmtest <- function(a, b, nested, hh) {
 MNAVN <- c(M0="M0 naiv", M1="M1 sesongnaiv", M2="M2 ETS", M3="M3 SARIMA",
            M4="M4 RegARIMA + k", M5="M5 RegARIMA + X", M6="M6 RegARIMA + X + k",
            M7="M7 med pålagt bidrag")
+
+# En DM/CW-statistikk kan vaere udefinert: med rektangulaert vindu og L = h-1
+# lag er langtidsvariansen ikke garantert positiv, og der to prognoser
+# sammenfaller er tapsdifferansen identisk null. Det er utfall av METODEN,
+# ikke datafeil - nb() skal fortsatt stoppe paa NA alle andre steder, men
+# testverdier trykkes gjennom nb_test(), som sier det som det er.
+nb_test <- function(x, siffer = 2) if (is.na(x)) "udefinert" else nb(x, siffer)
+
+# Samlede MASE-verdier og teststatistikker som proseavsnittene doemmer med.
+# Beregnet EN gang her, saa tekst og tabeller ikke kan regne hver for seg.
+mase_M0 <- mean(R$mase[R$.model == "M0"]); mase_M1 <- mean(R$mase[R$.model == "M1"])
+mase_M2 <- mean(R$mase[R$.model == "M2"]); mase_M5 <- mean(R$mase[R$.model == "M5"])
+mase_M6 <- mean(R$mase[R$.model == "M6"])
+dm_m2m6_h12 <- dmtest("M2", "M6", FALSE, 12)
+dm_m5m6_h1  <- dmtest("M5", "M6", TRUE, 1)
+dm_m5m6_h12 <- dmtest("M5", "M6", TRUE, 12)
 ```
 
 ## Presisjon over horisonten {#sec-res-presisjon}
@@ -1618,11 +1634,11 @@ R |> summarise(MASE = mean(mase), RMSE = sqrt(mean(e^2)),
   kab(align = "lrrrrr")
 ```
 
-@tbl-res-samlet samler utfallet. **T1 holder mot de naive referansene, men ikke mot alle.** M6 oppnår MASE `r nb(R |> filter(.model=="M6") |> pull(mase) |> mean(), 3)` mot sesongnaivs `r nb(R |> filter(.model=="M1") |> pull(mase) |> mean(), 3)` — struktur slår gjentakelse, som forventet. Men ETS ligger på `r nb(R |> filter(.model=="M2") |> pull(mase) |> mean(), 3)` og slår M6 samlet, og på tolv måneders horisont er forskjellen signifikant i ETS' favør (Diebold–Mariano `r nb(dmtest("M2","M6",FALSE,12), 2)`). Det er M4-konkurransens lærdom i praksis [@makridakis2020]: en enkel, veletablert metode er vanskelig å slå, og en modell som vet mer om regelverket vinner ikke automatisk på alle horisonter. @fig-res-mase viser hvordan forspranget forsvinner med horisonten.
+@tbl-res-samlet samler utfallet. M6 oppnår MASE `r nb(mase_M6, 3)` mot sesongnaivs `r nb(mase_M1, 3)` `r if (mase_M6 < mase_M1) "— struktur slår gjentakelse på samlet MASE, som forventet." else "— med point-in-time-kalender slår strukturen ikke lenger gjentakelsen på samlet MASE; fortrinnet ligger på horisontene der kalenderen faktisk var kjent (@tbl-res-april), og gjennomsnittet over alle opprinnelser bærer prisen for dem der den ikke var det."` ETS ligger på `r nb(mase_M2, 3)``r if (mase_M2 < mase_M6) " og slår M6 samlet" else ""`; ved tolv måneders horisont er Diebold–Mariano-statistikken `r nb_test(dm_m2m6_h12)``r if (is.na(dm_m2m6_h12)) " — langtidsvariansen er ikke positiv med det rektangulære vinduet (L = h − 1) på 31 opprinnelser, så testen finnes ikke der, og samlet MASE får stå alene" else if (dm_m2m6_h12 > 1.64) ", signifikant i ETS' favør" else ", under kritisk verdi"`. Det er M4-konkurransens lærdom i praksis [@makridakis2020]: en enkel, veletablert metode er vanskelig å slå, og en modell som vet mer om regelverket vinner ikke automatisk på alle horisonter. @fig-res-mase viser hvordan forspranget beveger seg med horisonten.
 
 ```{r}
 #| label: fig-res-mase
-#| fig-cap: "MASE per horisont. Stiplet linje ved 1 er sesongnaiv prognose i treningsvinduet. Ingen modell dominerer over hele horisonten: de regelinformerte er klart best på korte horisonter, mens forspranget spises opp mot tolv måneder."
+#| fig-cap: "MASE per horisont, point-in-time. Stiplet linje ved 1 er sesongnaiv prognose i treningsvinduet. Ingen modell dominerer over hele horisonten: de regelinformerte er best på korte horisonter, mens bildet mot tolv måneder avgjøres av hva som var kjent om regelverkskalenderen ved opprinnelsen."
 #| fig-width: 6.6
 #| fig-height: 3.2
 
@@ -1646,7 +1662,7 @@ R |> filter(.model %in% vis) |> summarise(mase = mean(mase), .by = c(.model, h))
 
 ```{r}
 #| label: tbl-res-cw
-#| tbl-cap: "Sammenlikninger langs modellstigen. Clark–West brukes på nøstede par, Diebold–Mariano med Harvey-korreksjon på ikke-nøstede (@sec-met-evaluering). Positiv verdi favoriserer den første modellen; ensidig kritisk verdi ved 5 prosent er 1,64."
+#| tbl-cap: "Sammenlikninger langs modellstigen. Clark–West brukes på nøstede par, Diebold–Mariano med Harvey-korreksjon på ikke-nøstede (@sec-met-evaluering). Positiv verdi favoriserer den første modellen; ensidig kritisk verdi ved 5 prosent er 1,64. «Udefinert» betyr at langtidsvariansen ikke er positiv med det rektangulære vinduet (L = h − 1) — testen finnes ikke der; den er ikke utelatt."
 
 tribble(~par, ~a, ~b, ~nested,
         "M6 mot M3 — samlet verdi av deterministisk informasjon", "M3","M6", TRUE,
@@ -1654,7 +1670,7 @@ tribble(~par, ~a, ~b, ~nested,
         "M6 mot M5 — kalenderens bidrag",                         "M5","M6", TRUE,
         "M6 mot M2 — mot en veletablert referanse",               "M2","M6", FALSE) |>
   mutate(map_dfr(seq_along(par), \(i) set_names(
-    map(c(1,3,6,12), \(hh) nb(dmtest(a[i], b[i], nested[i], hh), 2)),
+    map(c(1,3,6,12), \(hh) nb_test(dmtest(a[i], b[i], nested[i], hh))),
     c("h = 1","h = 3","h = 6","h = 12")))) |>
   transmute(Sammenlikning = par, Test = if_else(nested, "Clark–West", "DM–Harvey"),
             `h = 1`, `h = 3`, `h = 6`, `h = 12`) |>
@@ -1663,7 +1679,7 @@ tribble(~par, ~a, ~b, ~nested,
 
 @tbl-res-cw gjør sammenlikningene langs stigen eksplisitte. **T2 holder i retning, men ikke i styrke.** M6 slår M3 med `r pst(abs(100*(mean(R$mase[R$.model=="M6"])/mean(R$mase[R$.model=="M3"]) - 1)))` på MASE, og på hver enkelt horisont. Clark–West-statistikken er positiv gjennomgående, men når ikke kritisk verdi på noen horisont. Med `r nb(length(opprinnelser))` opprinnelser per horisont er testen rett og slett for svak til å avgjøre en forskjell av denne størrelsen; det er en utvalgsbegrensning, ikke et bevis for fravær av effekt.
 
-**Kalenderregressoren hjelper på korte horisonter og skader på lange.** M6 mot M5 gir `r nb(dmtest("M5","M6",TRUE,1), 2)` ved én måned og `r nb(dmtest("M5","M6",TRUE,12), 2)` ved tolv. Sammenholdt med at M5 har lavere samlet MASE enn M6, er dette kapitlets tydeligste påminnelse om at innenfor-utvalgs-signifikans ikke er ut-av-utvalgs-verdi: kalendereffekten er utvilsomt reell (@sec-res-kalender), men den er en høyfrekvent svingning som betyr lite for nivået tolv måneder fram, og to ekstra parametre koster mer enn de smaker på et treningsvindu av denne lengden.
+**Kalenderregressoren hjelper på korte horisonter og skader på lange.** M6 mot M5 gir `r nb_test(dm_m5m6_h1)` ved én måned og `r nb_test(dm_m5m6_h12)` ved tolv. Sammenholdt med de samlede MASE-verdiene (M5 `r nb(mase_M5, 3)`, M6 `r nb(mase_M6, 3)`; @tbl-res-samlet) er dette kapitlets tydeligste påminnelse om at innenfor-utvalgs-signifikans ikke er ut-av-utvalgs-verdi: kalendereffekten er utvilsomt reell (@sec-res-kalender), men den er en høyfrekvent svingning som betyr lite for nivået tolv måneder fram, og to ekstra parametre koster mer enn de smaker på et treningsvindu av denne lengden.
 
 ## Aprilbruddet 2024: hva regelverksinformasjon faktisk er verdt {#sec-res-april}
 
@@ -1822,7 +1838,7 @@ Konsekvensen er en presisering av protokollen som bør inn i en revidert versjon
 
 |   | Implikasjon | Utfall |
 |:---|:---|:---|
-| **T1** | Struktur slår naive referanser | **Holder delvis.** Slår naiv og sesongnaiv klart; ETS slår M6 samlet og signifikant på tolv måneder |
+| **T1** | Struktur slår naive referanser | `r if (mase_M6 < mase_M1 && mase_M6 < mase_M0) "**Holder delvis.** Slår naiv og sesongnaiv på samlet MASE" else "**Holder bare betinget.** Slår ikke begge de naive referansene på samlet point-in-time-MASE; fortrinnet er konsentrert der kalenderen var kjent (@tbl-res-april)"`; ETS ligger på `r nb(mase_M2, 3)` mot M6s `r nb(mase_M6, 3)` — testene per horisont står i @tbl-res-cw |
 | **T2** | Eksplisitte intervensjoner hjelper | **Holder i retning.** MASE ned; Clark–West når ikke kritisk verdi på noen horisont |
 | **T3** | Kalendereffekt stor før 2025, eksakt null etter | **Holder i første ledd.** Ekvivalens ikke etablert ved den forhåndssatte grensen; full styrke utelukket, halv styrke ikke |
 | **T4** | Nominell dekning krever brudd og kalender | **Faller.** Modellering forverrer dekningen; tidsgyldig konformal kalibrering reparerer den delvis (@sec-res-dekning) — resten er skjevhet, ikke bredde |
