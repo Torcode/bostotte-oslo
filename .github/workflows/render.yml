@@ -49,11 +49,12 @@ jobs:
       - name: Installer pakkene fra oppsett.R-settet
         run: |
           Rscript -e '
+            repo <- "https://cloud.r-project.org"
             cn <- tryCatch(system("lsb_release -cs", intern = TRUE)[1],
-                           error = function(e) NA)
-            repo <- if (!is.na(cn) && nzchar(cn))
-              sprintf("https://packagemanager.posit.co/cran/__linux__/%s/latest", cn)
-            else "https://cloud.r-project.org"
+                           error = function(e) NA_character_)
+            if (!is.na(cn) && nzchar(cn)) {
+              repo <- sprintf("https://packagemanager.posit.co/cran/__linux__/%s/latest", cn)
+            }
             options(repos = c(P = repo), Ncpus = 2)
             pk <- c("tidyverse","knitr","rmarkdown","tsibble","fable",
                     "fabletools","feasts","urca","distributional","jsonlite")
