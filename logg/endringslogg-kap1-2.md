@@ -87,3 +87,85 @@ Atferds- og institusjonsdelen (2.3) står urørt: litteraturgrunnlaget er solid 
 ## Nye bib-nøkler som kreves av kap 2 etter revisjonen
 
 `@husbanken2024aars` (brukes nå i begrepstabellen, 2.4 og T2) — oppføring ligger klar i kommentarblokken nederst i unt_1.qmd sammen med de øvrige.
+
+---
+
+# Revisjon 14. august 2026 — sammendraget og introduksjonens åpning
+
+Sammendraget hadde vokst til 376 ord og åpnet med en premiss dokumentet ikke kan
+forsvare. Denne runden kortet det til 185 og rettet fire ting i introduksjonen.
+Rendret og verifisert lokalt før commit.
+
+**E16. Sammendragets åpningspremiss fjernet.**
+Før: «Velferdsetaten trenger et anslag på hvor mange husstander i Oslo som vil motta
+statlig bostøtte de kommende månedene — til dimensjonering av veiledning og
+saksbehandling i bydelene, og som tidlig varsel …»
+Etter: sammendraget åpner med aprilbruddet 2024.
+Begrunnelse: ingen har bedt om dette arbeidet. README-en sier rett ut at det ikke er
+utført på oppdrag fra Velferdsetaten, så dokumentet motsa seg selv på første linje. En
+påstand om hva en etat trenger, er dessuten den eneste typen påstand i dokumentet uten
+kilde. «Velferdsetaten» forekommer nå ett sted i qmd-en: i ansvarsfraskrivelsen.
+
+**E17. Sammendraget kortet fra 376 til 185 ord.**
+Før: seks avsnitt.
+Etter: fire pluss en ansvarsfraskrivelse.
+Begrunnelse: tre av avsnittene gjentok senere kapitler — den operative anbefalingen står
+fyldigere i konklusjonen, pseudo-sanntidsforbeholdet i evalueringsprotokollen, og
+dekningstallene to steder i resultatkapitlet. Leseren falt av før introduksjonen.
+Rekkefølgen er snudd slik at hendelsen studien er bygget for kommer først; den gamle
+åpningen brukte første setning på å slå den svakeste tenkelige referansen.
+
+**E18. Tre påstander i sammendraget stilt på linje med kildene sine.**
+Før: «Fortrinnet kommer fra datert regelverksinformasjon, ikke fra modellkapasitet» sto
+flatt, med `@sec-res-gevinst` som referanse.
+Etter: «retningen holder, styrken er ikke etablert (@sec-res-gevinst)».
+Begrunnelse: avsnittet det pekes til sier selv at T2 holder i retning men ikke i styrke,
+og at Clark–West ikke når kritisk verdi. Sammendraget ga en konklusjon der kilden gir et
+forbehold. Samtidig: gjennomsnittsgevinsten er nå oppgitt som liten (hovedspesifikasjonen
+bommer fire prosent mindre enn å anta uendret nivå), og påstanden om at serien er
+regelstyrt har fått tilbake belegget sitt — stasjonaritet forkastes på den rå logserien og
+står betinget på de fem daterte leddene.
+
+**E19. Sammendragskontrakten krympet fra fire tall til to.**
+Før: `n_opprinnelser`, `april_avvik_pst`, `dekning_for`, `dekning_etter`.
+Etter: de to første.
+Begrunnelse: dekningstallene siteres ikke lenger i sammendraget, så assertene deres i
+`res-cv` dømte tall som ikke sto noe sted. Dekningen i resultatkapitlet regnes inline fra
+`K` og kan uansett ikke drive fra beregningen.
+
+**E20. Introduksjonens første setning strøket.**
+Før: «For Velferdsetaten er antallet husstander med statlig bostøtte en størrelse det må
+planlegges rundt.»
+Etter: avsnittet starter på at kommunen er førstelinje og at mottakstallet inngår i
+kunnskapsgrunnlaget for tilgrensende tjenester — som er belagt i setningene som følger.
+Begrunnelse: samme grunn som E16, i mildere form. Avsnittet tjener nå relevansen framfor å
+postulere den.
+
+**E21. «Statlig bostøtte er statlig finansiert» rettet til «Bostøtten».**
+Begrunnelse: da åpningssetningen forsvant, mistet «Ordningen» det den viste tilbake til,
+og erstatningen gjentok «statlig» to ganger på fem ord. Innført i E20, rettet her.
+
+**E22. SSB-tallet sitert, og prissonen navngitt.**
+Før: «Ifølge Statistisk sentralbyrå har Oslo landets høyeste husleienivå: … for en toroms
+bolig i Oslo og Bærum 15 260 kroner …» — uten siteringsnøkkel.
+Etter: «… ligger prissonen Oslo og Bærum høyest i landet: … 15 260 kroner, 29 prosent over
+landsgjennomsnittet [@ssb09895].»
+Begrunnelse: to feil i én setning. Tallet var det eneste faktatallet i introduksjonen uten
+kilde, og `ssb09895` lå allerede i datapakken og bibliografien. Og påstanden gjaldt Oslo
+mens tallet gjelder prissonen Oslo og Bærum, som er den SSB publiserer.
+
+**E23. MASE gitt en lesehjelp der målet innføres.**
+Lagt til i `@sec-met-evaluering`: 1 betyr like mye bom som den sesongnaive referansen, 0,8
+tjue prosent mindre, 1,2 tjue prosent mer.
+Begrunnelse: resultattabellen er uleselig for en fagleser som ikke bruker målet daglig.
+Selve omregningen til husstander står igjen som åpent punkt — den krever to nye
+kontraktsoppføringer regnet fra `R`.
+
+## Åpent etter denne runden
+
+- «Rundt 30 prosent» for referansemodellenes bom i sammendraget er det eneste tallet der
+  som er avrundet for hånd. Referansemodellene lander 19 500–20 900 mot fasit 15 588, altså
+  +25 til +34 prosent. Skal det følge dokumentets egen regel, trengs en tredje
+  kontraktsoppføring.
+- Husstandsomregningen av MASE ved resultattabellen, jf. E23.
+- Leienivået i E22 kunne regnes inline fra `leiemarked` framfor å stå som avskrift.

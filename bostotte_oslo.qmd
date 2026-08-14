@@ -316,38 +316,34 @@ fiks_tegnsett()
 #| label: sammendrag-kontrakt
 #| include: false
 
-# Sammendraget står før beregningene i dokumentflyten. De få resultattallene
+# Sammendraget står før beregningene i dokumentflyten. De to resultattallene
 # det siterer, deklareres derfor her som eksplisitte påstander — og håndheves
 # mot de beregnede verdiene i slutten av res-cv-chunken. Avviker de, stopper
 # byggingen med beskjed om å oppdatere sammendraget. Kontrakten er den samme
 # som ellers i dokumentet: ingen tall i prosa uten en beregning som dømmer det.
 SAMMENDRAG_PAASTAND <- list(
   n_opprinnelser  = 31,    # rullerende opprinnelser i backtesten
-  april_avvik_pst = 0.2,   # PIT-avvik mot termin april 2024, h = 6, M6
-  dekning_for     = 48,    # M6, 80 %-intervall foer kalibrering (kalibreringsutvalget)
-  dekning_etter   = 79     # M6 etter tidsgyldig konformal kalibrering
+  april_avvik_pst = 0.2    # PIT-avvik mot termin april 2024, h = 6, M6
 )
 ```
 
-Velferdsetaten trenger et anslag på hvor mange husstander i Oslo som vil motta statlig bostøtte de kommende månedene — til dimensjonering av veiledning og saksbehandling i bydelene, og som tidlig varsel når utviklingen avviker fra det ventede. Rapporten bygger og etterprøver en slik prognose på åpne data: `r nb(n_est)` månedsterminer (`r est_fra`–`r est_til`) fra Husbankens statistikkbank, evaluert med rullerende opprinnelse — `r nb(SAMMENDRAG_PAASTAND$n_opprinnelser)` opprinnelser, horisont 1–12 — der hver modell ved hver opprinnelse bare får regelverksinformasjon som beviselig var offentlig da, håndhevet mot et primærkildebelagt kunnskapsregister.
+Da det midlertidige bostøtteregelverket ble avviklet i april 2024, falt antall mottakere i Oslo med `r pst(abs(apr24_pst), 0)` på én termin. Hovedspesifikasjonen traff fallet med `r pst(SAMMENDRAG_PAASTAND$april_avvik_pst, 1)` avvik seks måneder i forveien, fra første opprinnelse etter at avviklingen ble kunngjort. Referansemodellene bommet med rundt 30 prosent fra samtlige horisonter.
 
-Hovedfunnet er at fortrinnet over naiv framskrivning i det vesentlige kommer fra datert regelverksinformasjon, ikke fra modellkapasitet. Serien er regelstyrt: betinget på fem deterministiske regelverks- og kalenderledd er den stasjonær, og uten dem må enhver modell lese vedtak som trend. Kortsiktsfortrinnet overlever at framtidige vedtak er ukjente; langsiktsfortrinnet gjør det ikke — det er betinget av kjent regelverkskalender.
+Over hele evalueringsvinduet er gevinsten liten; den ligger i månedene der regelverket endres. Fortrinnet kommer fra regelverkskalenderen, ikke fra modellklassen — retningen holder, styrken er ikke etablert (@sec-res-gevinst). At serien er regelstyrt, hviler derimot på en test: stasjonaritet forkastes på den rå logserien og står når de fem daterte regelverks- og kalenderleddene er trukket ut (@sec-met-diagnostikk).
 
-Det sentrale enkeltresultatet er point-in-time: mot termin april 2024 — et fall på `r pst(abs(apr24_pst), 0)` på én termin — traff hovedspesifikasjonen med `r pst(SAMMENDRAG_PAASTAND$april_avvik_pst, 1)` avvik fra seks måneders horisont, første opprinnelse etter at avviklingen ble offentlig kjent 6. oktober 2023. Referansemodellene bommet med rundt 30 prosent fra samtlige horisonter. Fra ni måneder — før kunngjøringen — treffer bare et eksplisitt merket orakelscenario med dagens fasitkalender.
+Grunnlaget er åpne data fra Husbankens statistikkbank, evaluert med rullerende opprinnelse over `r nb(SAMMENDRAG_PAASTAND$n_opprinnelser)` opprinnelser og horisont 1–12. Hver modell får bare regelverksinformasjon som beviselig var offentlig ved sin opprinnelse. Intervallene er tidsgyldig konformalt kalibrerte estimater, ikke dekningsgarantier.
 
-Usikkerheten rapporteres med to forbehold som begge er målt. Evalueringen er pseudo-sanntid: serien revideres bakover, historiske vintages er ikke offentlig tilgjengelige, og skjevheten rammer alle modellene likt. Og modellenes egne intervaller underdekker grovt — `r pst(SAMMENDRAG_PAASTAND$dekning_for, 0)` ved nominelt 80 prosent for hovedspesifikasjonen; tidsgyldig konformal etterkalibrering løfter dekningen til `r pst(SAMMENDRAG_PAASTAND$dekning_etter, 0)` på kalibreringsutvalget, og restfeilen er skjevhet der informasjon mangler, ikke intervallbredde. Intervallene omtales derfor gjennomgående som kalibrerte estimater, ikke som dekningsgarantier.
+Er en regelendring vedtatt og datert, lar nivået seg anslå et halvår fram. Er den ikke det, lar det seg ikke — hovedspesifikasjonen bommer da som referansemodellene. Et tolvmånederstall er derfor et utsagn om hvilke regler som gjelder, ikke en framskrivning av en trend. Det som betyr mest for en slik prognose, er at regelverkskalenderen holdes oppdatert, og det er en forvaltningsoppgave.
 
-Den operative anbefalingen følger av dette: en månedlig basisprognose der vedtatte regelendringer inngår fra sin dokumenterte kunngjøringsdato; ikke-vedtatte forslag utelukkende som navngitte scenarioer; hver målmåned merket etter sitt informasjonssett — prognose under vedtatt kalender, eller basisbane under uttrykkelig videreført regelverk; og driftsvarsling på intervallskår framfor treffsikkerhet alene.
-
-Kapittel 1–6 er den historiske evalueringen og står på egne bein. Den operative framtidsprognosen — tolv måneder fram fra siste observerte termin, med kalenderantakelsen deklarert per målmåned — er skilt ut i @sec-prognose og leses av README og den interaktive prognosesiden fra samme maskinproduserte artefakt.
+*Dette er et privat fag- og porteføljeprosjekt. Det er ikke utført på oppdrag fra eller i samarbeid med Oslo kommune, Velferdsetaten eller Husbanken, og alt datagrunnlag er offentlig og aggregert.*
 
 \newpage
 
 # Introduksjon
 
-For Velferdsetaten er antallet husstander med statlig bostøtte en størrelse det må planlegges rundt. Ordningen er statlig finansiert og forvaltet av Husbanken, men kommunen er førstelinje, og mottakstallet inngår i kunnskapsgrunnlaget for tilgrensende kommunale tjenester som økonomisk sosialhjelp og kommunal bostøtte. Størrelsesordenen på det kommunale behovet kartlegges annethvert år: i uke 48 i 2024 registrerte bydelene 3 826 husstander med behov for kommunal hjelp til å skaffe bolig, 480 flere enn i 2022 [@velferdsetaten2025bolig]. Statlig bostøtte virker i grenseflaten mot dette behovet. Hvor mange husstander som mottar den de kommende månedene, har derfor betydning både for dimensjoneringen av veiledning og saksbehandling i bydelene og for tidlig varsling når utviklingen avviker fra det forventede. Dette arbeidet legger derfor prognoseperspektivet til grunn.
+Bostøtten er statlig finansiert og forvaltet av Husbanken, men kommunen er førstelinje, og mottakstallet inngår i kunnskapsgrunnlaget for tilgrensende kommunale tjenester som økonomisk sosialhjelp og kommunal bostøtte. Størrelsesordenen på det kommunale behovet kartlegges annethvert år: i uke 48 i 2024 registrerte bydelene 3 826 husstander med behov for kommunal hjelp til å skaffe bolig, 480 flere enn i 2022 [@velferdsetaten2025bolig]. Statlig bostøtte virker i grenseflaten mot dette behovet. Hvor mange husstander som mottar den de kommende månedene, har betydning både for dimensjoneringen av veiledning og saksbehandling i bydelene og for tidlig varsling når utviklingen avviker fra det forventede. Dette arbeidet legger derfor prognoseperspektivet til grunn.
 
-Problemstillingen er særlig aktuell i Oslo. Ifølge Statistisk sentralbyrå har Oslo landets høyeste husleienivå: i 2025 var gjennomsnittlig månedlig leie for en toroms bolig i Oslo og Bærum 15 260 kroner, 29 prosent over landsgjennomsnittet. Kombinasjonen av høye boutgifter og store inntektsforskjeller gjør statlig bostøtte til et sentralt virkemiddel for å redusere boutgiftsbelastningen blant økonomisk vanskeligstilte husstander.
+Problemstillingen er særlig aktuell i Oslo. Ifølge Statistisk sentralbyrå ligger prissonen Oslo og Bærum høyest i landet: i 2025 var gjennomsnittlig månedlig leie for en toroms bolig 15 260 kroner, 29 prosent over landsgjennomsnittet [@ssb09895]. Kombinasjonen av høye boutgifter og store inntektsforskjeller gjør statlig bostøtte til et sentralt virkemiddel for å redusere boutgiftsbelastningen blant økonomisk vanskeligstilte husstander.
 
 En prognose for bostøttemottak står overfor en særegen metodisk utfordring: serien er regelstyrt. Antall mottakere bestemmes ikke bare av inntekter, husleier og søkeatferd, men av hvordan retten til bostøtte til enhver tid er definert. Regelverket er endret flere ganger i seriens levetid: midlertidig utvidede satser og ekstraordinær strømstøtte fra termin desember 2021 til og med termin mars 2024, tilbakeføring til ordinært regelverk fra termin april 2024, økte boutgiftstak og forenklet egenandelsberegning fra juli 2024 med ytterligere utvidelser utover høsten, og fra januar 2025 en korreksjon av inntektsgrunnlaget som skal motvirke et administrativt skapt sesongfall for mottakere av arbeidsavklaringspenger og dagpenger. En modell som ikke kjenner disse endringene, vil lese vedtak som trend og utbetalingskalender som naturlig sesong, og framskrive begge deler feil.
 
@@ -1407,6 +1403,8 @@ Det andre regimet er ikke en svakhet ved designet; det er innholdet i underspør
 
 **Punktpresisjon.** MAE og RMSE per horisont, og MASE (@eq-mase) som skalafritt hovedmål. Nevneren er sesongnaiv gjennomsnittlig absoluttfeil beregnet *innenfor treningsvinduet ved hver opprinnelse* [@hyndmankoehler2006] — ikke på hele utvalget, som ville gjort nevneren avhengig av data modellen ikke hadde sett.
 
+MASE er en andel, og den leses slik: 1 betyr at modellen bommer like mye som den sesongnaive referansen, 0,8 at den bommer 20 prosent mindre, 1,2 at den bommer 20 prosent mer. Fordi nevneren er et antall husstander, kan ethvert MASE-tall regnes tilbake til husstander, og bør det når tallet skal brukes til dimensjonering.
+
 **Signifikans, og en fallgruve som må navngis.** Forskjeller i prognosepresisjon testes med Diebold–Mariano [@diebold1995] med småutvalgskorreksjon [@harvey1997]. Testen forutsetter imidlertid ikke-nøstede modeller, og de sammenlikningene vi er mest interessert i — M6 mot M3, M6 mot M4, M6 mot M5 — er nøstede i populasjonen: den enklere modellen er den generelle med koeffisienter satt til null. Under nullhypotesen blir tapsdifferansen degenerert, og DM-testen er da underdimensjonert. Protokollen håndterer dette eksplisitt:
 
 - nøstede par testes med Clark–Wests justerte statistikk, som korrigerer for nettopp dette;
@@ -1689,7 +1687,7 @@ dm_m5m6_h1  <- dmtest("M5", "M6", TRUE, 1)
 dm_m5m6_h12 <- dmtest("M5", "M6", TRUE, 12)
 
 # --- Sammendragskontrakten -------------------------------------------------
-# Sammendraget trykkes foer beregningene og siterer fire resultattall fra en
+# Sammendraget trykkes foer beregningene og siterer to resultattall fra en
 # deklarert liste (chunk sammendrag-kontrakt). Her doemmes listen mot de
 # beregnede verdiene; avvik stopper byggingen. Dermed kan sammendraget ikke
 # komme i utakt med resultatkapitlet.
@@ -1698,11 +1696,7 @@ stopifnot(
   "Sammendraget: antall opprinnelser stemmer ikke" =
     SAMMENDRAG_PAASTAND$n_opprinnelser == n_opprinnelser,
   "Sammendraget: april-avviket (h=6) stemmer ikke med beregningen" =
-    abs(abs(100 * .apr_h6 / 15588 - 100) - SAMMENDRAG_PAASTAND$april_avvik_pst) < 0.05,
-  "Sammendraget: dekning foer kalibrering stemmer ikke" =
-    round(100 * mean(K$dekk80[K$.model == "M6"])) == SAMMENDRAG_PAASTAND$dekning_for,
-  "Sammendraget: dekning etter kalibrering stemmer ikke" =
-    round(100 * mean(K$kdekk80[K$.model == "M6"])) == SAMMENDRAG_PAASTAND$dekning_etter
+    abs(abs(100 * .apr_h6 / 15588 - 100) - SAMMENDRAG_PAASTAND$april_avvik_pst) < 0.05
 )
 ```
 

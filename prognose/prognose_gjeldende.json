@@ -2,8 +2,8 @@
   "meta": {
     "prognoseopprinnelse": "2026-06",
     "datavintage": "2026-08-04",
-    "commit": "f94222b4eebc566e9fc60ec412f9b6f596e3ab75",
-    "generert": "2026-08-09T22:02:24Z",
+    "commit": "1cf2e237d37102b43a628398e2df6a819370ca2b",
+    "generert": "2026-08-14T04:14:47Z",
     "modell": "M6 RegARIMA + X + k (point-in-time)",
     "modell_id": "M6",
     "intervallmetode": "tidsgyldig split-konformal kvantil av absolutte logfeil, endelig-utvalgsnivå ceiling((n+1)*nivå)/n, per horisont; kalibrert bare på feil som var realisert ved opprinnelsen.",
@@ -27,8 +27,8 @@
       "data/clean/regelverk_kunnskap.csv"
     ],
     "datahash_md5": [
-      "f98f2c5656f65debc82bada324064982",
-      "00f1d8a92f34bb3064e3b43cb06eab3c"
+      "291e69d76fc41c10067a691c129bd537",
+      "d06bf32754deebad67968efa91a4047b"
     ]
   },
   "prognoser": [
@@ -114,7 +114,7 @@
       "horisont": 8,
       "punkt": 17087,
       "lo80": 14763,
-      "hi80": 19778,
+      "hi80": 19777,
       "lo95": 14373,
       "hi95": 20314,
       "n_kalibreringsfeil": 31,
@@ -135,8 +135,8 @@
       "maalmaned": "2027-04",
       "horisont": 10,
       "punkt": 17147,
-      "lo80": 14756,
-      "hi80": 19927,
+      "lo80": 14754,
+      "hi80": 19929,
       "lo95": 14087,
       "hi95": 20873,
       "n_kalibreringsfeil": 31,
@@ -146,8 +146,8 @@
       "maalmaned": "2027-05",
       "horisont": 11,
       "punkt": 17071,
-      "lo80": 14821,
-      "hi80": 19662,
+      "lo80": 14820,
+      "hi80": 19663,
       "lo95": 14027,
       "hi95": 20775,
       "n_kalibreringsfeil": 31,
