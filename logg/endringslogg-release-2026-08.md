@@ -127,3 +127,39 @@ forskningsspørsmålet tidlig, velferdsteorem-passasjen komprimert og
 andre-teorem-avsnittet fjernet; nytt sammendrag foran, med
 sammendragskontrakt som stopper byggingen hvis tallene i det kommer i utakt
 med beregningen.
+
+---
+
+## 14. august 2026 — CRLF brøt prognosekontrakten
+
+**Symptom.** Etter rendring på Windows feilet `Datakontrakt` og `Prognoseside` på
+samme steg: P09, «datahash stemmer med kildefilene». Rapport-render og
+Kildeverifisering gikk gjennom. Kontrakten hadde bestått i alle tidligere kjøringer.
+
+**Årsak.** `.gitattributes` sto med `* text=auto` alene. Git sjekker da ut tekstfiler
+med CRLF på Windows og lagrer dem med LF i repoet. P09 hasher kildefilene **byte for
+byte** — `hashlib.md5(path.read_bytes())` — så en render på Windows skriver CRLF-hasher
+inn i artefakten, mens CI leser LF og regner ut noe annet. Innholdet er identisk; det
+er bare linjeskiftene som skiller.
+
+| Fil | LF (repo) | CRLF (Windows) |
+|---|---|---|
+| `data/raw/husbanken_bostotte_oslo_manedlig.csv` | `f98f2c56…` | `291e69d7…` |
+| `data/clean/regelverk_kunnskap.csv` | `00f1d8a9…` | `d06bf327…` |
+
+Artefakten inneholdt de to høyre. Tidligere artefakter var generert på Linux, så
+feilen kunne ikke oppstå før første lokale Windows-render.
+
+**Rettelse, to ledd.** `.gitattributes` tvinger nå `eol=lf` for `*.csv` og `*.json`, så
+arbeidskopien er byte-identisk med repoet på alle plattformer. Og de to hashene i
+`prognose/prognose_gjeldende.json` er satt til den kanoniske LF-formen. Det er ikke en
+omskriving av hva artefakten ble bygget fra — datainnholdet er det samme — men en
+retting av hvilken representasjon hashen viser til.
+
+**Merknad.** En kontrakt som hasher bytes, forutsetter at bytene er de samme overalt.
+Den forutsetningen var udokumentert til nå. Neste gang noen sjekker ut repoet på
+Windows, må `git add --renormalize .` kjøres én gang for at eksisterende arbeidskopier
+skal følge den nye regelen.
+
+**Kontrollert:** `validate_prognose.py` 13 av 13, `validate_phase1.py` 55 passert,
+0 feil, 2 advarsler (uendret fra før).
