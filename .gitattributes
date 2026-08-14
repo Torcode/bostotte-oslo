@@ -1,2 +1,9 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# Filer som hashes byte for byte av prognosekontrakten (P09) maa ha samme
+# bytes paa alle plattformer. Uten eol=lf sjekker Windows dem ut med CRLF,
+# og md5 blir en annen enn den CI regner ut.
+*.csv  text eol=lf
+*.json text eol=lf
+
