@@ -7,7 +7,10 @@
     "modell": "M6 RegARIMA + X + k (point-in-time)",
     "modell_id": "M6",
     "intervallmetode": "tidsgyldig split-konformal kvantil av absolutte logfeil, endelig-utvalgsnivå ceiling((n+1)*nivå)/n, per horisont; kalibrert bare på feil som var realisert ved opprinnelsen.",
-    "nominelle_nivaaer": [80, 95],
+    "nominelle_nivaaer": [
+      80,
+      95
+    ],
     "empirisk_dekning_80_backtest": 79,
     "empirisk_dekning_utvalg": "kalibreringsutvalget i backtesten, 270 punkter, 2022m12-2025m6",
     "kalibrering_n_per_h": 31,
@@ -27,8 +30,8 @@
       "data/clean/regelverk_kunnskap.csv"
     ],
     "datahash_md5": [
-      "291e69d76fc41c10067a691c129bd537",
-      "d06bf32754deebad67968efa91a4047b"
+      "f98f2c5656f65debc82bada324064982",
+      "00f1d8a92f34bb3064e3b43cb06eab3c"
     ]
   },
   "prognoser": [
