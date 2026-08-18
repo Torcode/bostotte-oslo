@@ -34,6 +34,13 @@
 # Datapakke-zip (redundant med utpakket data/)
 *.zip
 
+# --- Transportartefakter fra økt-flyten (gjenoppstår ved hver overføring) ---
+# Git-bundles er transport for commits når en økt ikke kan pushe selv, og
+# _for_pull/ er staging for filer som skal hentes inn. Innholdet hører hjemme
+# i git-historikken, ikke i arbeidstreet.
+*.bundle
+/_for_pull/
+
 # --- Python-bytekode og CI-artefakter (regenereres) ---
 __pycache__/
 *.py[cod]
