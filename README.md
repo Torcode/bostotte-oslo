@@ -62,7 +62,7 @@ oppgitt målt dekning, ikke som garantier.
 
 | | |
 |---|---|
-| [`bostotte_oslo.pdf`](bostotte_oslo.pdf) | Hovedrapporten (44 sider): teori, metode, backtest, diskusjon, konklusjon — og prognosekapitlet som produserer artefakten |
+| [`bostotte_oslo.pdf`](bostotte_oslo.pdf) | Hovedrapporten (45 sider): teori, metode, backtest, diskusjon, konklusjon — og prognosekapitlet som produserer artefakten |
 | [`bostotte_oslo.qmd`](bostotte_oslo.qmd) | Kilden. All beregning kjører ved rendering; ingen tall i teksten er skrevet for hånd |
 | [`rapport/`](rapport/) | Arbeidsverk 2: sammenfatning av Python-arbeidet, med versjonert kilde |
 | [`notebooks/`](notebooks/) | Arbeidsverk 2, sju notebooks med lagret utdata (protokollport, ML-klasser, kalibrering, avstemming, kvalitetskontroll) |
